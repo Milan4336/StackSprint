@@ -1,53 +1,73 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { CircleMarker, MapContainer, Popup, TileLayer } from 'react-leaflet';
+import { divIcon } from 'leaflet';
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import { Transaction } from '../../types';
 
 interface FraudRadarMapProps {
   transactions: Transaction[];
 }
 
-const locationCoordinates: Record<string, [number, number]> = {
-  NY: [40.7128, -74.006],
-  CA: [36.7783, -119.4179],
-  TX: [31.9686, -99.9018],
-  FL: [27.6648, -81.5158],
-  WA: [47.7511, -120.7401],
-  London: [51.5072, -0.1276],
-  Delhi: [28.6139, 77.209],
-  Tokyo: [35.6762, 139.6503],
-  Dubai: [25.2048, 55.2708],
-  Sydney: [-33.8688, 151.2093]
+const locationMap: Record<string, [number, number]> = {
+  ny: [40.7128, -74.006],
+  newyork: [40.7128, -74.006],
+  ca: [36.7783, -119.4179],
+  california: [36.7783, -119.4179],
+  tx: [31.9686, -99.9018],
+  texas: [31.9686, -99.9018],
+  fl: [27.6648, -81.5158],
+  florida: [27.6648, -81.5158],
+  wa: [47.7511, -120.7401],
+  washington: [47.7511, -120.7401],
+  london: [51.5072, -0.1276],
+  delhi: [28.6139, 77.209],
+  tokyo: [35.6762, 139.6503],
+  dubai: [25.2048, 55.2708],
+  sydney: [-33.8688, 151.2093]
 };
 
-const hashLocation = (location: string): [number, number] => {
-  let hash = 0;
-  for (let i = 0; i < location.length; i += 1) {
-    hash = (hash << 5) - hash + location.charCodeAt(i);
-    hash |= 0;
+const normalizeLocation = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, '');
+
+const isValidCoordinates = (lat: number, lng: number): boolean =>
+  Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+
+const fraudIcon = divIcon({
+  html: '<span class="radar-marker-dot radar-marker-fraud"></span>',
+  className: 'radar-marker',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10]
+});
+
+const legitIcon = divIcon({
+  html: '<span class="radar-marker-dot radar-marker-safe"></span>',
+  className: 'radar-marker',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8]
+});
+
+const coordinatesForTransaction = (tx: Transaction): [number, number] | null => {
+  if (
+    typeof tx.latitude === 'number' &&
+    typeof tx.longitude === 'number' &&
+    isValidCoordinates(tx.latitude, tx.longitude)
+  ) {
+    return [tx.latitude, tx.longitude];
   }
 
-  const lat = ((((hash % 140) + 140) % 140) - 70) + 0.11;
-  const lng = ((((Math.floor(hash / 3) % 360) + 360) % 360) - 180) + 0.21;
-  return [Math.max(-85, Math.min(85, lat)), Math.max(-180, Math.min(180, lng))];
+  const mapped = locationMap[normalizeLocation(tx.location)];
+  if (!mapped) return null;
+  return mapped;
 };
 
-const coordsForTransaction = (transaction: Transaction): [number, number] => {
-  if (typeof transaction.latitude === 'number' && typeof transaction.longitude === 'number') {
-    return [transaction.latitude, transaction.longitude];
-  }
-  return locationCoordinates[transaction.location] ?? hashLocation(transaction.location);
-};
-
-export const FraudRadarMap = ({ transactions }: FraudRadarMapProps) => {
-  const points = useMemo(
-    () =>
-      transactions.slice(0, 140).map((transaction) => ({
-        ...transaction,
-        coords: coordsForTransaction(transaction)
-      })),
-    [transactions]
-  );
+export const FraudRadarMap = memo(({ transactions }: FraudRadarMapProps) => {
+  const points = useMemo(() => {
+    const mapped = transactions.slice(0, 140).map((tx) => {
+      const coords = coordinatesForTransaction(tx);
+      if (!coords) return null;
+      return { tx, coords };
+    });
+    return mapped.filter((item): item is { tx: Transaction; coords: [number, number] } => item !== null);
+  }, [transactions]);
 
   return (
     <motion.article
@@ -57,6 +77,11 @@ export const FraudRadarMap = ({ transactions }: FraudRadarMapProps) => {
       transition={{ duration: 0.35 }}
     >
       <h3 className="panel-title">Real-Time Fraud Radar World Map</h3>
+      {points.length === 0 ? (
+        <p className="mb-3 rounded-xl border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-400">
+          No geo-mapped transactions yet. Create or simulate transactions.
+        </p>
+      ) : null}
       <div className="h-96 overflow-hidden rounded-xl border border-slate-700">
         <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom className="h-full w-full">
           <TileLayer
@@ -64,34 +89,26 @@ export const FraudRadarMap = ({ transactions }: FraudRadarMapProps) => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
-          {points.map((transaction) => {
-            const fraud = transaction.isFraud || transaction.riskLevel === 'High';
-            const color = fraud ? '#ef4444' : '#22c55e';
-
+          {points.map(({ tx, coords }) => {
+            const isFraud = tx.isFraud || tx.riskLevel === 'High';
             return (
-              <CircleMarker
-                key={transaction.transactionId}
-                center={transaction.coords}
-                radius={fraud ? 10 : 7}
-                pathOptions={{ color, fillColor: color, fillOpacity: 0.65, weight: fraud ? 2 : 1 }}
-                className={fraud ? 'pulse-red' : 'pulse-green'}
-              >
+              <Marker key={tx.transactionId} position={coords} icon={isFraud ? fraudIcon : legitIcon}>
                 <Popup>
                   <div className="text-xs text-slate-900">
-                    <p className="font-bold">{transaction.transactionId}</p>
-                    <p>User: {transaction.userId}</p>
-                    <p>Location: {transaction.location}</p>
-                    <p>Amount: ${transaction.amount.toLocaleString()}</p>
+                    <p className="font-bold">{tx.transactionId}</p>
+                    <p>User: {tx.userId}</p>
+                    <p>Location: {tx.location}</p>
+                    <p>Amount: ${tx.amount.toLocaleString()}</p>
                     <p>
-                      Risk: {transaction.riskLevel} ({transaction.fraudScore})
+                      Risk: {tx.riskLevel} ({tx.fraudScore})
                     </p>
                   </div>
                 </Popup>
-              </CircleMarker>
+              </Marker>
             );
           })}
         </MapContainer>
       </div>
     </motion.article>
   );
-};
+});

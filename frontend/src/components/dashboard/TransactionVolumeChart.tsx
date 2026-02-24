@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Transaction } from '../../types';
 import { safeDate } from '../../utils/date';
@@ -6,23 +7,24 @@ interface TransactionVolumeChartProps {
   transactions: Transaction[];
 }
 
-export const TransactionVolumeChart = ({ transactions }: TransactionVolumeChartProps) => {
-  const groups = new Map<string, number>();
+export const TransactionVolumeChart = memo(({ transactions }: TransactionVolumeChartProps) => {
+  const data = useMemo(() => {
+    const groups = new Map<string, number>();
+    transactions.forEach((tx) => {
+      const date = safeDate(tx.timestamp);
+      if (!date) return;
+      const key = date.toISOString().slice(0, 13);
+      groups.set(key, (groups.get(key) ?? 0) + 1);
+    });
 
-  transactions.forEach((tx) => {
-    const date = safeDate(tx.timestamp);
-    if (!date) return;
-    const key = date.toISOString().slice(0, 13);
-    groups.set(key, (groups.get(key) ?? 0) + 1);
-  });
-
-  const data = Array.from(groups.entries())
-    .sort(([a], [b]) => (a > b ? 1 : -1))
-    .slice(-20)
-    .map(([key, count]) => ({
-      time: safeDate(key)?.toLocaleString() ?? 'N/A',
-      count
-    }));
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => (a > b ? 1 : -1))
+      .slice(-20)
+      .map(([key, count]) => ({
+        time: safeDate(key)?.toLocaleString() ?? 'N/A',
+        count
+      }));
+  }, [transactions]);
 
   return (
     <article className="panel animate-fade-in">
@@ -40,4 +42,4 @@ export const TransactionVolumeChart = ({ transactions }: TransactionVolumeChartP
       </div>
     </article>
   );
-};
+});

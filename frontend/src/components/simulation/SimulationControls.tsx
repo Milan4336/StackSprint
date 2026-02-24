@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTransactions } from '../../context/TransactionContext';
 import { useDashboardStore } from '../../store/dashboard';
 
 export const SimulationControls = () => {
   const startSimulation = useDashboardStore((state) => state.startSimulation);
   const simulationMessage = useDashboardStore((state) => state.simulationMessage);
+  const { refreshTransactions } = useTransactions();
 
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +15,7 @@ export const SimulationControls = () => {
     setError(null);
     try {
       await startSimulation(50);
+      await refreshTransactions();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Simulation failed');
     } finally {

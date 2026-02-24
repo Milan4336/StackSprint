@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
 import axios from 'axios';
-import { useDashboardStore } from '../store/dashboard';
+import { useTransactions } from '../context/TransactionContext';
 import { Transaction } from '../types';
 
 interface CreateTransactionFormProps {
@@ -8,8 +8,7 @@ interface CreateTransactionFormProps {
 }
 
 export const CreateTransactionForm = ({ onCreated }: CreateTransactionFormProps) => {
-  const createTransaction = useDashboardStore((state) => state.createTransaction);
-  const creating = useDashboardStore((state) => state.creating);
+  const { createTransaction, creating } = useTransactions();
 
   const [userId, setUserId] = useState('user-001');
   const [amount, setAmount] = useState(350);
