@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Activity, RefreshCw, ShieldAlert, Sparkles } from 'lucide-react';
 import { FraudAlertsPanel } from '../components/alerts/FraudAlertsPanel';
 import { AnalyticsCards } from '../components/dashboard/AnalyticsCards';
@@ -12,11 +12,13 @@ import { RiskDistributionChart } from '../components/dashboard/RiskDistributionC
 import { TransactionVolumeChart } from '../components/dashboard/TransactionVolumeChart';
 import { FraudTrendChart } from '../components/dashboard/FraudTrendChart';
 import { CreateTransactionForm } from '../components/CreateTransactionForm';
+import { SystemBootIntro } from '../components/intro/SystemBootIntro';
 import { RiskBadge } from '../components/RiskBadge';
 import { FraudRadarMap } from '../components/radar/FraudRadarMap';
 import { SimulationControls } from '../components/simulation/SimulationControls';
 import { useTransactions } from '../context/TransactionContext';
 import { useDashboardStore } from '../store/dashboard';
+import { useIntroStore } from '../store/intro';
 import { RiskLevel, Transaction } from '../types';
 import { formatSafeDate, safeDate } from '../utils/date';
 
@@ -29,6 +31,11 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 
 export const Dashboard = () => {
   const { transactions, stats, loading, error, refreshTransactions } = useTransactions();
+  const hasHydrated = useIntroStore((state) => state.hasHydrated);
+  const hasSeenBootIntro = useIntroStore((state) => state.hasSeenBootIntro);
+  const isBootIntroActive = useIntroStore((state) => state.isBootIntroActive);
+  const startBootIntro = useIntroStore((state) => state.startBootIntro);
+  const completeBootIntro = useIntroStore((state) => state.completeBootIntro);
   const alerts = useDashboardStore((state) => state.alerts);
   const devices = useDashboardStore((state) => state.devices);
   const explanations = useDashboardStore((state) => state.explanations);
@@ -39,6 +46,15 @@ export const Dashboard = () => {
 
   const [sortKey, setSortKey] = useState<SortKey>('timestamp');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  useEffect(() => {
+    if (!hasHydrated || hasSeenBootIntro || isBootIntroActive) {
+      return;
+    }
+    if (!isBootIntroActive) {
+      startBootIntro();
+    }
+  }, [hasHydrated, hasSeenBootIntro, isBootIntroActive, startBootIntro]);
 
   const sortedTransactions = useMemo(() => {
     const sorted = [...transactions];
@@ -77,167 +93,175 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6" id="analytics">
-      <motion.section className="panel relative overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute -bottom-4 left-0 h-24 w-24 rounded-full bg-emerald-500/15 blur-2xl" />
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="chip mb-2 border-blue-500/40 bg-blue-500/10 text-blue-200">Executive Dashboard</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-              Real-Time Fraud Intelligence
-            </h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Hybrid ML + rules risk orchestration with live geospatial monitoring and autonomous response.
-            </p>
+    <>
+      <div className="space-y-6" id="analytics">
+        <motion.section className="panel relative overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="absolute -bottom-4 left-0 h-24 w-24 rounded-full bg-emerald-500/15 blur-2xl" />
+          <div className="relative flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="chip mb-2 border-blue-500/40 bg-blue-500/10 text-blue-200">Executive Dashboard</p>
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+                Real-Time Fraud Intelligence
+              </h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Hybrid ML + rules risk orchestration with live geospatial monitoring and autonomous response.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.14em]">
+              <span className="chip border-emerald-500/35 bg-emerald-500/10 text-emerald-200">{connected ? 'Socket Live' : 'Socket Offline'}</span>
+              <span className="chip border-slate-300/70 bg-white/80 text-slate-700 dark:border-slate-600/70 dark:bg-slate-800/70 dark:text-slate-300">
+                {transactions.length} Tracked TX
+              </span>
+              <button type="button" onClick={() => void refreshTransactions()} className="glass-btn">
+                <RefreshCw size={14} />
+                Sync
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.14em]">
-            <span className="chip border-emerald-500/35 bg-emerald-500/10 text-emerald-200">{connected ? 'Socket Live' : 'Socket Offline'}</span>
-            <span className="chip border-slate-300/70 bg-white/80 text-slate-700 dark:border-slate-600/70 dark:bg-slate-800/70 dark:text-slate-300">
-              {transactions.length} Tracked TX
-            </span>
-            <button type="button" onClick={() => void refreshTransactions()} className="glass-btn">
-              <RefreshCw size={14} />
-              Sync
-            </button>
-          </div>
+        </motion.section>
+
+        {loading && transactions.length === 0 ? (
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={`skeleton-${index}`} className="skeleton h-36" />
+            ))}
+          </section>
+        ) : null}
+
+        <div className="glass-panel flex items-center justify-between rounded-xl border px-4 py-2 text-xs uppercase tracking-[0.16em] text-slate-700 dark:text-slate-300">
+          <span className="flex items-center gap-2">
+            <Activity size={14} className={connected ? 'text-emerald-400' : 'text-red-400'} />
+            Live Feed {connected ? 'Connected' : 'Disconnected'}
+          </span>
+          <span className="flex items-center gap-2">
+            {loading ? 'Syncing...' : 'Operational'} <Sparkles size={13} />
+          </span>
         </div>
-      </motion.section>
 
-      {loading && transactions.length === 0 ? (
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div key={`skeleton-${index}`} className="skeleton h-36" />
-          ))}
+        {simulationMessage ? (
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+            {simulationMessage}
+          </div>
+        ) : null}
+
+        {error ? <div className="app-error text-sm">{error}</div> : null}
+
+        <AnalyticsCards
+          transactions={transactions}
+          stats={stats}
+          activeAlerts={activeAlerts}
+          fraudPrevented={fraudPrevented}
+        />
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <FraudRateChart transactions={transactions} />
+          <RiskDistributionChart transactions={transactions} />
         </section>
-      ) : null}
 
-      <div className="glass-panel flex items-center justify-between rounded-xl border px-4 py-2 text-xs uppercase tracking-[0.16em] text-slate-700 dark:text-slate-300">
-        <span className="flex items-center gap-2">
-          <Activity size={14} className={connected ? 'text-emerald-400' : 'text-red-400'} />
-          Live Feed {connected ? 'Connected' : 'Disconnected'}
-        </span>
-        <span className="flex items-center gap-2">{loading ? 'Syncing...' : 'Operational'} <Sparkles size={13} /></span>
+        <section className="grid gap-4 xl:grid-cols-2">
+          <TransactionVolumeChart transactions={transactions} />
+          <FraudTrendChart transactions={transactions} />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <FraudPieChart transactions={transactions} />
+          <FraudExplanationPanel transactions={transactions} explanations={explanations} />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <FraudByCountryChart stats={stats} />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <SimulationControls />
+          <DeviceFingerprintPanel devices={devices} />
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <FraudAlertsPanel alerts={alerts} />
+          <FraudRadarMap transactions={transactions} />
+        </section>
+
+        <section>
+          <h2 className="mb-3 section-title">Create Transaction</h2>
+          <CreateTransactionForm />
+        </section>
+
+        <motion.section id="transactions" className="panel" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="panel-title mb-0">Realtime Transaction Table</h3>
+            <span className="chip">{sortedTransactions.length} rows</span>
+          </div>
+
+          <div className="table-shell">
+            <table className="min-w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-slate-100/95 text-left text-xs uppercase tracking-[0.16em] text-slate-500 backdrop-blur dark:bg-slate-900/95 dark:text-slate-400">
+                <tr>
+                  <th className="px-3 py-3">Transaction</th>
+                  <th className="px-3 py-3">User</th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => setSort('amount')} className="table-sort-btn">
+                      Amount {sortKey === 'amount' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                    </button>
+                  </th>
+                  <th className="px-3 py-3">Location</th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => setSort('fraudScore')} className="table-sort-btn">
+                      Risk Score {sortKey === 'fraudScore' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                    </button>
+                  </th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => setSort('riskLevel')} className="table-sort-btn">
+                      Risk {sortKey === 'riskLevel' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                    </button>
+                  </th>
+                  <th className="px-3 py-3">Action</th>
+                  <th className="px-3 py-3">Fraud</th>
+                  <th className="px-3 py-3">
+                    <button type="button" onClick={() => setSort('timestamp')} className="table-sort-btn">
+                      Time {sortKey === 'timestamp' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                    </button>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedTransactions.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-6 text-sm text-slate-500 dark:text-slate-400" colSpan={9}>
+                      No transactions yet. Create or simulate transactions.
+                    </td>
+                  </tr>
+                ) : null}
+                {sortedTransactions.map((tx) => (
+                  <tr key={tx.transactionId} className="table-row">
+                    <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.userId}</td>
+                    <td className="px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.location}</td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.fraudScore}</td>
+                    <td className="px-3 py-3">
+                      <RiskBadge value={tx.riskLevel} />
+                    </td>
+                    <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.action ?? 'N/A'}</td>
+                    <td className={`px-3 py-3 text-lg ${tx.isFraud ? 'text-red-400' : 'text-emerald-400'}`}>●</td>
+                    <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(tx.timestamp)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.section>
+
+        <section className="glass-panel flex items-center gap-2 rounded-xl p-3 text-sm text-slate-600 dark:text-slate-300">
+          <ShieldAlert size={16} className="text-amber-400" />
+          Live risk analytics and autonomous responses update continuously. Manual refresh is not required.
+        </section>
       </div>
 
-      {simulationMessage ? (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-          {simulationMessage}
-        </div>
-      ) : null}
-
-      {error ? <div className="app-error text-sm">{error}</div> : null}
-
-      <AnalyticsCards
-        transactions={transactions}
-        stats={stats}
-        activeAlerts={activeAlerts}
-        fraudPrevented={fraudPrevented}
-      />
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <FraudRateChart transactions={transactions} />
-        <RiskDistributionChart transactions={transactions} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <TransactionVolumeChart transactions={transactions} />
-        <FraudTrendChart transactions={transactions} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <FraudPieChart transactions={transactions} />
-        <FraudExplanationPanel transactions={transactions} explanations={explanations} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <FraudByCountryChart stats={stats} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <SimulationControls />
-        <DeviceFingerprintPanel devices={devices} />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-2">
-        <FraudAlertsPanel alerts={alerts} />
-        <FraudRadarMap transactions={transactions} />
-      </section>
-
-      <section>
-        <h2 className="mb-3 section-title">Create Transaction</h2>
-        <CreateTransactionForm />
-      </section>
-
-      <motion.section id="transactions" className="panel" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="panel-title mb-0">Realtime Transaction Table</h3>
-          <span className="chip">{sortedTransactions.length} rows</span>
-        </div>
-
-        <div className="table-shell">
-          <table className="min-w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-100/95 text-left text-xs uppercase tracking-[0.16em] text-slate-500 backdrop-blur dark:bg-slate-900/95 dark:text-slate-400">
-              <tr>
-                <th className="px-3 py-3">Transaction</th>
-                <th className="px-3 py-3">User</th>
-                <th className="px-3 py-3">
-                  <button type="button" onClick={() => setSort('amount')} className="table-sort-btn">
-                    Amount {sortKey === 'amount' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </button>
-                </th>
-                <th className="px-3 py-3">Location</th>
-                <th className="px-3 py-3">
-                  <button type="button" onClick={() => setSort('fraudScore')} className="table-sort-btn">
-                    Risk Score {sortKey === 'fraudScore' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </button>
-                </th>
-                <th className="px-3 py-3">
-                  <button type="button" onClick={() => setSort('riskLevel')} className="table-sort-btn">
-                    Risk {sortKey === 'riskLevel' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </button>
-                </th>
-                <th className="px-3 py-3">Action</th>
-                <th className="px-3 py-3">Fraud</th>
-                <th className="px-3 py-3">
-                  <button type="button" onClick={() => setSort('timestamp')} className="table-sort-btn">
-                    Time {sortKey === 'timestamp' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTransactions.length === 0 ? (
-                <tr>
-                  <td className="px-3 py-6 text-sm text-slate-500 dark:text-slate-400" colSpan={9}>
-                    No transactions yet. Create or simulate transactions.
-                  </td>
-                </tr>
-              ) : null}
-              {sortedTransactions.map((tx) => (
-                <tr key={tx.transactionId} className="table-row">
-                  <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</td>
-                  <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.userId}</td>
-                  <td className="px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</td>
-                  <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.location}</td>
-                  <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.fraudScore}</td>
-                  <td className="px-3 py-3">
-                    <RiskBadge value={tx.riskLevel} />
-                  </td>
-                  <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.action ?? 'N/A'}</td>
-                  <td className={`px-3 py-3 text-lg ${tx.isFraud ? 'text-red-400' : 'text-emerald-400'}`}>●</td>
-                  <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(tx.timestamp)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.section>
-
-      <section className="glass-panel flex items-center gap-2 rounded-xl p-3 text-sm text-slate-600 dark:text-slate-300">
-        <ShieldAlert size={16} className="text-amber-400" />
-        Live risk analytics and autonomous responses update continuously. Manual refresh is not required.
-      </section>
-    </div>
+      <AnimatePresence>
+        {isBootIntroActive ? <SystemBootIntro onComplete={completeBootIntro} /> : null}
+      </AnimatePresence>
+    </>
   );
 };

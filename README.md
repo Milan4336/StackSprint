@@ -1,165 +1,275 @@
-# Cloud-Native Fraud Detection Command Center
+# FRAUD COMMAND CENTER
+## Hackathon Judge Guide (Enterprise Fintech Edition)
 
-Enterprise-grade, cloud-native fraud detection SaaS platform with real-time risk scoring, explainable ML, investigation workflows, case management, audit logging, geospatial intelligence, and production deployment assets.
+### One-line pitch
+A production-grade, cloud-native fraud intelligence platform that detects, explains, and responds to financial fraud in real time using hybrid rule + ML scoring, live geospatial monitoring, and full investigation workflows.
 
-Last updated: February 24, 2026
+### Why this project stands out
+- It is not a single model demo. It is a full fraud operations platform.
+- It combines realtime detection + explainability + autonomous response + analyst workflow.
+- It is deployable: Docker, Kubernetes manifests, and Azure Container Apps automation are included.
+- It is built with production architecture patterns (microservices, clean separation, validation, auth, observability).
 
-## Latest Frontend Upgrade
+---
 
-Completed enterprise-grade frontend refactor and cleanup:
+## 1) What Judges Can Experience in 3 Minutes
 
-- Upgraded visual system to premium fintech styling (glass cards, gradients, blur layers, stronger spacing and hierarchy).
-- Added motion-driven UX with Framer Motion across page transitions, sidebar collapse, cards, and panel loading states.
-- Enhanced executive dashboard cards with animated counters, trend deltas, and sparkline mini charts.
-- Improved investigation workflows (`/alerts`, `/cases`, `/transactions`) with richer tables, filters, and detail panels.
-- Added alert investigation timeline tab and resilient loading/error handling with retry actions.
-- Finalized global search dropdown in navbar across transactions, alerts, cases, and users.
-- Stabilized global theme state with Zustand-backed persistence.
-- Removed legacy/unused frontend scaffold files (`app/`, `features/`, `lib/`, duplicate auth store, and obsolete chart components).
+### Live Product URLs (local)
+- Frontend Command Center: `http://localhost:5173`
+- API Gateway: `http://localhost:8080`
+- API Health: `http://localhost:8080/health`
+- API Metrics: `http://localhost:8080/metrics`
+- ML Health: `http://localhost:8000/health`
 
-## Product Overview
+### Rapid demo sequence
+1. Login as admin/analyst in enterprise UI.
+2. Cinematic system boot intro runs on first dashboard load.
+3. Dashboard shows live KPIs and animated charts.
+4. Create a transaction and see:
+   - fraud score,
+   - risk level,
+   - action (`ALLOW` / `STEP_UP_AUTH` / `BLOCK`),
+   - realtime updates across dashboard/map/alerts.
+5. Trigger simulation mode (50 generated attack-pattern transactions).
+6. Open alerts and investigate with multi-tab workspace.
+7. Create/update cases and view case timeline.
+8. Open radar map for global fraud heatmap, clusters, pulsing high-risk markers, and suspicious geo-jump paths.
+9. Open model/system health pages for reliability and drift visibility.
 
-This repository now operates as a full fraud operations platform (not just a scoring API), with:
+---
 
-- Real-time transaction scoring (rule + ML hybrid)
-- Risk response actions (`ALLOW`, `STEP_UP_AUTH`, `BLOCK`)
-- Investigation and alert triage workflows
-- Case lifecycle management with timeline notes
-- Audit trail for security/compliance events
-- Model reliability and drift visibility
-- System health telemetry and ML circuit breaker status
-- Live fraud radar map with heatmap, clustering, and geo-jump detection
-- Docker, Kubernetes, and Azure Container Apps deployment assets
+## 2) Core Product Capabilities (Implemented)
 
-## What Is Implemented
+## Fraud Detection Engine
+- Hybrid scoring architecture:
+  - Rule Engine (behavior + risk heuristics)
+  - ML Anomaly Scoring (Isolation Forest via FastAPI service)
+- Final score is weighted and runtime-configurable via settings.
+- Risk classification:
+  - `0-30` -> `Low`
+  - `31-70` -> `Medium`
+  - `71-100` -> `High`
+- Response action mapping:
+  - `Low` -> `ALLOW`
+  - `Medium` -> `STEP_UP_AUTH`
+  - `High` -> `BLOCK`
 
-### Core fraud pipeline
+## Rule Intelligence Signals
+- High amount threshold breach.
+- Velocity anomalies within configurable time window.
+- Location anomaly vs previous user activity.
+- New device detection.
+- IP change detection.
+- Geo-velocity detection (`>1500 km` jump in `<2h`).
+- Behavioral profile signals:
+  - user average amount deviation,
+  - transaction velocity profile,
+  - location change frequency,
+  - device churn.
 
-- JWT authentication and RBAC (`admin`, `analyst`)
-- `POST /api/v1/transactions` for scoring + persistence
-- Hybrid scoring:
-  - Rule engine: amount, velocity, location anomalies, device anomalies, geo velocity
-  - ML service: Isolation Forest anomaly score with explanations
-  - Weighted final score from runtime settings
-- Risk level classification:
-  - `0-30 Low`
-  - `31-70 Medium`
-  - `71-100 High`
-- Response action assignment:
-  - `High -> BLOCK`
-  - `Medium -> STEP_UP_AUTH`
-  - `Low -> ALLOW`
+## Explainable AI
+- ML returns top explanation factors with impacts and reasons.
+- Explanations are persisted and shown in the investigation UI.
+- Alert reasons include detailed per-signal lines (Rule + ML explanations).
 
-### Enterprise investigation features
+## Autonomous Fraud Response
+- When fraud score exceeds autonomous threshold:
+  - creates fraud alert,
+  - stores full reason narrative,
+  - emits realtime alert event,
+  - logs audit event.
 
-- Alerts queue with pagination/filter/search
-- Alert investigation workspace tabs:
+## Fraud Simulation Mode
+- API endpoint to start controlled attack simulation.
+- Generates high-risk and normal transaction mix.
+- Realtime simulation events streamed to UI.
+- Fully toggleable via runtime settings (`simulationMode`).
+
+## Investigation Workflows
+- Alert queue with search/filter/pagination.
+- Alert detail workspace tabs:
   - Overview
+  - Fraud Explanation
   - User History
   - Geo Movement
   - Device Intelligence
-  - Fraud Explanation
   - Case Management
-  - Audit Timeline
-- Case management system (`cases` collection):
+  - Timeline
+- Case management lifecycle:
   - statuses: `OPEN`, `INVESTIGATING`, `RESOLVED`, `FALSE_POSITIVE`
   - priorities: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`
-  - timeline + notes
-- Audit logging system (`audit_logs` collection)
+  - notes + timeline updates + assignee support.
 
-### Real-time intelligence
+## Compliance + Auditability
+- Audit logging for key actions:
+  - login/register,
+  - transaction scoring,
+  - alert generation,
+  - case creation/update,
+  - settings updates.
+- Audit timeline page for analyst/admin review.
 
-- Redis pub/sub + Socket.io fanout
+## Realtime Operations
+- Redis pub/sub event bus.
+- Socket.io gateway with JWT auth.
 - Live channels:
   - `transactions.live`
   - `fraud.alerts`
   - `simulation.events`
-  - `system.status` (initial socket status event)
-- Live frontend updates for dashboard, alerts, map, and metrics
+  - `system.status`
+- Frontend subscribes and updates dashboard/alerts/radar in realtime.
 
-### Radar geospatial intelligence
+## Fraud Radar (Geospatial Intelligence)
+- World map with realtime marker updates.
+- Heatmap layer (fraud intensity).
+- Marker clustering by severity.
+- High-risk pulse effect.
+- Suspicious geo-jump path rendering with directional arrows.
+- Time filter presets (`10m`, `1h`, `24h`, custom range).
+- Floating live geo stats panel.
+- Geo resolution strategy:
+  - IP-based lookup (external GeoIP API),
+  - Redis cache for repeated lookups,
+  - deterministic location fallback mapping,
+  - coordinates persisted into transactions.
 
-- Backend `GeoService` for coordinate resolution
-- IP-based geolocation via configurable API (`GEOIP_API_URL`, default `https://ipwho.is`)
-- Redis coordinate cache to avoid repeated lookups
-- Persistent geo fields on transactions:
-  - `latitude`, `longitude`, `city`, `country`
-- Geo velocity rule:
-  - flags when same user jumps `>1500 km` within `<2 hours`
-  - stored as `geoVelocityFlag`
-- Frontend radar features:
-  - full-screen world map
-  - fraud heatmap layer
-  - marker clustering by risk severity
-  - pulsing high-risk markers
-  - suspicious geo-jump paths with arrows
-  - timeline filtering (`10m`, `1h`, `24h`, `custom`)
-  - global stats overlay (count, density, most-targeted country)
+## Executive Analytics
+- Executive KPI cards with animated counters and trend deltas.
+- Fraud rate, risk distribution, trend, volume, and country charts.
+- Device intelligence and explainability views integrated in dashboard.
 
-### ML reliability and model health
-
-- Circuit breaker in API Gateway ML client
-- ML runtime states:
+## Model Ops + Reliability
+- ML circuit breaker in API gateway.
+- Runtime ML status states:
   - `HEALTHY`
   - `DEGRADED`
   - `OFFLINE`
-- Fallback mode: if ML is unavailable, scoring continues with rule engine
-- Model metadata persisted on transaction:
-  - `modelName`, `modelVersion`, `modelConfidence`
-- Model metrics snapshots (`model_metrics` collection)
-- Drift detection based on distribution deltas
+- Fallback behavior: scoring continues with rule engine if ML is unavailable.
+- Model metadata persisted per transaction:
+  - `modelName`, `modelVersion`, `modelConfidence`, `mlStatus`
+- Model metrics snapshots + drift indicators.
 
-### Frontend platform pages
+## System Health Monitoring
+- Aggregated health endpoint includes:
+  - API latency
+  - ML latency
+  - Redis latency
+  - Mongo status
+  - Redis status
+  - ML status
+  - WebSocket status + connected clients
 
-- `/login`
-- `/dashboard`
-- `/transactions`
-- `/alerts`
-- `/cases`
-- `/radar`
-- `/audit`
-- `/model-health`
-- `/system`
-- `/analytics`
-- `/settings`
+## Enterprise Frontend UX
+- Protected routes + JWT login flow.
+- Global search (transactions, alerts, users, cases).
+- Collapsible sidebar, enterprise navbar, indicators, profile menu.
+- Theme toggle (dark/light) with persistence.
+- Skeleton loaders, retryable error states, empty states.
+- Virtualized transaction table (`react-window`) for large datasets.
+- Crash-safe date formatting (`N/A` fallback for invalid timestamps).
+- Cinematic startup intro (`SystemBootIntro`) with particle network animation.
 
-Plus enterprise UX features:
+## Enterprise Route Map (UI)
+- `/login` - secure entry.
+- `/dashboard` - executive command center.
+- `/transactions` - virtualized transaction operations table + investigation panel.
+- `/alerts` - alert queue + multi-tab investigation workspace.
+- `/cases` - case lifecycle and timeline operations.
+- `/radar` - geospatial fraud intelligence map.
+- `/analytics` - advanced fraud analytics visualizations.
+- `/audit` - compliance and action audit timeline.
+- `/model-health` - model drift/performance monitoring.
+- `/system` - service health and reliability telemetry.
+- `/settings` - runtime threshold/weights/simulation controls + theme controls.
 
-- Protected routing + persistent auth state
-- Global search (transactions/users/alerts/cases)
-- Collapsible enterprise sidebar
-- ML status indicator in navbar
-- Theme toggle (dark/light) persisted in `localStorage`
-- Crash-proof date rendering utilities (`formatSafeDate`, `safeDate`)
-- Loading skeletons and empty states
-- Polling + websocket synchronization
-- Virtualized transaction table for scalability
+## Cinematic Boot Intro (Judge Impact Feature)
+- Full-screen initialization sequence on first dashboard load.
+- Progressive system messages:
+  - transaction stream connection
+  - fraud engine initialization
+  - ML model loading
+  - realtime monitoring connection
+  - integrity verification
+  - ready state
+- Animated progress bar + blinking cursor + glow effects.
+- Canvas-powered particle network background.
+- Smooth fade-out transition into live dashboard.
+- Persisted "already seen" state to skip replay on refresh.
 
-## Architecture
+---
+
+## 3) Architecture
 
 ```text
-Frontend (React + TypeScript + Tailwind + Recharts + Leaflet + React Query + Zustand)
-    |
-    | HTTPS + JWT + Socket.io
-    v
-API Gateway (Node.js + Express + TypeScript)
-    |-- MongoDB collections (transactions, alerts, cases, audit, metrics, settings, devices, explanations)
-    |-- Redis (pub/sub, geo cache)
-    v
-ML Service (FastAPI + Isolation Forest)
+[Frontend: React + TypeScript + Tailwind + Recharts + Leaflet + React Query + Zustand]
+                  |
+                  | HTTPS REST + JWT + Socket.io
+                  v
+[API Gateway: Node.js + Express + TypeScript]
+  - Controllers / Services / Repositories
+  - Rule Engine + ML client + circuit breaker
+  - Alerting, Cases, Audit, Search, Settings
+  - Redis pub/sub + WebSocket fanout
+                  |
+      +-----------+-----------+
+      |                       |
+      v                       v
+[MongoDB]                 [Redis]
+transactions, alerts,     pub/sub channels,
+cases, audit_logs,        geolocation cache,
+model_metrics, settings   websocket streaming
+                  |
+                  v
+        [ML Service: FastAPI + Isolation Forest]
+        - /predict
+        - /health
+        - /metrics
 ```
 
-## Services and Ports
+### Backend design discipline
+- Clean separation: Controllers -> Services -> Repositories.
+- Validation at boundary (Zod schemas).
+- Centralized error handling + typed service contracts.
+- Environment-driven configuration (`env.ts` schema validation).
 
-| Service | Tech | URL | Docker service |
-|---|---|---|---|
-| Frontend | React/Vite build on Nginx | `http://localhost:5173` | `frontend` |
-| API Gateway | Express + TypeScript | `http://localhost:8080` | `api-gateway` |
-| ML Service | FastAPI | `http://localhost:8000` | `ml-service` |
-| MongoDB | Mongo 7 | `mongodb://localhost:27017` | `mongo` |
-| Redis | Redis 7 | `redis://localhost:6379` | `redis` |
+---
 
-## MongoDB Collections
+## 4) Tech Stack
+
+### Frontend
+- React 18 + TypeScript
+- Vite
+- TailwindCSS
+- Framer Motion
+- React Query
+- Zustand
+- Recharts
+- Leaflet + MarkerCluster + Heat Layer
+- Socket.io Client
+
+### Backend
+- Node.js + Express + TypeScript
+- Mongoose (MongoDB)
+- ioredis (Redis)
+- Socket.io
+- Zod validation
+- JWT auth + RBAC
+- Helmet + CORS + Rate limiting
+- Pino logging + Prometheus metrics
+
+### ML Service
+- FastAPI
+- scikit-learn Isolation Forest
+- Feature engineering for anomaly context
+
+### Infra
+- Docker + Docker Compose
+- Kubernetes manifests (`k8s/`)
+- Azure Container Apps deployment assets (`azure/`)
+
+---
+
+## 5) Data Model Collections
 
 - `users`
 - `transactions`
@@ -172,79 +282,110 @@ ML Service (FastAPI + Isolation Forest)
 - `system_settings`
 - `user_risk_profiles`
 
-## API Reference
+---
 
-Base URL: `http://localhost:8080/api/v1`
+## 6) API Surface (Implemented)
 
-### Auth
+Base: `http://localhost:8080/api/v1`
 
+## Auth
 - `POST /auth/register`
 - `POST /auth/login`
 
-### Transactions
-
+## Transactions
 - `POST /transactions`
 - `GET /transactions`
 - `GET /transactions/query`
 - `GET /transactions/:transactionId`
 - `GET /transactions/stats`
 
-### Simulation
-
+## Simulation
 - `POST /simulation/start` (admin)
 
-### Monitoring and investigation
-
+## Monitoring / Investigation
 - `GET /alerts`
 - `GET /alerts/:alertId`
 - `GET /devices`
 - `GET /explanations`
+
+## Cases
 - `POST /cases`
 - `GET /cases`
 - `PATCH /cases/:id`
+
+## Audit + Search
 - `GET /audit`
-
-### Platform intelligence
-
 - `GET /search`
+
+## Model + System
 - `GET /model/info`
 - `GET /model/health`
 - `GET /system/ml-status`
 - `GET /system/health`
+
+## Runtime Settings
 - `GET /settings`
-- `PATCH /settings`
+- `PATCH /settings` (admin)
 
-### Basic platform endpoints
-
+## Platform endpoints
 - `GET /health`
 - `GET /metrics`
 
-## Fraud Scoring and Response
+---
 
-Final score formula:
+## 7) Realtime Event Contract
 
-```text
-fraudScore = round((ruleScore * scoreRuleWeight) + (mlScore * 100 * scoreMlWeight))
+## Redis / Socket.io channels
+- `transactions.live`
+- `fraud.alerts`
+- `simulation.events`
+- `system.status`
+
+## transaction live payload (key fields)
+- `transactionId`
+- `userId`
+- `amount`
+- `location`
+- `latitude`, `longitude`, `city`, `country`
+- `fraudScore`, `riskLevel`, `isFraud`
+- `ruleScore`, `mlScore`, `mlStatus`
+- `action`
+- `modelName`, `modelVersion`, `modelConfidence`
+- `geoVelocityFlag`
+- `timestamp`
+
+---
+
+## 8) Security + Observability
+
+## Security controls
+- JWT authentication on protected APIs.
+- Role-based authorization for sensitive operations.
+- Zod request validation.
+- Helmet secure headers.
+- CORS allow-list via env.
+- API rate limiter.
+- Password hashing in auth workflow.
+
+## Observability controls
+- Structured logs via Pino.
+- Request ID tracing middleware.
+- `/health` and `/metrics` for API.
+- `/health` and `/metrics` for ML service.
+- Container-level health checks in Docker Compose.
+- System health aggregation endpoint.
+
+---
+
+## 9) Environment Configuration
+
+Copy and edit:
+
+```bash
+cp .env.example .env
 ```
-
-Runtime weights and thresholds are loaded from system settings (`/api/v1/settings`) and validated so:
-
-```text
-scoreRuleWeight + scoreMlWeight = 1
-```
-
-Action mapping:
-
-- `High` -> `BLOCK`
-- `Medium` -> `STEP_UP_AUTH`
-- `Low` -> `ALLOW`
-
-## Environment Variables
-
-Root `.env.example` contains complete defaults for local Docker networking.
 
 Key variables:
-
 - `NODE_ENV`
 - `PORT`
 - `MONGO_URI`
@@ -268,23 +409,17 @@ Key variables:
 - `VITE_API_URL`
 - `VITE_WS_URL`
 
-## Local Run (Docker Compose)
+---
 
-### 1) Configure env
+## 10) Run Locally (Docker)
 
-```bash
-cp .env.example .env
-```
-
-### 2) Start stack
-
+## Start
 ```bash
 docker compose down
 docker compose up --build -d
 ```
 
-### 3) Validate
-
+## Verify
 ```bash
 curl http://localhost:8080/health
 curl http://localhost:8080/metrics
@@ -292,32 +427,79 @@ curl http://localhost:8000/health
 curl -I http://localhost:5173
 ```
 
-## Seed and Test
+## Bootstrap demo data (optional but recommended)
+Create admin user (if not already present):
 
-Seed via API Gateway script:
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@fraud.local","password":"StrongPass123!","role":"admin"}'
+```
+
+Seed sample transactions:
 
 ```bash
 npm run seed -w api-gateway
 ```
 
-Or REST script:
+Or seed through API flow:
 
 ```bash
 TOKEN=<jwt> API_URL=http://localhost:8080 bash scripts/seed-transactions.sh
 ```
 
-## Local Development (Non-Docker)
+---
 
-Install:
+## 11) Judge-Friendly Demo Script
+
+## Step A: Login
+- Open `http://localhost:5173`
+- Default login used in UI:
+  - `admin@fraud.local`
+  - `StrongPass123!`
+
+## Step B: Show Enterprise Dashboard
+- Point out:
+  - animated KPI cards,
+  - fraud/risk charts,
+  - realtime socket indicator,
+  - cinematic intro (first load).
+
+## Step C: Create a High-Risk Transaction
+- Use Create Transaction form.
+- Show returned score + risk action reflected in table.
+
+## Step D: Show Autonomous Alerting
+- Open alerts panel/page.
+- Explain reason narrative includes:
+  - rule signals (velocity/device/IP/geo),
+  - ML explanation factors.
+
+## Step E: Trigger Simulation
+- Click "Start Fraud Attack Simulation".
+- Show live spikes in alerts/map/charts.
+
+## Step F: Investigation + Case Workflow
+- Open alert workspace tabs.
+- Create or update case.
+- Show case timeline and notes.
+
+## Step G: Radar Intelligence
+- Open `/radar`.
+- Demonstrate heatmap, clustering, pulsing markers, geo-jump paths.
+
+## Step H: Platform Reliability
+- Open `/model-health` and `/system`.
+- Explain circuit-breaker fallback and health telemetry.
+
+---
+
+## 12) Non-Docker Local Development
 
 ```bash
 npm run install:all
 pip install -r ml-service/requirements.txt
-```
 
-Run services:
-
-```bash
 npm run dev -w api-gateway
 npm run dev -w frontend
 uvicorn ml-service.main:app --host 0.0.0.0 --port 8000
@@ -329,10 +511,12 @@ Build all:
 npm run build
 ```
 
-## Kubernetes Assets
+---
 
+## 13) Deployment Assets
+
+## Kubernetes
 Available in `k8s/`:
-
 - `api-deployment.yaml`
 - `ml-deployment.yaml`
 - `mongo.yaml`
@@ -340,67 +524,46 @@ Available in `k8s/`:
 - `frontend.yaml`
 - `ingress.yaml`
 
-## Azure Deployment (Container Apps)
+## Azure Container Apps
+Available in `azure/`:
+- `env.template`
+- `deploy.sh`
+- `containerapps.yaml`
 
-Deployment assets:
+`deploy.sh` provisions/publishes:
+- Resource group
+- ACR
+- Cosmos DB (Mongo API)
+- Azure Redis
+- Container Apps environment
+- Frontend, API Gateway, ML Service containers
 
-- `azure/env.template`
-- `azure/deploy.sh`
-- `azure/containerapps.yaml`
+---
 
-Script flow (`azure/deploy.sh`):
-
-- Azure login and subscription setup
-- Resource group creation
-- ACR creation/login and image push
-- Cosmos DB Mongo API provisioning
-- Azure Redis provisioning
-- Container Apps environment creation
-- Deploy/update `ml-service`, `api-gateway`, `frontend`
-- Runtime env injection
-- Health and smoke verification
-
-Run:
-
-```bash
-cp azure/env.template azure/.env
-# edit azure/.env
-bash azure/deploy.sh
-```
-
-## Security and Observability
-
-Security:
-
-- Helmet
-- CORS allow-list from env
-- JWT auth middleware
-- RBAC middleware
-- Zod validation
-- API rate limiting
-
-Observability:
-
-- Structured logging with Pino
-- Request IDs
-- `/health` and `/metrics`
-- container healthchecks in Docker Compose
-- system telemetry endpoint (`/api/v1/system/health`)
-
-## Project Structure
+## 14) Project Structure
 
 ```text
-api-gateway/   Express API, scoring, realtime, repositories, controllers
-ml-service/    FastAPI model inference and feature engineering
-frontend/      React enterprise dashboard, charts, radar, investigation UI
+api-gateway/   Backend APIs, fraud scoring, realtime, security, repositories
+ml-service/    ML inference + explainability + metrics
+frontend/      Enterprise command center UI
 k8s/           Kubernetes manifests
-azure/         Azure Container Apps deployment automation
-scripts/       Utility scripts
+azure/         Azure deployment automation
+scripts/       Utility scripts (seed/testing)
 ```
 
-## Notes
+---
 
-- Real-time UX is event-driven and also polling-backed for resilience.
-- Date handling in frontend is hardened against invalid/null timestamps (`N/A` fallback).
-- Geo rendering avoids random coordinate generation; uses backend coordinates first, then deterministic fallback mapping.
-- Rotate credentials and secrets before any public deployment.
+## 15) Final Judge Pitch
+
+This project delivers the full lifecycle of fraud defense:
+- detect in realtime,
+- explain why,
+- respond automatically,
+- investigate collaboratively,
+- monitor model/system reliability,
+- deploy in cloud-native production environments.
+
+It is built as a real fintech operations platform, not a toy dashboard.
+
+### Suggested closing line in judging round
+"We are not just predicting fraud. We built a complete fraud operations system where detection, explanation, autonomous response, investigation, compliance, and reliability monitoring work together in realtime."

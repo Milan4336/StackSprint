@@ -302,6 +302,28 @@ html.dark {
   background: #0f172a;
 }
 
+.boot-cursor {
+  display: inline-block;
+  animation: bootBlink 1s steps(1, end) infinite;
+}
+
+.boot-glow {
+  text-shadow:
+    0 0 12px rgba(59, 130, 246, 0.55),
+    0 0 28px rgba(14, 165, 233, 0.35);
+}
+
+@keyframes bootBlink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
