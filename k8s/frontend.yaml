@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fraud-frontend
+  template:
+    metadata:
+      labels:
+        app: fraud-frontend
+    spec:
+      containers:
+        - name: fraud-frontend
+          image: fraud/frontend:latest
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-frontend
+spec:
+  selector:
+    app: fraud-frontend
+  ports:
+    - port: 80
+      targetPort: 80
