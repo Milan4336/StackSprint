@@ -14,6 +14,13 @@ export interface TransactionDocument extends Document {
   deviceId: string;
   ipAddress: string;
   timestamp: Date;
+  action: 'ALLOW' | 'STEP_UP_AUTH' | 'BLOCK';
+  ruleScore: number;
+  mlScore: number;
+  mlStatus: 'HEALTHY' | 'DEGRADED' | 'OFFLINE';
+  modelVersion: string;
+  modelName: string;
+  modelConfidence: number;
   fraudScore: number;
   riskLevel: 'Low' | 'Medium' | 'High';
   isFraud: boolean;
@@ -46,6 +53,13 @@ const transactionSchema = new Schema<TransactionDocument>(
     deviceId: { type: String, required: true },
     ipAddress: { type: String, required: true },
     timestamp: { type: Date, required: true, index: true },
+    action: { type: String, enum: ['ALLOW', 'STEP_UP_AUTH', 'BLOCK'], required: true, index: true },
+    ruleScore: { type: Number, required: true },
+    mlScore: { type: Number, required: true },
+    mlStatus: { type: String, enum: ['HEALTHY', 'DEGRADED', 'OFFLINE'], required: true, index: true },
+    modelVersion: { type: String, required: true },
+    modelName: { type: String, required: true },
+    modelConfidence: { type: Number, required: true },
     fraudScore: { type: Number, required: true },
     riskLevel: { type: String, enum: ['Low', 'Medium', 'High'], required: true, index: true },
     isFraud: { type: Boolean, required: true, index: true },

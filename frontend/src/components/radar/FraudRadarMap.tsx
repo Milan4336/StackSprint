@@ -9,6 +9,7 @@ import { formatSafeDate, safeDate } from '../../utils/date';
 
 interface FraudRadarMapProps {
   transactions: Transaction[];
+  heightClass?: string;
 }
 
 type TimePreset = '10m' | '1h' | '24h' | 'custom';
@@ -124,6 +125,7 @@ const buildPopupHtml = (point: RadarPoint): string => {
       <p>Geo: ${escapeHtml(cityCountry)}</p>
       <p>Amount: $${tx.amount.toLocaleString()}</p>
       <p>Fraud Score: ${tx.fraudScore} (${escapeHtml(tx.riskLevel)})</p>
+      <p>Action: ${escapeHtml(tx.action ?? 'N/A')}</p>
       ${warning}
       <hr />
       <p><strong>Device ID:</strong> ${escapeHtml(tx.deviceId)}</p>
@@ -280,7 +282,7 @@ const MapLayers = ({ points, paths, showHeatmap, showMarkers, showPaths }: MapLa
   return null;
 };
 
-export const FraudRadarMap = memo(({ transactions }: FraudRadarMapProps) => {
+export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: FraudRadarMapProps) => {
   const deferredTransactions = useDeferredValue(transactions);
 
   const [timePreset, setTimePreset] = useState<TimePreset>('1h');
@@ -469,7 +471,7 @@ export const FraudRadarMap = memo(({ transactions }: FraudRadarMapProps) => {
         </p>
       ) : null}
 
-      <div className="relative h-[500px] overflow-hidden rounded-xl border border-slate-700">
+      <div className={`relative overflow-hidden rounded-xl border border-slate-700 ${heightClass}`}>
         <div className="absolute right-3 top-3 z-[500] w-64 rounded-xl border border-slate-600/70 bg-slate-900/75 p-3 backdrop-blur">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">Global Intelligence</p>
           <div className="mt-2 space-y-1 text-sm">

@@ -1,280 +1,321 @@
 # Cloud-Native Fraud Detection Command Center
 
-Production-grade, real-time fraud detection platform for financial transactions using a hybrid rule + ML detection pipeline, live event streaming, and an operator dashboard.
+Enterprise-grade, cloud-native fraud detection SaaS platform with real-time risk scoring, explainable ML, investigation workflows, case management, audit logging, geospatial intelligence, and production deployment assets.
 
-## Current Status
+Last updated: February 24, 2026
 
-Implemented and wired end-to-end:
+## Latest Frontend Upgrade
 
-- JWT auth with RBAC (`admin`, `analyst`)
-- Transaction ingestion and scoring (`POST /api/v1/transactions`)
-- Hybrid fraud scoring:
-  - Rule engine (amount, velocity, geo change, new device)
-  - ML anomaly scoring (Isolation Forest)
-  - Weighted combination in API Gateway
-- Risk classification (`Low`, `Medium`, `High`)
-- Explainable AI payloads persisted and visualized
-- Autonomous fraud response and alert generation
-- Device fingerprint tracking and visualization
-- Fraud simulation mode (`POST /api/v1/simulation/start`)
-- Real-time updates over Socket.io + Redis pub/sub
-- Live fraud radar map with advanced geo intelligence:
-  - IP-based coordinate resolution with Redis geo cache
-  - fallback location mapping when IP geo is unavailable
-  - heatmap overlay, severity clustering, suspicious geo-jump paths
-  - live pulse markers for high-risk transactions
-  - timeline filtering (`10m`, `1h`, `24h`, custom)
-  - global geo stats overlay and device intelligence popup
-- Professional dashboard UI (dark/light theme, analytics, charts, alerts)
-- Theme toggle stabilized and persisted across reloads (`localStorage` + `html.dark`)
-- Crash-proof frontend date handling for invalid/null timestamps
-- Docker Compose local environment
-- Kubernetes manifests under `k8s/`
-- Azure deployment automation under `azure/`
+Completed enterprise-grade frontend refactor and cleanup:
 
-## Latest Updates (February 24, 2026)
+- Upgraded visual system to premium fintech styling (glass cards, gradients, blur layers, stronger spacing and hierarchy).
+- Added motion-driven UX with Framer Motion across page transitions, sidebar collapse, cards, and panel loading states.
+- Enhanced executive dashboard cards with animated counters, trend deltas, and sparkline mini charts.
+- Improved investigation workflows (`/alerts`, `/cases`, `/transactions`) with richer tables, filters, and detail panels.
+- Added alert investigation timeline tab and resilient loading/error handling with retry actions.
+- Finalized global search dropdown in navbar across transactions, alerts, cases, and users.
+- Stabilized global theme state with Zustand-backed persistence.
+- Removed legacy/unused frontend scaffold files (`app/`, `features/`, `lib/`, duplicate auth store, and obsolete chart components).
 
-- Added backend `GeoService` for IP geolocation + Redis caching and Mongo persistence of:
+## Product Overview
+
+This repository now operates as a full fraud operations platform (not just a scoring API), with:
+
+- Real-time transaction scoring (rule + ML hybrid)
+- Risk response actions (`ALLOW`, `STEP_UP_AUTH`, `BLOCK`)
+- Investigation and alert triage workflows
+- Case lifecycle management with timeline notes
+- Audit trail for security/compliance events
+- Model reliability and drift visibility
+- System health telemetry and ML circuit breaker status
+- Live fraud radar map with heatmap, clustering, and geo-jump detection
+- Docker, Kubernetes, and Azure Container Apps deployment assets
+
+## What Is Implemented
+
+### Core fraud pipeline
+
+- JWT authentication and RBAC (`admin`, `analyst`)
+- `POST /api/v1/transactions` for scoring + persistence
+- Hybrid scoring:
+  - Rule engine: amount, velocity, location anomalies, device anomalies, geo velocity
+  - ML service: Isolation Forest anomaly score with explanations
+  - Weighted final score from runtime settings
+- Risk level classification:
+  - `0-30 Low`
+  - `31-70 Medium`
+  - `71-100 High`
+- Response action assignment:
+  - `High -> BLOCK`
+  - `Medium -> STEP_UP_AUTH`
+  - `Low -> ALLOW`
+
+### Enterprise investigation features
+
+- Alerts queue with pagination/filter/search
+- Alert investigation workspace tabs:
+  - Overview
+  - User History
+  - Geo Movement
+  - Device Intelligence
+  - Fraud Explanation
+  - Case Management
+  - Audit Timeline
+- Case management system (`cases` collection):
+  - statuses: `OPEN`, `INVESTIGATING`, `RESOLVED`, `FALSE_POSITIVE`
+  - priorities: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`
+  - timeline + notes
+- Audit logging system (`audit_logs` collection)
+
+### Real-time intelligence
+
+- Redis pub/sub + Socket.io fanout
+- Live channels:
+  - `transactions.live`
+  - `fraud.alerts`
+  - `simulation.events`
+  - `system.status` (initial socket status event)
+- Live frontend updates for dashboard, alerts, map, and metrics
+
+### Radar geospatial intelligence
+
+- Backend `GeoService` for coordinate resolution
+- IP-based geolocation via configurable API (`GEOIP_API_URL`, default `https://ipwho.is`)
+- Redis coordinate cache to avoid repeated lookups
+- Persistent geo fields on transactions:
   - `latitude`, `longitude`, `city`, `country`
-- Added geo-velocity fraud rule:
-  - flags transaction when same user moves `>1500 km` within `<2 hours`
-  - persists `geoVelocityFlag` and increases fraud score
-- Enhanced fraud radar visualization with heatmap, clustering, animated geo paths, and map controls.
-- Improved autonomous alert explanations with specific reason strings.
-- Fixed theme toggle UX so switching is immediate, persistent, and visible across layout/table components.
+- Geo velocity rule:
+  - flags when same user jumps `>1500 km` within `<2 hours`
+  - stored as `geoVelocityFlag`
+- Frontend radar features:
+  - full-screen world map
+  - fraud heatmap layer
+  - marker clustering by risk severity
+  - pulsing high-risk markers
+  - suspicious geo-jump paths with arrows
+  - timeline filtering (`10m`, `1h`, `24h`, `custom`)
+  - global stats overlay (count, density, most-targeted country)
+
+### ML reliability and model health
+
+- Circuit breaker in API Gateway ML client
+- ML runtime states:
+  - `HEALTHY`
+  - `DEGRADED`
+  - `OFFLINE`
+- Fallback mode: if ML is unavailable, scoring continues with rule engine
+- Model metadata persisted on transaction:
+  - `modelName`, `modelVersion`, `modelConfidence`
+- Model metrics snapshots (`model_metrics` collection)
+- Drift detection based on distribution deltas
+
+### Frontend platform pages
+
+- `/login`
+- `/dashboard`
+- `/transactions`
+- `/alerts`
+- `/cases`
+- `/radar`
+- `/audit`
+- `/model-health`
+- `/system`
+- `/analytics`
+- `/settings`
+
+Plus enterprise UX features:
+
+- Protected routing + persistent auth state
+- Global search (transactions/users/alerts/cases)
+- Collapsible enterprise sidebar
+- ML status indicator in navbar
+- Theme toggle (dark/light) persisted in `localStorage`
+- Crash-proof date rendering utilities (`formatSafeDate`, `safeDate`)
+- Loading skeletons and empty states
+- Polling + websocket synchronization
+- Virtualized transaction table for scalability
 
 ## Architecture
 
 ```text
-Frontend (React + TS + Tailwind + Recharts + Leaflet)
+Frontend (React + TypeScript + Tailwind + Recharts + Leaflet + React Query + Zustand)
     |
     | HTTPS + JWT + Socket.io
     v
 API Gateway (Node.js + Express + TypeScript)
-    |-- MongoDB (transactions, users, fraud_alerts, user_devices, fraud_explanations)
-    |-- Redis (pub/sub channels for live updates)
+    |-- MongoDB collections (transactions, alerts, cases, audit, metrics, settings, devices, explanations)
+    |-- Redis (pub/sub, geo cache)
     v
 ML Service (FastAPI + Isolation Forest)
 ```
 
 ## Services and Ports
 
-| Service | Tech | Local URL | Internal Docker Name |
+| Service | Tech | URL | Docker service |
 |---|---|---|---|
-| Frontend | React/Vite + Nginx | `http://localhost:5173` | `frontend` |
+| Frontend | React/Vite build on Nginx | `http://localhost:5173` | `frontend` |
 | API Gateway | Express + TypeScript | `http://localhost:8080` | `api-gateway` |
 | ML Service | FastAPI | `http://localhost:8000` | `ml-service` |
 | MongoDB | Mongo 7 | `mongodb://localhost:27017` | `mongo` |
 | Redis | Redis 7 | `redis://localhost:6379` | `redis` |
 
-## Key Collections
+## MongoDB Collections
 
 - `users`
 - `transactions`
 - `fraud_alerts`
-- `user_devices`
 - `fraud_explanations`
+- `user_devices`
+- `cases`
+- `audit_logs`
+- `model_metrics`
+- `system_settings`
+- `user_risk_profiles`
 
-`transactions` now also stores geo-enrichment fields used by radar analytics:
+## API Reference
 
-- `latitude`
-- `longitude`
-- `city`
-- `country`
-- `geoVelocityFlag`
-
-## Fraud Scoring Logic
-
-Implemented in API Gateway (`FraudScoringService`):
-
-- `ruleScore` from rule engine (0–100)
-- `mlScore` from ML service (0–1 probability)
-- Final score:
-
-```text
-fraudScore = round((ruleScore * SCORE_RULE_WEIGHT) + (mlScore * 100 * SCORE_ML_WEIGHT))
-```
-
-Default env weights in `.env.example`:
-
-- `SCORE_RULE_WEIGHT=0.6`
-- `SCORE_ML_WEIGHT=0.4`
-
-Risk bands:
-
-- `0–30` => `Low`
-- `31–70` => `Medium`
-- `71–100` => `High`
-
-## API Endpoints
-
-Base path: `http://localhost:8080/api/v1`
+Base URL: `http://localhost:8080/api/v1`
 
 ### Auth
 
-- `POST /auth/register` (public)
-- `POST /auth/login` (public)
+- `POST /auth/register`
+- `POST /auth/login`
 
 ### Transactions
 
-- `POST /transactions` (auth, roles: `admin`, `analyst`)
-- `GET /transactions` (auth)
-- `GET /transactions/stats` (auth)
+- `POST /transactions`
+- `GET /transactions`
+- `GET /transactions/query`
+- `GET /transactions/:transactionId`
+- `GET /transactions/stats`
 
 ### Simulation
 
-- `POST /simulation/start` (auth, role: `admin`)
+- `POST /simulation/start` (admin)
 
-### Monitoring
+### Monitoring and investigation
 
-- `GET /alerts` (auth)
-- `GET /devices` (auth)
-- `GET /explanations` (auth)
+- `GET /alerts`
+- `GET /alerts/:alertId`
+- `GET /devices`
+- `GET /explanations`
+- `POST /cases`
+- `GET /cases`
+- `PATCH /cases/:id`
+- `GET /audit`
 
-### Platform
+### Platform intelligence
+
+- `GET /search`
+- `GET /model/info`
+- `GET /model/health`
+- `GET /system/ml-status`
+- `GET /system/health`
+- `GET /settings`
+- `PATCH /settings`
+
+### Basic platform endpoints
 
 - `GET /health`
 - `GET /metrics`
 
-## Real-Time Channels (Socket.io)
+## Fraud Scoring and Response
 
-WebSocket endpoint: `ws://localhost:8080` (auth token required)
+Final score formula:
 
-Channels emitted from Redis pub/sub:
+```text
+fraudScore = round((ruleScore * scoreRuleWeight) + (mlScore * 100 * scoreMlWeight))
+```
 
-- `transactions.live`
-- `fraud.alerts`
-- `simulation.events`
-- `system.status` (on connect)
+Runtime weights and thresholds are loaded from system settings (`/api/v1/settings`) and validated so:
 
-## Frontend Features
+```text
+scoreRuleWeight + scoreMlWeight = 1
+```
 
-Routes:
+Action mapping:
 
-- `/login`
-- `/dashboard`
-- `/transactions`
-- `/analytics`
-- `/settings`
+- `High` -> `BLOCK`
+- `Medium` -> `STEP_UP_AUTH`
+- `Low` -> `ALLOW`
 
-Implemented UX behavior:
+## Environment Variables
 
-- Protected routing + JWT persistence
-- Sidebar navigation + active route highlighting
-- Theme toggle persisted in `localStorage`
-- Shared transaction state via `TransactionContext`
-- Immediate UI update after transaction creation
-- Auto-refresh polling every 5s
-- Live websocket transaction upserts
-- Loading skeletons and empty states
-- Footer with fraud score explanation
-- Safe date utilities for invalid timestamps (`N/A` fallback)
+Root `.env.example` contains complete defaults for local Docker networking.
 
-## Security and Observability
+Key variables:
 
-### Security
+- `NODE_ENV`
+- `PORT`
+- `MONGO_URI`
+- `REDIS_URI`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `ML_SERVICE_URL`
+- `ALLOWED_ORIGINS`
+- `HIGH_AMOUNT_THRESHOLD`
+- `VELOCITY_WINDOW_MINUTES`
+- `VELOCITY_TX_THRESHOLD`
+- `SCORE_RULE_WEIGHT`
+- `SCORE_ML_WEIGHT`
+- `AUTONOMOUS_ALERT_THRESHOLD`
+- `GEOIP_API_URL`
+- `GEO_CACHE_TTL_SECONDS`
+- `MODEL_NAME`
+- `MODEL_VERSION`
+- `ML_CIRCUIT_FAIL_THRESHOLD`
+- `ML_CIRCUIT_RESET_SECONDS`
+- `VITE_API_URL`
+- `VITE_WS_URL`
 
-- Helmet secure headers
-- CORS allow-list from env (`ALLOWED_ORIGINS`)
-- JWT auth middleware
-- RBAC middleware
-- Input validation with Zod
-- API rate limiting (`120` req/min)
+## Local Run (Docker Compose)
 
-### Observability
-
-- Structured logging (Pino + pino-http)
-- Request ID middleware
-- Prometheus metrics (`/metrics`)
-- Health checks (`/health`)
-- Docker healthchecks for all services
-
-## Local Setup (Docker Compose)
-
-### 1) Configure environment
+### 1) Configure env
 
 ```bash
 cp .env.example .env
 ```
 
-Required defaults are already provided for local Docker networking (`mongo`, `redis`, `ml-service`).
-
-### 2) Build and run
+### 2) Start stack
 
 ```bash
 docker compose down
 docker compose up --build -d
 ```
 
-### 3) Verify
+### 3) Validate
 
 ```bash
 curl http://localhost:8080/health
+curl http://localhost:8080/metrics
 curl http://localhost:8000/health
 curl -I http://localhost:5173
 ```
 
-## Quick Functional Test
+## Seed and Test
 
-### 1) Register admin
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@fraud.local","password":"StrongPass123!","role":"admin"}'
-```
-
-### 2) Login and get token
+Seed via API Gateway script:
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"admin@fraud.local","password":"StrongPass123!"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+npm run seed -w api-gateway
 ```
 
-### 3) Create transaction
-
-```bash
-curl -X POST http://localhost:8080/api/v1/transactions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "transactionId":"tx-test-001",
-    "userId":"user-001",
-    "amount":95000,
-    "currency":"USD",
-    "location":"Delhi",
-    "deviceId":"device-001",
-    "ipAddress":"127.0.0.1",
-    "timestamp":"2026-02-24T12:00:00Z"
-  }'
-```
-
-## Seed Data
-
-Options:
-
-- API Gateway seed script (Mongo direct):
-  - `npm run seed -w api-gateway`
-- REST seeding helper script:
-  - `scripts/seed-transactions.sh` (requires `TOKEN` env)
-
-Example:
+Or REST script:
 
 ```bash
 TOKEN=<jwt> API_URL=http://localhost:8080 bash scripts/seed-transactions.sh
 ```
 
-## Local Development (Without Docker)
+## Local Development (Non-Docker)
 
-### Install dependencies
+Install:
 
 ```bash
 npm run install:all
 pip install -r ml-service/requirements.txt
 ```
 
-### Run services
+Run services:
 
 ```bash
 npm run dev -w api-gateway
@@ -282,15 +323,15 @@ npm run dev -w frontend
 uvicorn ml-service.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Build
+Build all:
 
 ```bash
 npm run build
 ```
 
-## Kubernetes Manifests
+## Kubernetes Assets
 
-Available under `k8s/`:
+Available in `k8s/`:
 
 - `api-deployment.yaml`
 - `ml-deployment.yaml`
@@ -299,27 +340,25 @@ Available under `k8s/`:
 - `frontend.yaml`
 - `ingress.yaml`
 
-These provide baseline deployments, services, probes, and ingress definitions for cluster deployment.
-
 ## Azure Deployment (Container Apps)
 
-Assets:
+Deployment assets:
 
 - `azure/env.template`
 - `azure/deploy.sh`
-- `azure/containerapps.yaml` (reference)
+- `azure/containerapps.yaml`
 
-### Deployment flow in `azure/deploy.sh`
+Script flow (`azure/deploy.sh`):
 
-- Ensures Azure login
-- Creates resource group
-- Creates ACR and pushes images
-- Creates Cosmos DB (Mongo API)
-- Creates Azure Redis
-- Creates/updates Container Apps (`frontend`, `api-gateway`, `ml-service`)
-- Injects runtime env vars (Cosmos `MONGO_URI`, Redis `REDIS_URI`, JWT, ML URL)
-- Runs health and smoke checks
-- Prints final URLs
+- Azure login and subscription setup
+- Resource group creation
+- ACR creation/login and image push
+- Cosmos DB Mongo API provisioning
+- Azure Redis provisioning
+- Container Apps environment creation
+- Deploy/update `ml-service`, `api-gateway`, `frontend`
+- Runtime env injection
+- Health and smoke verification
 
 Run:
 
@@ -329,41 +368,39 @@ cp azure/env.template azure/.env
 bash azure/deploy.sh
 ```
 
-### Azure Prerequisites
+## Security and Observability
 
-Ensure these providers are registered in the subscription before first deploy:
+Security:
 
-- `Microsoft.App`
-- `Microsoft.DocumentDB`
-- `Microsoft.Cache`
-- `Microsoft.ContainerRegistry`
-- `Microsoft.OperationalInsights`
+- Helmet
+- CORS allow-list from env
+- JWT auth middleware
+- RBAC middleware
+- Zod validation
+- API rate limiting
+
+Observability:
+
+- Structured logging with Pino
+- Request IDs
+- `/health` and `/metrics`
+- container healthchecks in Docker Compose
+- system telemetry endpoint (`/api/v1/system/health`)
 
 ## Project Structure
 
 ```text
-api-gateway/   # Express API, scoring, auth, websocket, repositories
-ml-service/    # FastAPI model inference and feature engineering
-frontend/      # React dashboard, charts, map, auth UI
-k8s/           # Kubernetes manifests
-azure/         # Azure Container Apps deployment automation
-scripts/       # Utility scripts
+api-gateway/   Express API, scoring, realtime, repositories, controllers
+ml-service/    FastAPI model inference and feature engineering
+frontend/      React enterprise dashboard, charts, radar, investigation UI
+k8s/           Kubernetes manifests
+azure/         Azure Container Apps deployment automation
+scripts/       Utility scripts
 ```
 
 ## Notes
 
-- Frontend map uses backend-provided coordinates first, then deterministic location fallback.
-- Real-time flow is backed by Redis pub/sub and Socket.io fanout.
-- Date rendering is hardened against null/invalid timestamps via `safeDate`/`formatSafeDate`.
-- If you expose this publicly, rotate secrets and avoid committing real credentials in `.env` files.
-
-## Troubleshooting
-
-- Theme does not switch:
-  - clear browser cache and reload once (`Ctrl+Shift+R`)
-  - verify `localStorage.theme` is set and `html` toggles class `dark`
-- Map appears with wrong points:
-  - ensure transactions include valid `latitude/longitude` or known `location`
-  - check Redis geo cache and API `GeoService` configuration
-- Azure deploy fails with `MissingSubscriptionRegistration`:
-  - register missing provider namespace(s), then rerun `azure/deploy.sh`
+- Real-time UX is event-driven and also polling-backed for resilience.
+- Date handling in frontend is hardened against invalid/null timestamps (`N/A` fallback).
+- Geo rendering avoids random coordinate generation; uses backend coordinates first, then deterministic fallback mapping.
+- Rotate credentials and secrets before any public deployment.

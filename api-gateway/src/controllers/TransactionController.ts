@@ -1,8 +1,15 @@
 import { Request, Response } from 'express';
 import { TransactionService } from '../services/TransactionService';
+import { AppError } from '../utils/errors';
 
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
+
+  private toDate(raw: unknown): Date | undefined {
+    if (!raw) return undefined;
+    const next = new Date(String(raw));
+    return Number.isNaN(next.getTime()) ? undefined : next;
+  }
 
   create = async (req: Request, res: Response): Promise<void> => {
     const created = await this.transactionService.create({
@@ -15,6 +22,32 @@ export class TransactionController {
   list = async (req: Request, res: Response): Promise<void> => {
     const limit = Number(req.query.limit ?? 100);
     const result = await this.transactionService.list(limit);
+    res.status(200).json(result);
+  };
+
+  query = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.transactionService.query({
+      page: Number(req.query.page ?? 1),
+      limit: Number(req.query.limit ?? 25),
+      search: (req.query.search as string | undefined) ?? undefined,
+      riskLevel: req.query.riskLevel as 'Low' | 'Medium' | 'High' | undefined,
+      userId: req.query.userId as string | undefined,
+      deviceId: req.query.deviceId as string | undefined,
+      minAmount: req.query.minAmount !== undefined ? Number(req.query.minAmount) : undefined,
+      maxAmount: req.query.maxAmount !== undefined ? Number(req.query.maxAmount) : undefined,
+      startDate: this.toDate(req.query.startDate),
+      endDate: this.toDate(req.query.endDate),
+      sortBy: req.query.sortBy as 'timestamp' | 'amount' | 'fraudScore' | 'riskLevel' | 'createdAt' | undefined,
+      sortOrder: req.query.sortOrder as 'asc' | 'desc' | undefined
+    });
+    res.status(200).json(result);
+  };
+
+  byId = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.transactionService.findByTransactionId(req.params.transactionId);
+    if (!result) {
+      throw new AppError('Transaction not found', 404);
+    }
     res.status(200).json(result);
   };
 

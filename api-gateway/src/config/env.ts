@@ -19,7 +19,11 @@ const envSchema = z.object({
   SCORE_ML_WEIGHT: z.coerce.number().default(0.4),
   AUTONOMOUS_ALERT_THRESHOLD: z.coerce.number().default(80),
   GEOIP_API_URL: z.string().url().default('https://ipwho.is'),
-  GEO_CACHE_TTL_SECONDS: z.coerce.number().int().min(60).default(86400)
+  GEO_CACHE_TTL_SECONDS: z.coerce.number().int().min(60).default(86400),
+  MODEL_NAME: z.string().default('IsolationForest-Fraud-v1'),
+  MODEL_VERSION: z.string().default('1.0.0'),
+  ML_CIRCUIT_FAIL_THRESHOLD: z.coerce.number().int().min(1).default(3),
+  ML_CIRCUIT_RESET_SECONDS: z.coerce.number().int().min(5).default(60)
 });
 
 export const env = envSchema.parse(process.env);

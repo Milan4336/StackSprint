@@ -15,6 +15,7 @@ const resolveToken = (candidate: unknown): string | null => {
 class GatewayWebSocketServer {
   private io?: SocketIOServer;
   private subscriber?: Redis;
+  private initialized = false;
 
   async initialize(httpServer: HttpServer): Promise<void> {
     this.io = new SocketIOServer(httpServer, {
@@ -65,6 +66,14 @@ class GatewayWebSocketServer {
     });
 
     logger.info('WebSocket server initialized');
+    this.initialized = true;
+  }
+
+  getStats(): { initialized: boolean; connectedClients: number } {
+    return {
+      initialized: this.initialized,
+      connectedClients: this.io?.engine.clientsCount ?? 0
+    };
   }
 }
 

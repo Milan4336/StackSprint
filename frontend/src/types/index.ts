@@ -1,5 +1,7 @@
 export type UserRole = 'admin' | 'analyst';
 export type RiskLevel = 'Low' | 'Medium' | 'High';
+export type TransactionAction = 'ALLOW' | 'STEP_UP_AUTH' | 'BLOCK';
+export type MlStatus = 'HEALTHY' | 'DEGRADED' | 'OFFLINE';
 
 export interface AuthResponse {
   token: string;
@@ -25,6 +27,13 @@ export interface Transaction {
   deviceId: string;
   ipAddress: string;
   timestamp: string;
+  action?: TransactionAction;
+  ruleScore?: number;
+  mlScore?: number;
+  mlStatus?: MlStatus;
+  modelVersion?: string;
+  modelName?: string;
+  modelConfidence?: number;
   fraudScore: number;
   riskLevel: RiskLevel;
   isFraud: boolean;
@@ -49,6 +58,9 @@ export interface TransactionStats {
   fraudRate: number;
   avgRiskScore: number;
   highRiskUsers: Array<{ userId: string; count: number }>;
+  totalTransactions?: number;
+  fraudTransactions?: number;
+  fraudByCountry?: Array<{ country: string; fraudCount: number; total: number }>;
 }
 
 export interface ApiErrorShape {
@@ -75,6 +87,15 @@ export interface FraudAlert {
   createdAt: string;
 }
 
+export interface AlertInvestigation {
+  alert: FraudAlert;
+  transaction: Transaction | null;
+  userHistory: Transaction[];
+  devices: UserDevice[];
+  explanations: FraudExplanationRecord[];
+  cases: CaseRecord[];
+}
+
 export interface UserDevice {
   _id?: string;
   userId: string;
@@ -94,4 +115,113 @@ export interface FraudExplanationRecord {
   fraudScore: number;
   explanations: FraudExplanation[];
   createdAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export type CaseStatus = 'OPEN' | 'INVESTIGATING' | 'RESOLVED' | 'FALSE_POSITIVE';
+export type CasePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface CaseTimelineItem {
+  at: string;
+  actor: string;
+  action: string;
+  note?: string;
+}
+
+export interface CaseRecord {
+  _id?: string;
+  caseId: string;
+  transactionId: string;
+  alertId?: string;
+  assignedTo?: string;
+  status: CaseStatus;
+  priority: CasePriority;
+  notes: string[];
+  timeline: CaseTimelineItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditLog {
+  _id?: string;
+  eventType: string;
+  action: string;
+  actorId?: string;
+  actorEmail?: string;
+  entityType: string;
+  entityId?: string;
+  metadata?: Record<string, unknown>;
+  ipAddress?: string;
+  createdAt: string;
+}
+
+export interface ModelInfo {
+  modelName: string;
+  modelVersion: string;
+  mlStatus: MlStatus;
+  lastLatencyMs: number;
+}
+
+export interface MlStatusSnapshot {
+  status: MlStatus;
+  failureCount: number;
+  lastLatencyMs: number;
+  lastError: string | null;
+  circuitOpenUntil: string | null;
+}
+
+export interface ModelMetric {
+  _id?: string;
+  snapshotAt: string;
+  fraudRate: number;
+  avgFraudScore: number;
+  scoreDistribution: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  inputDistribution: {
+    avgAmount: number;
+    uniqueDevices: number;
+    uniqueLocations: number;
+  };
+  driftDetected: boolean;
+  driftReason?: string;
+}
+
+export interface ModelHealthPayload {
+  latest: ModelMetric | null;
+  metrics: ModelMetric[];
+}
+
+export interface SystemHealth {
+  timestamp: string;
+  apiLatencyMs: number;
+  mlLatencyMs: number;
+  redisLatencyMs: number;
+  mongoStatus: 'UP' | 'DOWN';
+  redisStatus: 'UP' | 'DOWN';
+  mlStatus: 'UP' | 'DOWN';
+  websocketStatus: 'UP' | 'DOWN';
+  websocketClients: number;
+}
+
+export interface SystemSettings {
+  key: string;
+  highAmountThreshold: number;
+  velocityWindowMinutes: number;
+  velocityTxThreshold: number;
+  scoreRuleWeight: number;
+  scoreMlWeight: number;
+  autonomousAlertThreshold: number;
+  simulationMode: boolean;
+  updatedBy?: string;
+  updatedAt: string;
 }

@@ -28,4 +28,8 @@ export class UserDeviceRepository {
   async findRecent(limit = 200): Promise<UserDeviceDocument[]> {
     return UserDeviceModel.find({}).sort({ updatedAt: -1 }).limit(limit);
   }
+
+  async findByUser(userId: string, limit = 200): Promise<UserDeviceDocument[]> {
+    return UserDeviceModel.find({ userId }).sort({ updatedAt: -1 }).limit(limit);
+  }
 }

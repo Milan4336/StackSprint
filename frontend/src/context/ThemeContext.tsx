@@ -1,48 +1,31 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-
-type Theme = 'light' | 'dark';
+import { createContext, ReactNode, useContext, useLayoutEffect, useMemo } from 'react';
+import { AppTheme, useThemeStore } from '../store/theme';
 
 interface ThemeContextValue {
-  theme: Theme;
+  theme: AppTheme;
   toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
+  setTheme: (theme: AppTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const applyTheme = (theme: Theme) => {
-  if (typeof window === 'undefined') return;
-  document.documentElement.classList.toggle('dark', theme === 'dark');
-  document.documentElement.setAttribute('data-theme', theme);
-};
-
-const readInitialTheme = (): Theme => {
-  if (typeof window === 'undefined') return 'dark';
-  const stored = localStorage.getItem('theme');
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-};
-
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setThemeState] = useState<Theme>(readInitialTheme);
+  const theme = useThemeStore((state) => state.theme);
+  const initialize = useThemeStore((state) => state.initialize);
+  const setTheme = useThemeStore((state) => state.setTheme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
-  useEffect(() => {
-    applyTheme(theme);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('theme', theme);
-    applyTheme(theme);
-  }, [theme]);
+  useLayoutEffect(() => {
+    initialize();
+  }, [initialize]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
-      setTheme: (next: Theme) => setThemeState(next),
-      toggleTheme: () => setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'))
+      setTheme,
+      toggleTheme
     }),
-    [theme]
+    [theme, setTheme, toggleTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { FraudExplanationRecord, Transaction } from '../../types';
@@ -30,30 +31,30 @@ export const FraudExplanationPanel = ({ transactions, explanations }: FraudExpla
 
   if (!selected) {
     return (
-      <article className="panel animate-fade-in">
+      <motion.article className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, delay: 0.08 }}>
         <h3 className="panel-title">Explainable AI Panel</h3>
-        <p className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-400">
+        <p className="rounded-xl border border-slate-200/80 bg-white/70 p-4 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
           No explanation payloads available yet.
         </p>
-      </article>
+      </motion.article>
     );
   }
 
   return (
-    <article className="panel animate-fade-in">
+    <motion.article className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, delay: 0.08 }}>
       <h3 className="panel-title">Explainable AI Panel</h3>
-      <p className="mb-3 text-xs uppercase tracking-[0.15em] text-slate-400">
+      <p className="mb-3 text-xs uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
         Transaction {selected.transactionId} · Score {selected.fraudScore}
       </p>
 
       <div className="mb-4 space-y-2">
         {selected.explanations.map((item) => (
-          <div key={`${item.feature}-${item.reason}`} className="rounded-xl border border-slate-700 bg-slate-900/60 p-3">
-            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-slate-200">
+          <div key={`${item.feature}-${item.reason}`} className="rounded-xl border border-slate-200/80 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/60">
+            <div className="mb-1 flex items-center justify-between text-sm font-semibold text-slate-800 dark:text-slate-200">
               <span>{item.feature}</span>
               <span>{Math.round(item.impact * 100)}%</span>
             </div>
-            <p className="text-xs text-slate-400">{item.reason}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{item.reason}</p>
           </div>
         ))}
       </div>
@@ -69,6 +70,6 @@ export const FraudExplanationPanel = ({ transactions, explanations }: FraudExpla
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </article>
+    </motion.article>
   );
 };

@@ -25,3 +25,29 @@ export const loginSchema = z.object({
 export const simulationSchema = z.object({
   count: z.number().int().min(1).max(500).optional()
 });
+
+export const createCaseSchema = z.object({
+  transactionId: z.string().min(1),
+  alertId: z.string().min(1).optional(),
+  assignedTo: z.string().min(1).optional(),
+  status: z.enum(['OPEN', 'INVESTIGATING', 'RESOLVED', 'FALSE_POSITIVE']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
+  notes: z.array(z.string().min(1)).optional()
+});
+
+export const updateCaseSchema = z.object({
+  status: z.enum(['OPEN', 'INVESTIGATING', 'RESOLVED', 'FALSE_POSITIVE']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
+  assignedTo: z.string().min(1).optional(),
+  note: z.string().min(1).optional()
+});
+
+export const updateSettingsSchema = z.object({
+  highAmountThreshold: z.number().positive().optional(),
+  velocityWindowMinutes: z.number().int().min(1).max(180).optional(),
+  velocityTxThreshold: z.number().int().min(1).max(200).optional(),
+  scoreRuleWeight: z.number().min(0).max(1).optional(),
+  scoreMlWeight: z.number().min(0).max(1).optional(),
+  autonomousAlertThreshold: z.number().min(1).max(100).optional(),
+  simulationMode: z.boolean().optional()
+});

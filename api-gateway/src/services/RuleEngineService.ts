@@ -1,6 +1,7 @@
-import { env } from '../config/env';
 import { TransactionRepository } from '../repositories/TransactionRepository';
 import { haversineKm } from '../utils/geolocation';
+import { SettingsService } from './SettingsService';
+import { UserRiskProfileService } from './UserRiskProfileService';
 
 interface RuleInput {
   userId: string;
@@ -20,24 +21,54 @@ export interface RuleEvaluationResult {
 }
 
 export class RuleEngineService {
-  constructor(private readonly transactionRepository: TransactionRepository) {}
+  constructor(
+    private readonly transactionRepository: TransactionRepository,
+    private readonly userRiskProfileService: UserRiskProfileService,
+    private readonly settingsService: SettingsService
+  ) {}
 
   async evaluate(input: RuleInput): Promise<RuleEvaluationResult> {
     let score = 0;
     const reasons: string[] = [];
     let geoVelocityFlag = false;
+    const runtimeConfig = await this.settingsService.getRuntimeConfig();
 
-    if (input.amount >= env.HIGH_AMOUNT_THRESHOLD) {
-      score += 40;
-      reasons.push(`High transaction amount (${input.amount}) exceeds threshold ${env.HIGH_AMOUNT_THRESHOLD}.`);
+    const profile = await this.userRiskProfileService.buildAndStore(input.userId, input.timestamp);
+    if (profile.avgTransactionAmount > 0 && input.amount > profile.avgTransactionAmount * 3) {
+      score += 12;
+      reasons.push(
+        `Behavioral anomaly: amount ${input.amount} is >3x user average ${profile.avgTransactionAmount.toFixed(2)}.`
+      );
     }
 
-    const from = new Date(input.timestamp.getTime() - env.VELOCITY_WINDOW_MINUTES * 60 * 1000);
+    if (profile.transactionVelocity >= 1.5) {
+      score += 8;
+      reasons.push(`Elevated user velocity profile (${profile.transactionVelocity.toFixed(2)} tx/hour).`);
+    }
+
+    if (profile.locationChangeFrequency >= 0.6) {
+      score += 6;
+      reasons.push(`High location change frequency (${(profile.locationChangeFrequency * 100).toFixed(0)}%).`);
+    }
+
+    if (profile.deviceCount >= 5) {
+      score += 5;
+      reasons.push(`High device churn detected (${profile.deviceCount} devices in last 24h).`);
+    }
+
+    if (input.amount >= runtimeConfig.highAmountThreshold) {
+      score += 40;
+      reasons.push(
+        `High transaction amount (${input.amount}) exceeds threshold ${runtimeConfig.highAmountThreshold}.`
+      );
+    }
+
+    const from = new Date(input.timestamp.getTime() - runtimeConfig.velocityWindowMinutes * 60 * 1000);
     const recent = await this.transactionRepository.findByUserWithinWindow(input.userId, from);
-    if (recent.length >= env.VELOCITY_TX_THRESHOLD) {
+    if (recent.length >= runtimeConfig.velocityTxThreshold) {
       score += 25;
       reasons.push(
-        `High velocity detected (${recent.length + 1} transactions in ${env.VELOCITY_WINDOW_MINUTES} minutes).`
+        `High velocity detected (${recent.length + 1} transactions in ${runtimeConfig.velocityWindowMinutes} minutes).`
       );
     }
 

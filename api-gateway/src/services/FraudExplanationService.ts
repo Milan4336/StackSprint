@@ -25,4 +25,12 @@ export class FraudExplanationService {
   async listRecent(limit = 50) {
     return this.fraudExplanationRepository.findRecent(limit);
   }
+
+  async findByTransactionId(transactionId: string) {
+    return this.fraudExplanationRepository.findByTransactionId(transactionId);
+  }
+
+  async findByUser(userId: string, limit = 50) {
+    return this.fraudExplanationRepository.findByUser(userId, limit);
+  }
 }

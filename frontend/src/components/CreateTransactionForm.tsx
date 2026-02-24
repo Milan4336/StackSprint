@@ -1,5 +1,7 @@
 import { FormEvent, useState } from 'react';
+import { motion } from 'framer-motion';
 import axios from 'axios';
+import { DollarSign, LocateFixed, Smartphone, UserRound } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 import { Transaction } from '../types';
 
@@ -42,28 +44,42 @@ export const CreateTransactionForm = ({ onCreated }: CreateTransactionFormProps)
   };
 
   return (
-    <form
+    <motion.form
       onSubmit={submit}
-      className="grid gap-3 rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-4 shadow-xl backdrop-blur sm:grid-cols-2 xl:grid-cols-5"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-panel grid gap-3 rounded-2xl border p-4 sm:grid-cols-2 xl:grid-cols-5"
     >
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">User ID</span>
-        <input className="input" value={userId} onChange={(e) => setUserId(e.target.value)} required />
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">User ID</span>
+        <div className="relative">
+          <UserRound className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+          <input className="input pl-8" value={userId} onChange={(e) => setUserId(e.target.value)} required />
+        </div>
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Amount</span>
-        <input className="input" type="number" min={1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} required />
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Amount</span>
+        <div className="relative">
+          <DollarSign className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+          <input className="input pl-8" type="number" min={1} value={amount} onChange={(e) => setAmount(Number(e.target.value))} required />
+        </div>
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Location</span>
-        <input className="input" value={location} onChange={(e) => setLocation(e.target.value)} required />
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Location</span>
+        <div className="relative">
+          <LocateFixed className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+          <input className="input pl-8" value={location} onChange={(e) => setLocation(e.target.value)} required />
+        </div>
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Device ID</span>
-        <input className="input" value={deviceId} onChange={(e) => setDeviceId(e.target.value)} required />
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Device ID</span>
+        <div className="relative">
+          <Smartphone className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+          <input className="input pl-8" value={deviceId} onChange={(e) => setDeviceId(e.target.value)} required />
+        </div>
       </label>
 
       <div className="flex items-end">
@@ -72,7 +88,7 @@ export const CreateTransactionForm = ({ onCreated }: CreateTransactionFormProps)
           disabled={creating}
           className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-white transition hover:from-blue-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-cyan-300"
         >
-          {creating ? 'Submitting...' : 'Create'}
+          {creating ? 'Submitting...' : 'Create Transaction'}
         </button>
       </div>
 
@@ -83,6 +99,6 @@ export const CreateTransactionForm = ({ onCreated }: CreateTransactionFormProps)
       {success ? (
         <p className="sm:col-span-2 xl:col-span-5 rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-medium text-emerald-300">{success}</p>
       ) : null}
-    </form>
+    </motion.form>
   );
 };

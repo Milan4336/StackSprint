@@ -1,16 +1,24 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TransactionService } from './TransactionService';
 import { EventBusService } from './EventBusService';
+import { SettingsService } from './SettingsService';
+import { AppError } from '../utils/errors';
 
 const locations = ['NY', 'CA', 'TX', 'FL', 'WA', 'London', 'Delhi', 'Tokyo', 'Dubai', 'Sydney'];
 
 export class SimulationService {
   constructor(
     private readonly transactionService: TransactionService,
-    private readonly eventBusService: EventBusService
+    private readonly eventBusService: EventBusService,
+    private readonly settingsService: SettingsService
   ) {}
 
   async startSimulation(count = 50): Promise<{ generated: number }> {
+    const runtime = await this.settingsService.getRuntimeConfig();
+    if (!runtime.simulationMode) {
+      throw new AppError('Simulation mode is disabled in settings', 403);
+    }
+
     await this.eventBusService.publishSimulationEvent({
       type: 'simulation.started',
       count,

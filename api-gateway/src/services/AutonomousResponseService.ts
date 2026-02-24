@@ -2,16 +2,21 @@ import { v4 as uuidv4 } from 'uuid';
 import { FraudExplanationItem } from '../models/FraudExplanation';
 import { FraudAlertRepository } from '../repositories/FraudAlertRepository';
 import { EventBusService } from './EventBusService';
+import { SettingsService } from './SettingsService';
+import { AuditService } from './AuditService';
 
 export class AutonomousResponseService {
   constructor(
     private readonly fraudAlertRepository: FraudAlertRepository,
     private readonly eventBusService: EventBusService,
-    private readonly threshold = 80
+    private readonly settingsService: SettingsService,
+    private readonly auditService: AuditService,
+    private readonly fallbackThreshold = 80
   ) {}
 
   private composeReason(input: {
     fraudScore: number;
+    threshold: number;
     ruleReasons?: string[];
     explanations?: FraudExplanationItem[];
   }): string {
@@ -31,7 +36,7 @@ export class AutonomousResponseService {
 
     const deDuplicated = Array.from(new Set(lines));
     const detail = deDuplicated.map((line, index) => `${index + 1}. ${line}`).join('\n');
-    return `Autonomous response triggered at score ${input.fraudScore} (threshold ${this.threshold}).\n${detail}`;
+    return `Autonomous response triggered at score ${input.fraudScore} (threshold ${input.threshold}).\n${detail}`;
   }
 
   async process(input: {
@@ -42,11 +47,14 @@ export class AutonomousResponseService {
     ruleReasons?: string[];
     explanations?: FraudExplanationItem[];
   }): Promise<void> {
-    if (input.fraudScore < this.threshold) {
+    const runtime = await this.settingsService.getRuntimeConfig().catch(() => null);
+    const threshold = runtime?.autonomousAlertThreshold ?? this.fallbackThreshold;
+
+    if (input.fraudScore < threshold) {
       return;
     }
 
-    const reason = this.composeReason(input);
+    const reason = this.composeReason({ ...input, threshold });
 
     const alert = await this.fraudAlertRepository.create({
       alertId: uuidv4(),
@@ -56,6 +64,19 @@ export class AutonomousResponseService {
       riskLevel: input.riskLevel,
       reason,
       status: 'open'
+    });
+
+    await this.auditService.log({
+      eventType: 'ALERT_GENERATED',
+      action: 'create',
+      entityType: 'fraud_alert',
+      entityId: alert.alertId,
+      metadata: {
+        transactionId: alert.transactionId,
+        userId: alert.userId,
+        fraudScore: alert.fraudScore,
+        riskLevel: alert.riskLevel
+      }
     });
 
     await this.eventBusService.publishFraudAlert({

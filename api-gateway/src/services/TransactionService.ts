@@ -5,6 +5,8 @@ import { AutonomousResponseService } from './AutonomousResponseService';
 import { DeviceFingerprintService } from './DeviceFingerprintService';
 import { FraudExplanationService } from './FraudExplanationService';
 import { GeoService } from './GeoService';
+import { AuditService } from './AuditService';
+import { ModelMetricsService } from './ModelMetricsService';
 
 export interface CreateTransactionInput {
   transactionId: string;
@@ -25,7 +27,9 @@ export class TransactionService {
     private readonly autonomousResponseService: AutonomousResponseService,
     private readonly deviceFingerprintService: DeviceFingerprintService,
     private readonly fraudExplanationService: FraudExplanationService,
-    private readonly geoService: GeoService
+    private readonly geoService: GeoService,
+    private readonly auditService: AuditService,
+    private readonly modelMetricsService: ModelMetricsService
   ) {}
 
   async create(input: CreateTransactionInput) {
@@ -48,6 +52,13 @@ export class TransactionService {
       longitude: resolvedGeo.longitude,
       city: resolvedGeo.city,
       country: resolvedGeo.country,
+      action: scoring.action,
+      ruleScore: scoring.ruleScore,
+      mlScore: scoring.mlScore,
+      mlStatus: scoring.mlStatus,
+      modelVersion: scoring.modelVersion,
+      modelName: scoring.modelName,
+      modelConfidence: scoring.modelConfidence,
       fraudScore: scoring.fraudScore,
       riskLevel: scoring.riskLevel,
       isFraud: scoring.isFraud,
@@ -77,6 +88,20 @@ export class TransactionService {
         riskLevel: created.riskLevel,
         ruleReasons: scoring.ruleReasons,
         explanations: scoring.explanations
+      }),
+      this.auditService.log({
+        eventType: 'TRANSACTION_SCORED',
+        action: 'score',
+        entityType: 'transaction',
+        entityId: created.transactionId,
+        metadata: {
+          userId: created.userId,
+          action: created.action,
+          ruleScore: created.ruleScore,
+          mlScore: created.mlScore,
+          fraudScore: created.fraudScore,
+          riskLevel: created.riskLevel
+        }
       })
     ]);
 
@@ -89,6 +114,13 @@ export class TransactionService {
       city: created.city,
       country: created.country,
       riskLevel: created.riskLevel,
+      action: created.action,
+      ruleScore: created.ruleScore,
+      mlScore: created.mlScore,
+      mlStatus: created.mlStatus,
+      modelVersion: created.modelVersion,
+      modelName: created.modelName,
+      modelConfidence: created.modelConfidence,
       fraudScore: created.fraudScore,
       timestamp: created.timestamp,
       isFraud: created.isFraud,
@@ -97,6 +129,8 @@ export class TransactionService {
       deviceId: created.deviceId,
       explanations: created.explanations
     });
+
+    await this.modelMetricsService.recordSnapshotIfDue();
     return created;
   }
 
@@ -104,16 +138,41 @@ export class TransactionService {
     return this.transactionRepository.findRecent(limit);
   }
 
+  async query(input: {
+    page: number;
+    limit: number;
+    search?: string;
+    riskLevel?: 'Low' | 'Medium' | 'High';
+    userId?: string;
+    deviceId?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    startDate?: Date;
+    endDate?: Date;
+    sortBy?: 'timestamp' | 'amount' | 'fraudScore' | 'riskLevel' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+  }) {
+    return this.transactionRepository.query(input);
+  }
+
+  async findByTransactionId(transactionId: string) {
+    return this.transactionRepository.findByTransactionId(transactionId);
+  }
+
   async stats() {
-    const [summary, highRiskUsers] = await Promise.all([
+    const [summary, highRiskUsers, fraudByCountry] = await Promise.all([
       this.transactionRepository.getStats(),
-      this.transactionRepository.topHighRiskUsers(5)
+      this.transactionRepository.topHighRiskUsers(5),
+      this.transactionRepository.fraudByCountry(10)
     ]);
 
     return {
+      totalTransactions: summary.total,
+      fraudTransactions: summary.fraudCount,
       fraudRate: summary.total ? summary.fraudCount / summary.total : 0,
       avgRiskScore: summary.avgScore,
-      highRiskUsers
+      highRiskUsers,
+      fraudByCountry
     };
   }
 }

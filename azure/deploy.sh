@@ -136,12 +136,11 @@ MONGO_URI="$(echo "${COSMOS_CONN_RAW}" | sed "s|/\\?|/${AZ_COSMOS_DB_NAME}?|")"
 
 if ! az redis show --name "${AZ_REDIS_NAME}" --resource-group "${AZ_RESOURCE_GROUP}" >/dev/null 2>&1; then
   az redis create \
-    --name "${AZ_REDIS_NAME}" \
-    --resource-group "${AZ_RESOURCE_GROUP}" \
-    --location "${AZ_LOCATION}" \
-    --sku Basic \
-    --vm-size C0 \
-    --enable-non-ssl-port false \
+  --name $AZ_REDIS_NAME \
+  --resource-group $AZ_RESOURCE_GROUP \
+  --location $AZ_LOCATION \
+  --sku Basic \
+  --vm-size C0 \
     --only-show-errors >/dev/null
 fi
 
