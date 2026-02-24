@@ -18,12 +18,30 @@ Implemented and wired end-to-end:
 - Device fingerprint tracking and visualization
 - Fraud simulation mode (`POST /api/v1/simulation/start`)
 - Real-time updates over Socket.io + Redis pub/sub
-- Live fraud radar map with geo markers
+- Live fraud radar map with advanced geo intelligence:
+  - IP-based coordinate resolution with Redis geo cache
+  - fallback location mapping when IP geo is unavailable
+  - heatmap overlay, severity clustering, suspicious geo-jump paths
+  - live pulse markers for high-risk transactions
+  - timeline filtering (`10m`, `1h`, `24h`, custom)
+  - global geo stats overlay and device intelligence popup
 - Professional dashboard UI (dark/light theme, analytics, charts, alerts)
+- Theme toggle stabilized and persisted across reloads (`localStorage` + `html.dark`)
 - Crash-proof frontend date handling for invalid/null timestamps
 - Docker Compose local environment
 - Kubernetes manifests under `k8s/`
 - Azure deployment automation under `azure/`
+
+## Latest Updates (February 24, 2026)
+
+- Added backend `GeoService` for IP geolocation + Redis caching and Mongo persistence of:
+  - `latitude`, `longitude`, `city`, `country`
+- Added geo-velocity fraud rule:
+  - flags transaction when same user moves `>1500 km` within `<2 hours`
+  - persists `geoVelocityFlag` and increases fraud score
+- Enhanced fraud radar visualization with heatmap, clustering, animated geo paths, and map controls.
+- Improved autonomous alert explanations with specific reason strings.
+- Fixed theme toggle UX so switching is immediate, persistent, and visible across layout/table components.
 
 ## Architecture
 
@@ -56,6 +74,14 @@ ML Service (FastAPI + Isolation Forest)
 - `fraud_alerts`
 - `user_devices`
 - `fraud_explanations`
+
+`transactions` now also stores geo-enrichment fields used by radar analytics:
+
+- `latitude`
+- `longitude`
+- `city`
+- `country`
+- `geoVelocityFlag`
 
 ## Fraud Scoring Logic
 
@@ -303,6 +329,16 @@ cp azure/env.template azure/.env
 bash azure/deploy.sh
 ```
 
+### Azure Prerequisites
+
+Ensure these providers are registered in the subscription before first deploy:
+
+- `Microsoft.App`
+- `Microsoft.DocumentDB`
+- `Microsoft.Cache`
+- `Microsoft.ContainerRegistry`
+- `Microsoft.OperationalInsights`
+
 ## Project Structure
 
 ```text
@@ -316,7 +352,18 @@ scripts/       # Utility scripts
 
 ## Notes
 
-- Frontend map uses backend-provided coordinates first, with deterministic location mapping fallback.
+- Frontend map uses backend-provided coordinates first, then deterministic location fallback.
 - Real-time flow is backed by Redis pub/sub and Socket.io fanout.
 - Date rendering is hardened against null/invalid timestamps via `safeDate`/`formatSafeDate`.
 - If you expose this publicly, rotate secrets and avoid committing real credentials in `.env` files.
+
+## Troubleshooting
+
+- Theme does not switch:
+  - clear browser cache and reload once (`Ctrl+Shift+R`)
+  - verify `localStorage.theme` is set and `html` toggles class `dark`
+- Map appears with wrong points:
+  - ensure transactions include valid `latitude/longitude` or known `location`
+  - check Redis geo cache and API `GeoService` configuration
+- Azure deploy fails with `MissingSubscriptionRegistration`:
+  - register missing provider namespace(s), then rerun `azure/deploy.sh`
