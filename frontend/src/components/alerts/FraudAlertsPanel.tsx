@@ -16,7 +16,7 @@ export const FraudAlertsPanel = ({ alerts }: FraudAlertsPanelProps) => {
               <p className="text-sm font-bold text-red-200">{alert.alertId.slice(0, 8)} · {alert.userId}</p>
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-red-300">{alert.status}</span>
             </div>
-            <p className="text-xs text-red-100">{alert.reason}</p>
+            <p className="whitespace-pre-line text-xs text-red-100">{alert.reason}</p>
             <p className="mt-1 text-xs text-red-200">Risk {alert.riskLevel} · Score {alert.fraudScore}</p>
           </div>
         ))}

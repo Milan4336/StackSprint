@@ -44,7 +44,7 @@ export const CreateTransactionForm = ({ onCreated }: CreateTransactionFormProps)
   return (
     <form
       onSubmit={submit}
-      className="grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl backdrop-blur sm:grid-cols-2 xl:grid-cols-5"
+      className="grid gap-3 rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-900/90 to-slate-800/80 p-4 shadow-xl backdrop-blur sm:grid-cols-2 xl:grid-cols-5"
     >
       <label className="block">
         <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">User ID</span>
@@ -70,7 +70,7 @@ export const CreateTransactionForm = ({ onCreated }: CreateTransactionFormProps)
         <button
           type="submit"
           disabled={creating}
-          className="w-full rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
+          className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-white transition hover:from-blue-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-cyan-300"
         >
           {creating ? 'Submitting...' : 'Create'}
         </button>

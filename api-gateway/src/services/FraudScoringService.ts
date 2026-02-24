@@ -20,14 +20,20 @@ export class FraudScoringService {
     amount: number;
     location: string;
     deviceId: string;
+    ipAddress: string;
+    latitude?: number;
+    longitude?: number;
     timestamp: Date;
   }): Promise<{
     fraudScore: number;
     riskLevel: 'Low' | 'Medium' | 'High';
     isFraud: boolean;
     explanations: FraudExplanationItem[];
+    ruleReasons: string[];
+    geoVelocityFlag: boolean;
   }> {
-    const ruleScore = await this.ruleEngineService.evaluate(input);
+    const ruleEvaluation = await this.ruleEngineService.evaluate(input);
+    const ruleScore = ruleEvaluation.score;
 
     let mlScore = 0;
     let explanations: FraudExplanationItem[] = [];
@@ -50,6 +56,13 @@ export class FraudScoringService {
     const fraudScore = Math.max(0, Math.min(100, Math.round(weighted)));
     const riskLevel = this.classify(fraudScore);
 
-    return { fraudScore, riskLevel, isFraud: riskLevel === 'High', explanations };
+    return {
+      fraudScore,
+      riskLevel,
+      isFraud: riskLevel === 'High',
+      explanations,
+      ruleReasons: ruleEvaluation.reasons,
+      geoVelocityFlag: ruleEvaluation.geoVelocityFlag
+    };
   }
 }

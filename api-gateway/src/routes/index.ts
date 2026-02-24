@@ -18,6 +18,7 @@ import { AutonomousResponseService } from '../services/AutonomousResponseService
 import { DeviceFingerprintService } from '../services/DeviceFingerprintService';
 import { FraudExplanationService } from '../services/FraudExplanationService';
 import { SimulationService } from '../services/SimulationService';
+import { GeoService } from '../services/GeoService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authMiddleware, roleMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -32,6 +33,7 @@ const eventBusService = new EventBusService();
 const fraudAlertRepository = new FraudAlertRepository();
 const userDeviceRepository = new UserDeviceRepository();
 const fraudExplanationRepository = new FraudExplanationRepository();
+const geoService = new GeoService();
 
 const autonomousResponseService = new AutonomousResponseService(
   fraudAlertRepository,
@@ -47,7 +49,8 @@ const transactionService = new TransactionService(
   eventBusService,
   autonomousResponseService,
   deviceFingerprintService,
-  fraudExplanationService
+  fraudExplanationService,
+  geoService
 );
 const transactionController = new TransactionController(transactionService);
 const simulationService = new SimulationService(transactionService, eventBusService);

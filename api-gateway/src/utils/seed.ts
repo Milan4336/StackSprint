@@ -14,14 +14,17 @@ const seed = async (): Promise<void> => {
       amount: Math.round(Math.random() * 9000 + 20),
       currency: 'USD',
       location,
-      latitude: coordinates.latitude,
-      longitude: coordinates.longitude,
+      latitude: coordinates?.latitude,
+      longitude: coordinates?.longitude,
+      city: coordinates?.city,
+      country: coordinates?.country,
       deviceId: `device-${(i % 15) + 1}`,
       ipAddress: `10.0.0.${(i % 250) + 1}`,
       timestamp: new Date(now - i * 60_000),
       fraudScore: Math.round(Math.random() * 100),
       riskLevel: ['Low', 'Medium', 'High'][i % 3],
-      isFraud: i % 3 === 2
+      isFraud: i % 3 === 2,
+      geoVelocityFlag: false
     };
   });
 

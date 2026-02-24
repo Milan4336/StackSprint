@@ -20,12 +20,15 @@ export interface Transaction {
   location: string;
   latitude?: number;
   longitude?: number;
+  city?: string;
+  country?: string;
   deviceId: string;
   ipAddress: string;
   timestamp: string;
   fraudScore: number;
   riskLevel: RiskLevel;
   isFraud: boolean;
+  geoVelocityFlag?: boolean;
   explanations?: FraudExplanation[];
   createdAt?: string;
   updatedAt?: string;

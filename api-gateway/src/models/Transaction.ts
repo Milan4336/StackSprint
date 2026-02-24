@@ -7,14 +7,17 @@ export interface TransactionDocument extends Document {
   amount: number;
   currency: string;
   location: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  country?: string;
   deviceId: string;
   ipAddress: string;
   timestamp: Date;
   fraudScore: number;
   riskLevel: 'Low' | 'Medium' | 'High';
   isFraud: boolean;
+  geoVelocityFlag?: boolean;
   explanations?: FraudExplanationItem[];
   createdAt: Date;
   updatedAt: Date;
@@ -36,14 +39,17 @@ const transactionSchema = new Schema<TransactionDocument>(
     amount: { type: Number, required: true },
     currency: { type: String, required: true },
     location: { type: String, required: true },
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true },
+    latitude: { type: Number, required: false },
+    longitude: { type: Number, required: false },
+    city: { type: String, required: false },
+    country: { type: String, required: false },
     deviceId: { type: String, required: true },
     ipAddress: { type: String, required: true },
     timestamp: { type: Date, required: true, index: true },
     fraudScore: { type: Number, required: true },
     riskLevel: { type: String, enum: ['Low', 'Medium', 'High'], required: true, index: true },
     isFraud: { type: Boolean, required: true, index: true },
+    geoVelocityFlag: { type: Boolean, required: false, default: false },
     explanations: { type: [explanationItemSchema], default: [] }
   },
   { timestamps: true, collection: 'transactions' }

@@ -30,7 +30,7 @@ export const Transactions = () => {
           <button
             type="button"
             onClick={() => void refreshTransactions()}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800"
+            className="glass-btn"
           >
             {loading ? 'Refreshing...' : 'Refresh'}
           </button>
@@ -40,14 +40,14 @@ export const Transactions = () => {
         {loading && sorted.length === 0 ? (
           <div className="mb-4 grid gap-2">
             {Array.from({ length: 5 }).map((_, index) => (
-              <div key={`tx-skeleton-${index}`} className="h-12 animate-pulse rounded-lg bg-slate-800/60" />
+              <div key={`tx-skeleton-${index}`} className="skeleton h-12" />
             ))}
           </div>
         ) : null}
 
-        <div className="overflow-x-auto rounded-xl border border-slate-800">
+        <div className="table-shell">
           <table className="min-w-full text-sm">
-            <thead className="bg-slate-900 text-left text-xs uppercase tracking-[0.16em] text-slate-400">
+            <thead className="sticky top-0 z-10 bg-slate-900/95 text-left text-xs uppercase tracking-[0.16em] text-slate-400 backdrop-blur">
               <tr>
                 <th className="px-3 py-3">Transaction</th>
                 <th className="px-3 py-3">User</th>
@@ -60,10 +60,10 @@ export const Transactions = () => {
             </thead>
             <tbody>
               {sorted.map((tx) => (
-                <tr key={tx.transactionId} className="border-t border-slate-800/80 bg-slate-900/40 transition hover:bg-slate-800/70">
-                  <td className="px-3 py-3 font-semibold text-slate-100">{tx.transactionId}</td>
+                <tr key={tx.transactionId} className="border-t border-slate-800/70 bg-slate-900/35 transition hover:bg-slate-800/65">
+                  <td className="px-3 py-3 font-semibold text-blue-100">{tx.transactionId}</td>
                   <td className="px-3 py-3 text-slate-300">{tx.userId}</td>
-                  <td className="px-3 py-3 text-slate-200">{money.format(tx.amount)}</td>
+                  <td className="px-3 py-3 font-semibold text-slate-100">{money.format(tx.amount)}</td>
                   <td className="px-3 py-3 text-slate-300">{tx.location}</td>
                   <td className="px-3 py-3 text-slate-200">{tx.fraudScore}</td>
                   <td className="px-3 py-3">

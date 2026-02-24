@@ -4,7 +4,7 @@ import { EventBusService } from './EventBusService';
 import { AutonomousResponseService } from './AutonomousResponseService';
 import { DeviceFingerprintService } from './DeviceFingerprintService';
 import { FraudExplanationService } from './FraudExplanationService';
-import { geocodeLocation } from '../utils/geolocation';
+import { GeoService } from './GeoService';
 
 export interface CreateTransactionInput {
   transactionId: string;
@@ -24,27 +24,34 @@ export class TransactionService {
     private readonly eventBusService: EventBusService,
     private readonly autonomousResponseService: AutonomousResponseService,
     private readonly deviceFingerprintService: DeviceFingerprintService,
-    private readonly fraudExplanationService: FraudExplanationService
+    private readonly fraudExplanationService: FraudExplanationService,
+    private readonly geoService: GeoService
   ) {}
 
   async create(input: CreateTransactionInput) {
-    const coordinates = geocodeLocation(input.location);
+    const resolvedGeo = await this.geoService.resolveCoordinates(input.ipAddress, input.location);
 
     const scoring = await this.fraudScoringService.score({
       userId: input.userId,
       amount: input.amount,
       location: input.location,
       deviceId: input.deviceId,
+      ipAddress: input.ipAddress,
+      latitude: resolvedGeo.latitude,
+      longitude: resolvedGeo.longitude,
       timestamp: input.timestamp
     });
 
     const created = await this.transactionRepository.create({
       ...input,
-      latitude: coordinates.latitude,
-      longitude: coordinates.longitude,
+      latitude: resolvedGeo.latitude,
+      longitude: resolvedGeo.longitude,
+      city: resolvedGeo.city,
+      country: resolvedGeo.country,
       fraudScore: scoring.fraudScore,
       riskLevel: scoring.riskLevel,
       isFraud: scoring.isFraud,
+      geoVelocityFlag: scoring.geoVelocityFlag,
       explanations: scoring.explanations
     });
 
@@ -67,7 +74,9 @@ export class TransactionService {
         transactionId: created.transactionId,
         userId: created.userId,
         fraudScore: created.fraudScore,
-        riskLevel: created.riskLevel
+        riskLevel: created.riskLevel,
+        ruleReasons: scoring.ruleReasons,
+        explanations: scoring.explanations
       })
     ]);
 
@@ -77,10 +86,13 @@ export class TransactionService {
       location: created.location,
       latitude: created.latitude,
       longitude: created.longitude,
+      city: created.city,
+      country: created.country,
       riskLevel: created.riskLevel,
       fraudScore: created.fraudScore,
       timestamp: created.timestamp,
       isFraud: created.isFraud,
+      geoVelocityFlag: created.geoVelocityFlag,
       userId: created.userId,
       deviceId: created.deviceId,
       explanations: created.explanations

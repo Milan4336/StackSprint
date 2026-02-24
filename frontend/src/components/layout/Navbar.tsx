@@ -25,28 +25,33 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated }: NavbarProps) =>
   const email = useMemo(() => decodeEmail(), []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-slate-700/70 bg-slate-950/70 backdrop-blur-xl">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-100">Fraud Detection Command Center</h1>
-          <p className="text-xs text-slate-400">
+          <p className="chip mb-1 border-blue-500/40 bg-blue-500/10 text-blue-200">Fintech Intelligence Grid</p>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-100 sm:text-2xl">Fraud Detection Command Center</h1>
+          <p className="text-xs text-slate-400 sm:text-sm">
             {lastUpdated ? `Last sync ${formatSafeDate(lastUpdated)}` : 'Awaiting first sync'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="hidden items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 md:inline-flex">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            Live
+          </span>
           <p className="hidden text-xs font-semibold text-slate-400 md:block">{email}</p>
           <button
             type="button"
             onClick={onToggleTheme}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+            className="glass-btn"
           >
             Theme
           </button>
           <button
             type="button"
             onClick={onLogout}
-            className="rounded-lg bg-red-500/20 px-3 py-2 text-sm font-semibold text-red-300 hover:bg-red-500/35"
+            className="rounded-lg border border-red-500/40 bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-500/30"
           >
             Logout
           </button>

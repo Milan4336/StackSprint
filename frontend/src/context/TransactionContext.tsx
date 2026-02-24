@@ -73,12 +73,15 @@ const normalizeTransaction = (raw: Partial<Transaction>): Transaction => {
     location: raw.location || 'Unknown',
     latitude: typeof raw.latitude === 'number' ? raw.latitude : undefined,
     longitude: typeof raw.longitude === 'number' ? raw.longitude : undefined,
+    city: raw.city,
+    country: raw.country,
     deviceId: raw.deviceId || 'unknown-device',
     ipAddress: raw.ipAddress || '0.0.0.0',
     timestamp,
     fraudScore: Number(raw.fraudScore ?? 0),
     riskLevel,
     isFraud: Boolean(raw.isFraud ?? riskLevel === 'High'),
+    geoVelocityFlag: Boolean(raw.geoVelocityFlag ?? false),
     explanations: raw.explanations
   };
 };

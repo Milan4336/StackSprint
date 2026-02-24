@@ -17,7 +17,9 @@ const envSchema = z.object({
   VELOCITY_TX_THRESHOLD: z.coerce.number().default(5),
   SCORE_RULE_WEIGHT: z.coerce.number().default(0.6),
   SCORE_ML_WEIGHT: z.coerce.number().default(0.4),
-  AUTONOMOUS_ALERT_THRESHOLD: z.coerce.number().default(80)
+  AUTONOMOUS_ALERT_THRESHOLD: z.coerce.number().default(80),
+  GEOIP_API_URL: z.string().url().default('https://ipwho.is'),
+  GEO_CACHE_TTL_SECONDS: z.coerce.number().int().min(60).default(86400)
 });
 
 export const env = envSchema.parse(process.env);
