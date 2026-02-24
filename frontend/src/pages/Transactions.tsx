@@ -36,7 +36,7 @@ export const Transactions = () => {
           </button>
         </div>
 
-        {error ? <p className="mb-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p> : null}
+        {error ? <p className="mb-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">{error}</p> : null}
         {loading && sorted.length === 0 ? (
           <div className="mb-4 grid gap-2">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -47,7 +47,7 @@ export const Transactions = () => {
 
         <div className="table-shell">
           <table className="min-w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-900/95 text-left text-xs uppercase tracking-[0.16em] text-slate-400 backdrop-blur">
+            <thead className="sticky top-0 z-10 bg-slate-100/95 text-left text-xs uppercase tracking-[0.16em] text-slate-500 backdrop-blur dark:bg-slate-900/95 dark:text-slate-400">
               <tr>
                 <th className="px-3 py-3">Transaction</th>
                 <th className="px-3 py-3">User</th>
@@ -60,21 +60,24 @@ export const Transactions = () => {
             </thead>
             <tbody>
               {sorted.map((tx) => (
-                <tr key={tx.transactionId} className="border-t border-slate-800/70 bg-slate-900/35 transition hover:bg-slate-800/65">
-                  <td className="px-3 py-3 font-semibold text-blue-100">{tx.transactionId}</td>
-                  <td className="px-3 py-3 text-slate-300">{tx.userId}</td>
-                  <td className="px-3 py-3 font-semibold text-slate-100">{money.format(tx.amount)}</td>
-                  <td className="px-3 py-3 text-slate-300">{tx.location}</td>
-                  <td className="px-3 py-3 text-slate-200">{tx.fraudScore}</td>
+                <tr
+                  key={tx.transactionId}
+                  className="border-t border-slate-200/70 bg-white/70 transition hover:bg-slate-100/90 dark:border-slate-800/70 dark:bg-slate-900/35 dark:hover:bg-slate-800/65"
+                >
+                  <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</td>
+                  <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.userId}</td>
+                  <td className="px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</td>
+                  <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.location}</td>
+                  <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.fraudScore}</td>
                   <td className="px-3 py-3">
                     <RiskBadge value={tx.riskLevel} />
                   </td>
-                  <td className="px-3 py-3 text-slate-400">{formatSafeDate(tx.timestamp)}</td>
+                  <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(tx.timestamp)}</td>
                 </tr>
               ))}
               {sorted.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-4 text-slate-400" colSpan={7}>
+                  <td className="px-3 py-4 text-slate-500 dark:text-slate-400" colSpan={7}>
                     No transactions yet. Create or simulate transactions.
                   </td>
                 </tr>

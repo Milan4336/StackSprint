@@ -5,6 +5,7 @@ interface NavbarProps {
   onToggleTheme: () => void;
   onLogout: () => void;
   lastUpdated: string | null;
+  theme: 'light' | 'dark';
 }
 
 const decodeEmail = (): string => {
@@ -21,16 +22,18 @@ const decodeEmail = (): string => {
   }
 };
 
-export const Navbar = ({ onToggleTheme, onLogout, lastUpdated }: NavbarProps) => {
+export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarProps) => {
   const email = useMemo(() => decodeEmail(), []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-700/70 bg-slate-950/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-950/70">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <div>
           <p className="chip mb-1 border-blue-500/40 bg-blue-500/10 text-blue-200">Fintech Intelligence Grid</p>
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-100 sm:text-2xl">Fraud Detection Command Center</h1>
-          <p className="text-xs text-slate-400 sm:text-sm">
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+            Fraud Detection Command Center
+          </h1>
+          <p className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
             {lastUpdated ? `Last sync ${formatSafeDate(lastUpdated)}` : 'Awaiting first sync'}
           </p>
         </div>
@@ -40,13 +43,9 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated }: NavbarProps) =>
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             Live
           </span>
-          <p className="hidden text-xs font-semibold text-slate-400 md:block">{email}</p>
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className="glass-btn"
-          >
-            Theme
+          <p className="hidden text-xs font-semibold text-slate-600 dark:text-slate-400 md:block">{email}</p>
+          <button type="button" onClick={onToggleTheme} className="glass-btn">
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
           <button
             type="button"

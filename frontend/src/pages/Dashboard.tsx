@@ -79,14 +79,18 @@ export const Dashboard = () => {
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="chip mb-2 border-blue-500/40 bg-blue-500/10 text-blue-200">Real-Time Risk Intelligence</p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-100 sm:text-3xl">Fraud Command Center</h2>
-            <p className="mt-1 text-sm text-slate-300">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+              Fraud Command Center
+            </h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Live monitoring across transactions, risk behavior, and autonomous alerting.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.14em]">
             <span className="chip border-emerald-500/35 bg-emerald-500/10 text-emerald-200">{connected ? 'Socket Live' : 'Socket Offline'}</span>
-            <span className="chip border-slate-600/70 bg-slate-800/70 text-slate-300">{transactions.length} Tracked TX</span>
+            <span className="chip border-slate-300/70 bg-white/80 text-slate-700 dark:border-slate-600/70 dark:bg-slate-800/70 dark:text-slate-300">
+              {transactions.length} Tracked TX
+            </span>
           </div>
         </div>
       </section>
@@ -99,7 +103,7 @@ export const Dashboard = () => {
         </section>
       ) : null}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-700/70 bg-slate-900/55 px-4 py-2 text-xs uppercase tracking-[0.16em] text-slate-300">
+      <div className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white/80 px-4 py-2 text-xs uppercase tracking-[0.16em] text-slate-700 dark:border-slate-700/70 dark:bg-slate-900/55 dark:text-slate-300">
         <span className="flex items-center gap-2">
           <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-red-400'}`} />
           Live Feed {connected ? 'Connected' : 'Disconnected'}
@@ -161,7 +165,7 @@ export const Dashboard = () => {
 
         <div className="table-shell">
           <table className="min-w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-900/95 text-left text-xs uppercase tracking-[0.16em] text-slate-400 backdrop-blur">
+            <thead className="sticky top-0 z-10 bg-slate-100/95 text-left text-xs uppercase tracking-[0.16em] text-slate-500 backdrop-blur dark:bg-slate-900/95 dark:text-slate-400">
               <tr>
                 <th className="px-3 py-3">Transaction</th>
                 <th className="px-3 py-3">User</th>
@@ -192,23 +196,26 @@ export const Dashboard = () => {
             <tbody>
               {sortedTransactions.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-6 text-sm text-slate-400" colSpan={8}>
+                  <td className="px-3 py-6 text-sm text-slate-500 dark:text-slate-400" colSpan={8}>
                     No transactions yet. Create or simulate transactions.
                   </td>
                 </tr>
               ) : null}
               {sortedTransactions.map((tx) => (
-                <tr key={tx.transactionId} className="border-t border-slate-800/70 bg-slate-900/35 transition hover:bg-slate-800/65">
-                  <td className="px-3 py-3 font-semibold text-blue-100">{tx.transactionId}</td>
-                  <td className="px-3 py-3 text-slate-300">{tx.userId}</td>
-                  <td className="px-3 py-3 font-semibold text-slate-100">{money.format(tx.amount)}</td>
-                  <td className="px-3 py-3 text-slate-300">{tx.location}</td>
-                  <td className="px-3 py-3 text-slate-200">{tx.fraudScore}</td>
+                <tr
+                  key={tx.transactionId}
+                  className="border-t border-slate-200/70 bg-white/70 transition hover:bg-slate-100/90 dark:border-slate-800/70 dark:bg-slate-900/35 dark:hover:bg-slate-800/65"
+                >
+                  <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</td>
+                  <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.userId}</td>
+                  <td className="px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</td>
+                  <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.location}</td>
+                  <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.fraudScore}</td>
                   <td className="px-3 py-3">
                     <RiskBadge value={tx.riskLevel} />
                   </td>
                   <td className={`px-3 py-3 text-lg ${tx.isFraud ? 'text-red-400' : 'text-emerald-400'}`}>●</td>
-                  <td className="px-3 py-3 text-slate-400">{formatSafeDate(tx.timestamp)}</td>
+                  <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(tx.timestamp)}</td>
                 </tr>
               ))}
             </tbody>

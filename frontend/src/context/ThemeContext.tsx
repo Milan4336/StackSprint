@@ -10,20 +10,30 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
+const applyTheme = (theme: Theme) => {
+  if (typeof window === 'undefined') return;
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+};
+
 const readInitialTheme = (): Theme => {
   if (typeof window === 'undefined') return 'dark';
   const stored = localStorage.getItem('theme');
   if (stored === 'light' || stored === 'dark') return stored;
-  return 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<Theme>(readInitialTheme);
 
   useEffect(() => {
+    applyTheme(theme);
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     localStorage.setItem('theme', theme);
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    applyTheme(theme);
   }, [theme]);
 
   const value = useMemo<ThemeContextValue>(
