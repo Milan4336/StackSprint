@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: frauddb
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  transaction-service:
+    build: ./transaction-service
+    environment:
+      PORT: 4001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: frauddb
+      FRAUD_SERVICE_URL: http://fraud-service:4002
+    ports:
+      - '4001:4001'
+    depends_on:
+      - postgres
+      - fraud-service
+
+  fraud-service:
+    build: ./fraud-service
+    environment:
+      PORT: 4002
+    ports:
+      - '4002:4002'
+
+  api-gateway:
+    build: ./api-gateway
+    environment:
+      PORT: 4000
+      TRANSACTION_SERVICE_URL: http://transaction-service:4001
+      FRAUD_SERVICE_URL: http://fraud-service:4002
+    ports:
+      - '4000:4000'
+    depends_on:
+      - transaction-service
+      - fraud-service
+
+  dashboard:
+    build: ./dashboard
+    environment:
+      VITE_API_BASE_URL: http://api-gateway:4000/api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - api-gateway
+
+volumes:
+  pgdata:
