@@ -1,0 +1,128 @@
+# Azure Container Apps deployment template (reference).
+# Render with environment variables from azure/.env using envsubst if needed.
+#
+# This file defines all required containers:
+# - frontend (port 80, external)
+# - api-gateway (port 8080, external)
+# - ml-service (port 8000, internal)
+
+---
+name: ${AZ_ML_APP}
+type: Microsoft.App/containerApps
+location: ${AZ_LOCATION}
+properties:
+  managedEnvironmentId: ${AZ_CONTAINERAPPS_ENV_ID}
+  configuration:
+    ingress:
+      external: false
+      targetPort: 8000
+      transport: auto
+    registries:
+      - server: ${AZ_ACR_LOGIN_SERVER}
+        username: ${AZ_ACR_USERNAME}
+        passwordSecretRef: acr-password
+    secrets:
+      - name: acr-password
+        value: ${AZ_ACR_PASSWORD}
+  template:
+    containers:
+      - name: ml-service
+        image: ${AZ_ACR_LOGIN_SERVER}/ml-service:${IMAGE_TAG}
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: PORT
+            value: "8000"
+    scale:
+      minReplicas: 1
+      maxReplicas: 3
+
+---
+name: ${AZ_API_APP}
+type: Microsoft.App/containerApps
+location: ${AZ_LOCATION}
+properties:
+  managedEnvironmentId: ${AZ_CONTAINERAPPS_ENV_ID}
+  configuration:
+    ingress:
+      external: true
+      targetPort: 8080
+      transport: auto
+    registries:
+      - server: ${AZ_ACR_LOGIN_SERVER}
+        username: ${AZ_ACR_USERNAME}
+        passwordSecretRef: acr-password
+    secrets:
+      - name: acr-password
+        value: ${AZ_ACR_PASSWORD}
+  template:
+    containers:
+      - name: api-gateway
+        image: ${AZ_ACR_LOGIN_SERVER}/api-gateway:${IMAGE_TAG}
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: PORT
+            value: "8080"
+          - name: MONGO_URI
+            value: ${MONGO_URI}
+          - name: REDIS_URI
+            value: ${REDIS_URI}
+          - name: JWT_SECRET
+            value: ${JWT_SECRET}
+          - name: JWT_EXPIRES_IN
+            value: ${JWT_EXPIRES_IN}
+          - name: ML_SERVICE_URL
+            value: ${ML_SERVICE_URL}
+          - name: ALLOWED_ORIGINS
+            value: ${ALLOWED_ORIGINS}
+          - name: HIGH_AMOUNT_THRESHOLD
+            value: "${HIGH_AMOUNT_THRESHOLD}"
+          - name: VELOCITY_WINDOW_MINUTES
+            value: "${VELOCITY_WINDOW_MINUTES}"
+          - name: VELOCITY_TX_THRESHOLD
+            value: "${VELOCITY_TX_THRESHOLD}"
+          - name: SCORE_RULE_WEIGHT
+            value: "${SCORE_RULE_WEIGHT}"
+          - name: SCORE_ML_WEIGHT
+            value: "${SCORE_ML_WEIGHT}"
+          - name: AUTONOMOUS_ALERT_THRESHOLD
+            value: "${AUTONOMOUS_ALERT_THRESHOLD}"
+    scale:
+      minReplicas: 1
+      maxReplicas: 5
+
+---
+name: ${AZ_FRONTEND_APP}
+type: Microsoft.App/containerApps
+location: ${AZ_LOCATION}
+properties:
+  managedEnvironmentId: ${AZ_CONTAINERAPPS_ENV_ID}
+  configuration:
+    ingress:
+      external: true
+      targetPort: 80
+      transport: auto
+    registries:
+      - server: ${AZ_ACR_LOGIN_SERVER}
+        username: ${AZ_ACR_USERNAME}
+        passwordSecretRef: acr-password
+    secrets:
+      - name: acr-password
+        value: ${AZ_ACR_PASSWORD}
+  template:
+    containers:
+      - name: frontend
+        image: ${AZ_ACR_LOGIN_SERVER}/frontend:${IMAGE_TAG}
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+    scale:
+      minReplicas: 1
+      maxReplicas: 3

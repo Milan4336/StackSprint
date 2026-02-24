@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+
+  html,
+  body,
+  #root {
+    @apply min-h-screen;
+  }
+
+  body {
+    @apply m-0 bg-slate-100 font-sans text-slate-900 antialiased dark:bg-[#0f172a] dark:text-slate-100;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none ring-blue-300 transition focus:border-blue-400 focus:ring;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-800 p-5 shadow-xl animate-fade-in;
+  }
+
+  .panel-title {
+    @apply mb-3 text-base font-bold tracking-tight text-slate-100;
+  }
+
+  .table-sort-btn {
+    @apply inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 transition hover:text-slate-100;
+  }
+}
+
+@keyframes pulseMarker {
+  0% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+}
+
+.pulse-red {
+  animation: pulseMarker 1.25s ease-in-out infinite;
+}
+
+.pulse-green {
+  animation: pulseMarker 1.75s ease-in-out infinite;
+}
+
+.leaflet-container {
+  background: #0f172a;
+}
