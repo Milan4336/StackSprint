@@ -1,7 +1,6 @@
-# FRAUD COMMAND CENTER
-## Hackathon Judge Guide (Enterprise Fintech Edition)
+# FRAUD COMMAND CENTER (Enterprise Fintech Edition)
 
-### One-line pitch
+
 A production-grade, cloud-native fraud intelligence platform that detects, explains, and responds to financial fraud in real time using hybrid rule + ML scoring, live geospatial monitoring, and full investigation workflows.
 
 ### Why this project stands out
@@ -12,7 +11,7 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 
 ---
 
-## 1) What Judges Can Experience in 3 Minutes
+## 1) Features
 
 ### Live Product URLs (local)
 - Frontend Command Center: `http://localhost:5173`
@@ -553,7 +552,7 @@ scripts/       Utility scripts (seed/testing)
 
 ---
 
-## 15) Final Judge Pitch
+## 15) Conclusion
 
 This project delivers the full lifecycle of fraud defense:
 - detect in realtime,
@@ -565,5 +564,5 @@ This project delivers the full lifecycle of fraud defense:
 
 It is built as a real fintech operations platform, not a toy dashboard.
 
-### Suggested closing line in judging round
+### Closing Line
 "We are not just predicting fraud. We built a complete fraud operations system where detection, explanation, autonomous response, investigation, compliance, and reliability monitoring work together in realtime."
