@@ -6,6 +6,7 @@ import { Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { ErrorState } from '../components/ErrorState';
 import { monitoringApi } from '../api/client';
 import { useTransactions } from '../context/TransactionContext';
+import { useActivityFeedStore } from '../store/activityFeedStore';
 import { formatSafeDate } from '../utils/date';
 
 const tabs = [
@@ -29,6 +30,7 @@ const riskTone = (risk: string): string => {
 export const Alerts = () => {
   const queryClient = useQueryClient();
   const { transactions } = useTransactions();
+  const addCaseEvent = useActivityFeedStore((state) => state.addCaseEvent);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<'open' | 'investigating' | 'resolved' | ''>('');
   const [search, setSearch] = useState('');
@@ -64,7 +66,12 @@ export const Alerts = () => {
         transactionId: detailsQuery.data?.alert.transactionId ?? '',
         alertId: detailsQuery.data?.alert.alertId
       }),
-    onSuccess: async () => {
+    onSuccess: async (createdCase) => {
+      addCaseEvent({
+        action: 'created',
+        caseId: createdCase.caseId,
+        assignedTo: createdCase.assignedTo
+      });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['cases'] }),
         queryClient.invalidateQueries({ queryKey: ['alert-detail', selectedAlertId] })

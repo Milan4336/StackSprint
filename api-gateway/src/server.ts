@@ -7,17 +7,35 @@ import { redisClient } from './config/redis';
 import { gatewayWebSocketServer } from './websocket/server';
 
 const bootstrap = async (): Promise<void> => {
-  await Promise.all([connectMongo(), redisClient.ping()]);
+  try {
+    logger.info('Starting API Gateway...');
 
-  const httpServer = createServer(app);
-  await gatewayWebSocketServer.initialize(httpServer);
+    const httpServer = createServer(app);
 
-  httpServer.listen(env.PORT, () => {
-    logger.info(`API Gateway listening on ${env.PORT}`);
-  });
+    await gatewayWebSocketServer.initialize(httpServer);
+
+    // Start server FIRST
+    httpServer.listen(env.PORT || 8080, "0.0.0.0", () => {
+      logger.info(`API Gateway listening on ${env.PORT || 8080}`);
+    });
+
+    // Connect Mongo in background
+    connectMongo()
+      .then(() => logger.info('Mongo connected'))
+      .catch((error) =>
+        logger.error({ error }, 'Mongo connection failed')
+      );
+
+    // Connect Redis in background
+    redisClient.connect()
+      .then(() => logger.info('Redis connected'))
+      .catch((error) =>
+        logger.error({ error }, 'Redis connection failed')
+      );
+
+  } catch (error) {
+    logger.error({ error }, 'Bootstrap failure');
+  }
 };
 
-bootstrap().catch((error) => {
-  logger.error({ error }, 'Failed to bootstrap API gateway');
-  process.exit(1);
-});
+bootstrap();

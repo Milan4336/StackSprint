@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -81,7 +81,7 @@ log "Creating resource group and shared services"
 az group create \
   --name "${AZ_RESOURCE_GROUP}" \
   --location "${AZ_LOCATION}" \
-  --only-show-errors >/dev/null
+  
 
 if ! az acr show --name "${AZ_ACR_NAME}" --resource-group "${AZ_RESOURCE_GROUP}" >/dev/null 2>&1; then
   az acr create \
@@ -132,7 +132,7 @@ if [[ -z "${COSMOS_CONN_RAW}" ]]; then
   exit 1
 fi
 
-MONGO_URI="$(echo "${COSMOS_CONN_RAW}" | sed "s|/\\?|/${AZ_COSMOS_DB_NAME}?|")"
+MONGO_URI="$(echo "${COSMOS_CONN_RAW}" | sed "s|10255/?|10255/${AZ_COSMOS_DB_NAME}?|")"
 
 if ! az redis show --name "${AZ_REDIS_NAME}" --resource-group "${AZ_RESOURCE_GROUP}" >/dev/null 2>&1; then
   az redis create \

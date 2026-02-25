@@ -36,7 +36,7 @@ export class CaseController {
 
   update = async (req: Request, res: Response): Promise<void> => {
     const updated = await this.caseService.updateByCaseId({
-      caseId: req.params.id,
+      caseId: req.params.id as string,
       status: req.body.status,
       priority: req.body.priority,
       assignedTo: req.body.assignedTo,

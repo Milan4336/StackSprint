@@ -1,0 +1,50 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SimulationService = void 0;
+const uuid_1 = require("uuid");
+const errors_1 = require("../utils/errors");
+const locations = ['NY', 'CA', 'TX', 'FL', 'WA', 'London', 'Delhi', 'Tokyo', 'Dubai', 'Sydney'];
+class SimulationService {
+    transactionService;
+    eventBusService;
+    settingsService;
+    constructor(transactionService, eventBusService, settingsService) {
+        this.transactionService = transactionService;
+        this.eventBusService = eventBusService;
+        this.settingsService = settingsService;
+    }
+    async startSimulation(count = 50) {
+        const runtime = await this.settingsService.getRuntimeConfig();
+        if (!runtime.simulationMode) {
+            throw new errors_1.AppError('Simulation mode is disabled in settings', 403);
+        }
+        await this.eventBusService.publishSimulationEvent({
+            type: 'simulation.started',
+            count,
+            startedAt: new Date().toISOString()
+        });
+        const now = Date.now();
+        for (let i = 0; i < count; i += 1) {
+            const amount = i % 6 === 0 ? Math.round(50_000 + Math.random() * 60_000) : Math.round(20 + Math.random() * 5000);
+            const location = locations[Math.floor(Math.random() * locations.length)];
+            const userId = `sim-user-${(i % 12) + 1}`;
+            await this.transactionService.create({
+                transactionId: `sim-${(0, uuid_1.v4)()}`,
+                userId,
+                amount,
+                currency: 'USD',
+                location,
+                deviceId: i % 5 === 0 ? `unknown-${(0, uuid_1.v4)().slice(0, 6)}` : `device-${(i % 20) + 1}`,
+                ipAddress: `10.0.${(i % 10) + 1}.${(i % 200) + 1}`,
+                timestamp: new Date(now - i * 1000)
+            });
+        }
+        await this.eventBusService.publishSimulationEvent({
+            type: 'simulation.completed',
+            count,
+            completedAt: new Date().toISOString()
+        });
+        return { generated: count };
+    }
+}
+exports.SimulationService = SimulationService;

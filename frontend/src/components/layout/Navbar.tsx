@@ -13,7 +13,10 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { monitoringApi } from '../../api/client';
 import { useDashboardStore } from '../../store/dashboard';
+import { useActivityFeedStore } from '../../store/activityFeedStore';
+import { useThreatStore } from '../../store/threatStore';
 import { formatSafeDate } from '../../utils/date';
+import { ThreatLevelIndicator } from '../threat/ThreatLevelIndicator';
 
 interface NavbarProps {
   onToggleTheme: () => void;
@@ -44,7 +47,11 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
   const [profileOpen, setProfileOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const previousMlStatusRef = useRef<string | null>(null);
   const alerts = useDashboardStore((state) => state.alerts);
+  const threatLevel = useThreatStore((state) => state.threatLevel);
+  const setMlStatus = useThreatStore((state) => state.setMlStatus);
+  const addMlStatusEvent = useActivityFeedStore((state) => state.addMlStatusEvent);
   const activeAlerts = alerts.filter((alert) => alert.status !== 'resolved').length;
 
   useEffect(() => {
@@ -99,8 +106,24 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
       ? 'text-amber-300 border-amber-500/30 bg-amber-500/10'
       : 'text-red-300 border-red-500/30 bg-red-500/10';
 
+  useEffect(() => {
+    setMlStatus(mlStatus);
+    const previous = previousMlStatusRef.current;
+    if (previous && previous !== mlStatus) {
+      addMlStatusEvent({ previous, next: mlStatus });
+    }
+    previousMlStatusRef.current = mlStatus;
+  }, [addMlStatusEvent, mlStatus, setMlStatus]);
+
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/55 backdrop-blur-2xl dark:border-slate-700/70 dark:bg-slate-950/55">
+    <header
+      className={[
+        'sticky top-0 z-30 border-b backdrop-blur-2xl',
+        threatLevel === 'CRITICAL'
+          ? 'border-red-500/40 bg-red-500/10 shadow-[0_6px_35px_-20px_rgba(239,68,68,0.85)] dark:border-red-500/35 dark:bg-red-950/20'
+          : 'border-slate-200/80 bg-white/55 dark:border-slate-700/70 dark:bg-slate-950/55'
+      ].join(' ')}
+    >
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="min-w-[220px]">
           <p className="chip mb-1 border-blue-500/35 bg-blue-500/10 text-blue-200">Enterprise Risk Intelligence</p>
@@ -219,6 +242,8 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
             />
             ML {mlStatus}
           </span>
+
+          <ThreatLevelIndicator />
 
           <span
             className={[

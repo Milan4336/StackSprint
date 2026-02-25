@@ -44,7 +44,7 @@ export class TransactionController {
   };
 
   byId = async (req: Request, res: Response): Promise<void> => {
-    const result = await this.transactionService.findByTransactionId(req.params.transactionId);
+    const result = await this.transactionService.findByTransactionId(req.params.transactionId as string);
     if (!result) {
       throw new AppError('Transaction not found', 404);
     }

@@ -16,6 +16,7 @@ import { SystemBootIntro } from '../components/intro/SystemBootIntro';
 import { RiskBadge } from '../components/RiskBadge';
 import { FraudRadarMap } from '../components/radar/FraudRadarMap';
 import { SimulationControls } from '../components/simulation/SimulationControls';
+import { ThreatStatusCard } from '../components/threat/ThreatStatusCard';
 import { useTransactions } from '../context/TransactionContext';
 import { useDashboardStore } from '../store/dashboard';
 import { useIntroStore } from '../store/intro';
@@ -146,6 +147,8 @@ export const Dashboard = () => {
         ) : null}
 
         {error ? <div className="app-error text-sm">{error}</div> : null}
+
+        <ThreatStatusCard />
 
         <AnalyticsCards
           transactions={transactions}

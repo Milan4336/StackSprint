@@ -208,16 +208,6 @@ export const TransactionProvider = ({ children }: { children: ReactNode }) => {
     void fetchTransactions();
   }, [fetchTransactions, isAuthenticated]);
 
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const interval = window.setInterval(() => {
-      void refreshTransactions();
-    }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [isAuthenticated, refreshTransactions]);
 
   useEffect(() => {
     if (!isAuthenticated) return;

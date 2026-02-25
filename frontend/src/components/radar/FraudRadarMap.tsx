@@ -1,9 +1,10 @@
-import { memo, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import L, { divIcon } from 'leaflet';
 import 'leaflet.heat';
 import 'leaflet.markercluster';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { useThreatStore } from '../../store/threatStore';
 import { Transaction } from '../../types';
 import { formatSafeDate, safeDate } from '../../utils/date';
 
@@ -139,13 +140,14 @@ const buildPopupHtml = (point: RadarPoint): string => {
   `;
 };
 
-const markerIconFor = (score: number): L.DivIcon => {
+const markerIconFor = (score: number, incidentMode: boolean): L.DivIcon => {
   const level = score > 70 ? 'high' : score > 40 ? 'medium' : 'low';
   const pulseClass = score > 70 ? 'radar-marker-pulse' : '';
+  const incidentClass = incidentMode && score > 70 ? 'radar-marker-critical' : '';
 
   return divIcon({
     html: `
-      <span class="radar-node ${pulseClass}">
+      <span class="radar-node ${pulseClass} ${incidentClass}">
         <span class="radar-node-core radar-node-${level}"></span>
         <span class="radar-node-ripple"></span>
       </span>
@@ -169,121 +171,122 @@ interface MapLayersProps {
   showHeatmap: boolean;
   showMarkers: boolean;
   showPaths: boolean;
+  incidentMode: boolean;
 }
 
-const MapLayers = ({ points, paths, showHeatmap, showMarkers, showPaths }: MapLayersProps) => {
+const MapLayers = ({
+  points,
+  paths,
+  showHeatmap,
+  showMarkers,
+  showPaths,
+  incidentMode
+}: MapLayersProps) => {
+
   const map = useMap();
 
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const clusterRef = useRef<any>(null);
+  const heatRef = useRef<any>(null);
+  const pathsRef = useRef<L.LayerGroup | null>(null);
+
   useEffect(() => {
-    const layers: L.Layer[] = [];
 
-    if (showHeatmap && points.length > 0) {
-      const heatData = points.map((point) => {
-        const intensity = Math.max(0.1, Math.min(1, point.tx.fraudScore / 100));
-        return [point.coords[0], point.coords[1], intensity] as [number, number, number];
+    if (!clusterRef.current) {
+      clusterRef.current = (L as any).markerClusterGroup({
+        showCoverageOnHover: false,
+        maxClusterRadius: 52
       });
 
-      const heatLayer = (L as typeof L & { heatLayer: (...args: unknown[]) => L.Layer }).heatLayer(heatData, {
-        radius: 26,
-        blur: 18,
-        minOpacity: 0.4,
-        maxZoom: 7,
-        gradient: {
-          0.2: '#fde68a',
-          0.55: '#fb923c',
-          0.85: '#ef4444'
-        }
-      });
-
-      map.addLayer(heatLayer);
-      layers.push(heatLayer);
+      map.addLayer(clusterRef.current);
     }
 
-    if (showMarkers && points.length > 0) {
-      const cluster = (L as typeof L & { markerClusterGroup: (...args: unknown[]) => L.LayerGroup }).markerClusterGroup({
-        showCoverageOnHover: false,
-        maxClusterRadius: 52,
-        spiderfyOnMaxZoom: true,
-        iconCreateFunction: (cl: unknown) => {
-          const clusterAny = cl as {
-            getAllChildMarkers: () => Array<{ options: { riskLevel?: string } }>;
-            getChildCount: () => number;
-          };
+    if (!pathsRef.current) {
+      pathsRef.current = L.layerGroup();
+      map.addLayer(pathsRef.current);
+    }
 
-          const children = clusterAny.getAllChildMarkers();
-          let high = 0;
-          let medium = 0;
-          for (const child of children) {
-            const level = child.options?.riskLevel;
-            if (level === 'High') high += 1;
-            else if (level === 'Medium') medium += 1;
-          }
-
-          const severityClass = high > 0 ? 'cluster-high' : medium > 0 ? 'cluster-medium' : 'cluster-low';
-          return divIcon({
-            html: `<span>${clusterAny.getChildCount()}</span>`,
-            className: `radar-cluster ${severityClass}`,
-            iconSize: [42, 42]
-          });
-        }
-      });
+    if (showMarkers) {
 
       for (const point of points) {
+
+        if (markersRef.current.has(point.tx.transactionId)) continue;
+
         const marker = L.marker(point.coords, {
-          icon: markerIconFor(point.tx.fraudScore),
-          riseOnHover: true
+          icon: markerIconFor(point.tx.fraudScore, incidentMode)
         });
 
-        (marker.options as { riskLevel?: string }).riskLevel = point.tx.riskLevel;
-        marker.bindPopup(buildPopupHtml(point), { maxWidth: 320 });
-        cluster.addLayer(marker);
+        marker.bindPopup(buildPopupHtml(point));
+
+        clusterRef.current.addLayer(marker);
+
+        markersRef.current.set(point.tx.transactionId, marker);
       }
 
-      map.addLayer(cluster);
-      layers.push(cluster);
+      if (markersRef.current.size > 300) {
+
+        const excess = markersRef.current.size - 300;
+
+        const keys = Array.from(markersRef.current.keys()).slice(0, excess);
+
+        for (const key of keys) {
+          const marker = markersRef.current.get(key);
+          if (marker) {
+            clusterRef.current.removeLayer(marker);
+            markersRef.current.delete(key);
+          }
+        }
+      }
+
     }
 
-    if (showPaths && paths.length > 0) {
-      const jumpLayer = L.layerGroup();
+    if (showHeatmap) {
 
-      for (const path of paths) {
+      const heatData = points.map(p => [
+        p.coords[0],
+        p.coords[1],
+        Math.max(0.1, Math.min(1, p.tx.fraudScore / 100))
+      ]);
+
+      if (!heatRef.current) {
+        heatRef.current = (L as any).heatLayer(heatData, {
+          radius: 26,
+          blur: 18,
+          minOpacity: 0.4
+        });
+        map.addLayer(heatRef.current);
+      } else {
+        heatRef.current.setLatLngs(heatData);
+      }
+
+    }
+
+    if (showPaths) {
+
+      pathsRef.current.clearLayers();
+
+      for (const path of paths.slice(-100)) {
+
         const polyline = L.polyline([path.from, path.to], {
           color: '#ef4444',
           weight: 3,
           opacity: 0.75,
-          dashArray: '9 12',
-          className: 'geo-jump-line'
+          dashArray: '9 12'
         });
 
-        polyline.bindPopup(
-          `<div class="radar-popup"><p class="radar-popup-title">Suspicious Geo Jump Detected</p><p>User: ${escapeHtml(
-            path.userId
-          )}</p><p>Distance: ${path.distanceKm.toFixed(0)} km</p><p>Time Gap: ${path.hoursDiff.toFixed(
-            2
-          )}h</p><p>TX: ${escapeHtml(path.tx.transactionId)}</p></div>`
-        );
-
-        const arrow = L.marker(path.to, { icon: arrowIcon });
-        jumpLayer.addLayer(polyline);
-        jumpLayer.addLayer(arrow);
+        pathsRef.current.addLayer(polyline);
       }
 
-      map.addLayer(jumpLayer);
-      layers.push(jumpLayer);
     }
 
-    return () => {
-      for (const layer of layers) {
-        map.removeLayer(layer);
-      }
-    };
-  }, [map, points, paths, showHeatmap, showMarkers, showPaths]);
+  }, [points, paths, showMarkers, showHeatmap, showPaths, incidentMode, map]);
 
   return null;
 };
 
 export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: FraudRadarMapProps) => {
   const deferredTransactions = useDeferredValue(transactions);
+  const incidentMode = useThreatStore((state) => state.threatLevel === 'CRITICAL');
 
   const [timePreset, setTimePreset] = useState<TimePreset>('1h');
   const [showHeatmap, setShowHeatmap] = useState(true);
@@ -415,6 +418,9 @@ export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h3 className="panel-title mb-0">Fraud Intelligence GeoMap</h3>
         <div className="flex flex-wrap items-center gap-2">
+          {incidentMode ? (
+            <span className="chip border-red-500/35 bg-red-500/10 text-red-200">Incident Mode</span>
+          ) : null}
           <button type="button" className={`glass-btn ${showMarkers ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setShowMarkers((p) => !p)}>
             {showMarkers ? 'Hide Markers' : 'Show Markers'}
           </button>
@@ -494,7 +500,14 @@ export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: 
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MapLayers points={points} paths={paths} showHeatmap={showHeatmap} showMarkers={showMarkers} showPaths={showPaths} />
+          <MapLayers
+            points={points}
+            paths={paths}
+            showHeatmap={showHeatmap}
+            showMarkers={showMarkers}
+            showPaths={showPaths}
+            incidentMode={incidentMode}
+          />
         </MapContainer>
       </div>
     </motion.article>

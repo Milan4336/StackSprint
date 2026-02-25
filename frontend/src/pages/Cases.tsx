@@ -2,11 +2,13 @@ import { FormEvent, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { monitoringApi } from '../api/client';
+import { useActivityFeedStore } from '../store/activityFeedStore';
 import { CasePriority, CaseStatus } from '../types';
 import { formatSafeDate } from '../utils/date';
 
 export const Cases = () => {
   const queryClient = useQueryClient();
+  const addCaseEvent = useActivityFeedStore((state) => state.addCaseEvent);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<CaseStatus | ''>('');
   const [priority, setPriority] = useState<CasePriority | ''>('');
@@ -46,7 +48,12 @@ export const Cases = () => {
         priority: createForm.priority,
         notes: createForm.note ? [createForm.note] : undefined
       }),
-    onSuccess: async () => {
+    onSuccess: async (createdCase) => {
+      addCaseEvent({
+        action: 'created',
+        caseId: createdCase.caseId,
+        assignedTo: createdCase.assignedTo
+      });
       setCreateForm({
         transactionId: '',
         assignedTo: '',
@@ -66,7 +73,19 @@ export const Cases = () => {
         note: payload.note,
         assignedTo: payload.assignedTo
       }),
-    onSuccess: async () => {
+    onSuccess: async (updatedCase, variables) => {
+      if (variables.assignedTo) {
+        addCaseEvent({
+          action: 'assigned',
+          caseId: updatedCase.caseId,
+          assignedTo: variables.assignedTo
+        });
+      } else {
+        addCaseEvent({
+          action: 'updated',
+          caseId: updatedCase.caseId
+        });
+      }
       setNote('');
       await queryClient.invalidateQueries({ queryKey: ['cases'] });
     }

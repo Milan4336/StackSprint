@@ -37,7 +37,7 @@ export class MonitoringController {
   };
 
   alertDetails = async (req: Request, res: Response): Promise<void> => {
-    const alertId = req.params.alertId;
+    const alertId = req.params.alertId as string;
     const alert = await this.fraudAlertRepository.findByAlertId(alertId);
 
     if (!alert) {
