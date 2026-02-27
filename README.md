@@ -1,6 +1,5 @@
 # FRAUD COMMAND CENTER (Enterprise Fintech Edition)
 
-
 A production-grade, cloud-native fraud intelligence platform that detects, explains, and responds to financial fraud in real time using hybrid rule + ML scoring, live geospatial monitoring, and full investigation workflows.
 
 ### Why this project stands out
@@ -8,6 +7,15 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 - It combines realtime detection + explainability + autonomous response + analyst workflow.
 - It is deployable: Docker, Kubernetes manifests, and Azure Container Apps automation are included.
 - It is built with production architecture patterns (microservices, clean separation, validation, auth, observability).
+
+### Latest UI/UX Improvements (Feb 2026)
+- **System boot animation** — Orbital ring CSS animation with glowing dots, pulsing core, radar sweep, and sci-fi grid plays on every login.
+- **Live Feed ECG animation** — Animated heartbeat SVG (green) when connected; pulsing orange flatline when disconnected. Both states always animate.
+- **Fraud by Country** — Computed client-side from live transaction data; bar chart now always populated.
+- **Light theme polish** — Metric value gradients, Live Activity Feed panel, and all severity badges now fully readable in both light and dark modes.
+- **Pie chart tooltips** — Dark background with light text; visible in both themes.
+- **Alerts investigation page** — Fixed backend paginated response shape; page loads correctly.
+- **Sidebar collapse** — Toggle button always visible; icon-only mode with tooltips when collapsed.
 
 ---
 
@@ -21,19 +29,18 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 - ML Health: `http://localhost:8000/health`
 
 ### Rapid demo sequence
-1. Login as admin/analyst in enterprise UI.
-2. Cinematic system boot intro runs on first dashboard load.
-3. Dashboard shows live KPIs and animated charts.
-4. Create a transaction and see:
+1. Login as admin/analyst in enterprise UI — cinematic orbital boot animation plays on every login.
+2. Dashboard shows live KPIs, animated metric cards, ECG live-feed indicator, and animated charts.
+3. Create a transaction and see:
    - fraud score,
    - risk level,
    - action (`ALLOW` / `STEP_UP_AUTH` / `BLOCK`),
    - realtime updates across dashboard/map/alerts.
-5. Trigger simulation mode (50 generated attack-pattern transactions).
-6. Open alerts and investigate with multi-tab workspace.
-7. Create/update cases and view case timeline.
-8. Open radar map for global fraud heatmap, clusters, pulsing high-risk markers, and suspicious geo-jump paths.
-9. Open model/system health pages for reliability and drift visibility.
+4. Trigger simulation mode (50 generated attack-pattern transactions).
+5. Open alerts and investigate with multi-tab workspace.
+6. Create/update cases and view case timeline.
+7. Open radar map for global fraud heatmap, clusters, pulsing high-risk markers, and suspicious geo-jump paths.
+8. Open model/system health pages for reliability and drift visibility.
 
 ---
 

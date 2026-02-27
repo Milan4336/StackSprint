@@ -1,11 +1,13 @@
-import Redis from 'ioredis';
-import { env } from './env';
+import Redis from "ioredis";
+import { env } from "./env";
 
-export const redisClient = new Redis(env.REDIS_URI, {
-  tls: {},                      // REQUIRED for Azure Redis
-  maxRetriesPerRequest: null,  // prevents crash on startup
-  enableReadyCheck: true,
-  lazyConnect: true            // prevents immediate connection crash
+const redisUrl = env.REDIS_URI || "redis://redis:6379";
+
+export const redisClient = new Redis(redisUrl, {
+  retryStrategy: (times) => {
+    console.log(`Redis retry attempt ${times}`);
+    return Math.min(times * 50, 2000);
+  },
 });
 
 redisClient.on("connect", () => {
@@ -17,5 +19,7 @@ redisClient.on("ready", () => {
 });
 
 redisClient.on("error", (err) => {
-  console.error("Redis error:", err);
+  if (err && err.message) {
+    console.error("Redis error:", err.message);
+  }
 });

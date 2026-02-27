@@ -5,11 +5,13 @@ import { Fingerprint, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuthStore } from '../store/auth';
+import { useIntroStore } from '../store/intro';
 
 export const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
+  const resetBootIntro = useIntroStore((state) => state.resetBootIntro);
 
   const [email, setEmail] = useState('admin@fraud.local');
   const [password, setPassword] = useState('StrongPass123!');
@@ -25,6 +27,7 @@ export const Login = () => {
 
     try {
       const response = await apiClient.post<{ token: string }>('/auth/login', { email, password });
+      resetBootIntro(); // reset in-memory state so animation plays fresh
       login(response.data.token);
       navigate(from, { replace: true });
     } catch (err) {

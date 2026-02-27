@@ -1,16 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 
 interface SystemBootIntroProps {
   onComplete: () => void;
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  radius: number;
 }
 
 const BOOT_MESSAGES = [
@@ -24,8 +16,28 @@ const BOOT_MESSAGES = [
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
+// Generate deterministic orbit positions for rings
+const RINGS = [
+  { size: 320, duration: 18, delay: 0, opacity: 0.18, borderWidth: 1.5, color: '59,130,246' },
+  { size: 480, duration: 26, delay: -6, opacity: 0.13, borderWidth: 1, color: '16,185,129' },
+  { size: 640, duration: 34, delay: -12, opacity: 0.10, borderWidth: 1, color: '139,92,246' },
+  { size: 780, duration: 42, delay: -20, opacity: 0.08, borderWidth: 0.5, color: '59,130,246' },
+  { size: 920, duration: 52, delay: -8, opacity: 0.06, borderWidth: 0.5, color: '16,185,129' },
+];
+
+const DOTS = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  ringIdx: i % RINGS.length,
+  angle: (i * 360) / 14,
+  size: i % 3 === 0 ? 6 : 4,
+  color: i % 2 === 0 ? '56,189,248' : '52,211,153',
+  glow: i % 3 === 0,
+  pulseDuration: 1.8 + (i % 4) * 0.4,
+}));
+
+const GRID_LINES = 8;
+
 export const SystemBootIntro = ({ onComplete }: SystemBootIntroProps) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const hasCompletedRef = useRef(false);
   const [progress, setProgress] = useState(0);
   const [visibleMessageCount, setVisibleMessageCount] = useState(0);
@@ -50,9 +62,7 @@ export const SystemBootIntro = ({ onComplete }: SystemBootIntroProps) => {
           : Math.min(BOOT_MESSAGES.length, Math.floor((elapsed - messageStartMs) / messageStepMs) + 1);
       setVisibleMessageCount(count);
 
-      if (elapsed >= readyAtMs) {
-        setIsReady(true);
-      }
+      if (elapsed >= readyAtMs) setIsReady(true);
 
       if (elapsed >= totalDurationMs) {
         if (!hasCompletedRef.current) {
@@ -69,111 +79,150 @@ export const SystemBootIntro = ({ onComplete }: SystemBootIntroProps) => {
     return () => cancelAnimationFrame(rafId);
   }, [onComplete]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    let width = 0;
-    let height = 0;
-    let rafId = 0;
-    let particles: Particle[] = [];
-
-    const initializeParticles = () => {
-      const count = Math.max(45, Math.min(90, Math.floor((width * height) / 28000)));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
-        radius: Math.random() * 1.8 + 0.8
-      }));
-    };
-
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      initializeParticles();
-    };
-
-    const drawFrame = () => {
-      context.clearRect(0, 0, width, height);
-
-      const gradient = context.createLinearGradient(0, 0, width, height);
-      gradient.addColorStop(0, 'rgba(2, 6, 23, 0.98)');
-      gradient.addColorStop(0.45, 'rgba(3, 10, 30, 0.92)');
-      gradient.addColorStop(1, 'rgba(8, 21, 52, 0.86)');
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, width, height);
-
-      for (let i = 0; i < particles.length; i += 1) {
-        const p1 = particles[i];
-
-        for (let j = i + 1; j < particles.length; j += 1) {
-          const p2 = particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance > 150) continue;
-
-          const alpha = 1 - distance / 150;
-          context.strokeStyle = `rgba(59, 130, 246, ${alpha * 0.22})`;
-          context.lineWidth = 1;
-          context.beginPath();
-          context.moveTo(p1.x, p1.y);
-          context.lineTo(p2.x, p2.y);
-          context.stroke();
-        }
-      }
-
-      particles.forEach((particle) => {
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-
-        if (particle.x <= 0 || particle.x >= width) particle.vx *= -1;
-        if (particle.y <= 0 || particle.y >= height) particle.vy *= -1;
-
-        context.beginPath();
-        context.fillStyle = 'rgba(147, 197, 253, 0.85)';
-        context.shadowBlur = 14;
-        context.shadowColor = 'rgba(56, 189, 248, 0.45)';
-        context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        context.fill();
-      });
-
-      context.shadowBlur = 0;
-      rafId = requestAnimationFrame(drawFrame);
-    };
-
-    resize();
-    drawFrame();
-    window.addEventListener('resize', resize);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
   const visibleMessages = useMemo(() => BOOT_MESSAGES.slice(0, visibleMessageCount), [visibleMessageCount]);
 
   return (
     <motion.div
-      className="fixed inset-0 z-[140] overflow-hidden bg-slate-950/95"
+      className="fixed inset-0 z-[140] overflow-hidden bg-[#020617]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <canvas ref={canvasRef} className="absolute inset-0 opacity-90" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.2),transparent_42%),radial-gradient(circle_at_80%_18%,rgba(16,185,129,0.16),transparent_38%),radial-gradient(circle_at_50%_88%,rgba(239,68,68,0.15),transparent_45%)]" />
+      {/* ── Forever-running animated background ────────────────────────── */}
 
+      {/* Slow deep gradient sweeps */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 80% 60% at 20% 20%, rgba(59,130,246,0.18) 0%, transparent 55%),' +
+              'radial-gradient(ellipse 70% 55% at 80% 15%, rgba(16,185,129,0.13) 0%, transparent 50%),' +
+              'radial-gradient(ellipse 90% 40% at 50% 95%, rgba(139,92,246,0.12) 0%, transparent 55%)',
+            animation: 'boot-sweep 12s ease-in-out infinite alternate',
+          }}
+        />
+      </div>
+
+      {/* Sci-fi grid overlay */}
+      <div className="absolute inset-0 opacity-[0.04]" style={{
+        backgroundImage:
+          `linear-gradient(rgba(59,130,246,0.8) 1px, transparent 1px),` +
+          `linear-gradient(90deg, rgba(59,130,246,0.8) 1px, transparent 1px)`,
+        backgroundSize: '60px 60px',
+        animation: 'boot-grid-drift 20s linear infinite',
+      }} />
+
+      {/* Central orb */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{ width: 0, height: 0 }}>
+
+        {/* Orbiting rings */}
+        {RINGS.map((ring, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: ring.size,
+              height: ring.size,
+              left: -ring.size / 2,
+              top: -ring.size / 2,
+              border: `${ring.borderWidth}px solid rgba(${ring.color},${ring.opacity})`,
+              animation: `boot-ring-spin ${ring.duration}s linear ${ring.delay}s infinite`,
+              boxShadow: `0 0 24px rgba(${ring.color},${ring.opacity * 0.5})`,
+            }}
+          >
+            {/* Highlight arc effect */}
+            <div className="absolute inset-0 rounded-full" style={{
+              background: `conic-gradient(from 0deg, rgba(${ring.color},${ring.opacity * 1.5}) 0deg, transparent 60deg, transparent 360deg)`,
+            }} />
+          </div>
+        ))}
+
+        {/* Orbiting dots on rings */}
+        {DOTS.map((dot) => {
+          const ring = RINGS[dot.ringIdx];
+          return (
+            <div
+              key={dot.id}
+              className="absolute rounded-full"
+              style={{
+                width: dot.size,
+                height: dot.size,
+                left: -dot.size / 2,
+                top: -ring.size / 2,
+                background: `rgba(${dot.color},0.9)`,
+                boxShadow: dot.glow ? `0 0 12px 3px rgba(${dot.color},0.6)` : 'none',
+                transformOrigin: `${dot.size / 2}px ${ring.size / 2}px`,
+                transform: `rotate(${dot.angle}deg)`,
+                animation: `boot-ring-spin ${ring.duration}s linear ${ring.delay}s infinite, boot-dot-pulse ${dot.pulseDuration}s ease-in-out infinite alternate`,
+              }}
+            />
+          );
+        })}
+
+        {/* Core glowing orb */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 80, height: 80,
+            left: -40, top: -40,
+            background: 'radial-gradient(circle, rgba(56,189,248,0.9) 0%, rgba(59,130,246,0.6) 40%, transparent 70%)',
+            boxShadow: '0 0 40px 10px rgba(56,189,248,0.5), 0 0 80px 20px rgba(59,130,246,0.25)',
+            animation: 'boot-core-pulse 3s ease-in-out infinite',
+          }}
+        />
+        {/* Inner sharp core */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 20, height: 20,
+            left: -10, top: -10,
+            background: 'radial-gradient(circle, #fff 0%, rgba(56,189,248,0.8) 60%, transparent 100%)',
+          }}
+        />
+
+        {/* Scan line sweeping across */}
+        <div
+          className="absolute rounded-full overflow-hidden"
+          style={{
+            width: RINGS[RINGS.length - 1].size,
+            height: RINGS[RINGS.length - 1].size,
+            left: -RINGS[RINGS.length - 1].size / 2,
+            top: -RINGS[RINGS.length - 1].size / 2,
+            animation: `boot-ring-spin 8s linear infinite`,
+          }}
+        >
+          <div
+            className="absolute"
+            style={{
+              top: 0,
+              left: '50%',
+              height: '50%',
+              width: '50%',
+              background: 'conic-gradient(from 0deg, rgba(56,189,248,0.22) 0deg, transparent 55deg)',
+              transformOrigin: '0 100%',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Floating data packets — horizontal scan lines */}
+      {Array.from({ length: GRID_LINES }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute left-0 right-0"
+          style={{
+            top: `${10 + i * 10.5}%`,
+            height: 1,
+            background: 'linear-gradient(90deg, transparent, rgba(56,189,248,0.25), rgba(56,189,248,0.06), transparent)',
+            animation: `boot-scanline ${4 + i * 0.7}s ease-in-out ${i * 0.45}s infinite alternate`,
+          }}
+        />
+      ))}
+
+      {/* ── UI overlay ─────────────────────────────────────────────────── */}
       <div className="relative z-10 mx-auto flex h-full w-full max-w-4xl flex-col justify-center px-6">
         <motion.p
           initial={{ opacity: 0, y: 8 }}
@@ -193,7 +242,7 @@ export const SystemBootIntro = ({ onComplete }: SystemBootIntroProps) => {
           FRAUD COMMAND CENTER
         </motion.h1>
 
-        <div className="glass-panel mt-8 max-w-3xl rounded-2xl border border-blue-400/25 bg-slate-950/45 p-5">
+        <div className="glass-panel mt-8 max-w-3xl rounded-2xl border border-blue-400/25 bg-slate-950/55 p-5 backdrop-blur-sm">
           <div className="space-y-2 font-mono text-sm text-blue-100/90">
             <AnimatePresence>
               {visibleMessages.map((line) => (
@@ -247,6 +296,35 @@ export const SystemBootIntro = ({ onComplete }: SystemBootIntroProps) => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── Keyframe injection ──────────────────────────────────────────── */}
+      <style>{`
+        @keyframes boot-ring-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes boot-core-pulse {
+          0%, 100% { transform: scale(1);    opacity: 0.9; }
+          50%       { transform: scale(1.18); opacity: 1;   }
+        }
+        @keyframes boot-dot-pulse {
+          from { opacity: 0.6; transform: scale(1); }
+          to   { opacity: 1;   transform: scale(1.5); }
+        }
+        @keyframes boot-sweep {
+          0%   { opacity: 0.85; transform: scale(1) rotate(0deg);   }
+          50%  { opacity: 1;    transform: scale(1.04) rotate(2deg); }
+          100% { opacity: 0.85; transform: scale(1) rotate(-2deg);  }
+        }
+        @keyframes boot-grid-drift {
+          from { background-position: 0 0; }
+          to   { background-position: 60px 60px; }
+        }
+        @keyframes boot-scanline {
+          from { opacity: 0;    transform: scaleX(0.4); }
+          to   { opacity: 0.9;  transform: scaleX(1);   }
+        }
+      `}</style>
     </motion.div>
   );
 };

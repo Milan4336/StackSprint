@@ -7,39 +7,42 @@ class FraudAlertRepository {
         return FraudAlert_1.FraudAlertModel.create(payload);
     }
     async findRecent(limit = 100) {
-        return FraudAlert_1.FraudAlertModel.find({}).sort({ createdAt: -1 }).limit(limit);
+        return FraudAlert_1.FraudAlertModel.find({})
+            .limit(Number(limit))
+            .exec();
     }
-    async findByAlertId(alertId) {
-        return FraudAlert_1.FraudAlertModel.findOne({ alertId });
+    async findByUser(userId, limit = 50) {
+        return FraudAlert_1.FraudAlertModel.find({ userId })
+            .limit(Number(limit))
+            .exec();
     }
-    async list(options) {
+    async findAll(limit = 100, skip = 0) {
+        return FraudAlert_1.FraudAlertModel.find({})
+            .skip(Number(skip))
+            .limit(Number(limit))
+            .exec();
+    }
+    async list(options = {}) {
+        const page = Math.max(1, Number(options.page ?? 1));
+        const limit = Number(options.limit ?? 100);
+        const skip = (page - 1) * limit;
         const query = {};
         if (options.status) {
             query.status = options.status;
         }
         if (options.search) {
-            const safe = options.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             query.$or = [
-                { alertId: { $regex: safe, $options: 'i' } },
-                { transactionId: { $regex: safe, $options: 'i' } },
-                { userId: { $regex: safe, $options: 'i' } },
-                { reason: { $regex: safe, $options: 'i' } }
+                { transactionId: { $regex: options.search, $options: 'i' } },
+                { userId: { $regex: options.search, $options: 'i' } }
             ];
         }
-        const limit = Math.max(1, Math.min(500, options.limit));
-        const page = Math.max(1, options.page);
-        const skip = (page - 1) * limit;
-        const [data, total] = await Promise.all([
-            FraudAlert_1.FraudAlertModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
-            FraudAlert_1.FraudAlertModel.countDocuments(query)
-        ]);
-        return {
-            data,
-            total,
-            page,
-            limit,
-            pages: Math.max(1, Math.ceil(total / limit))
-        };
+        return FraudAlert_1.FraudAlertModel.find(query)
+            .skip(skip)
+            .limit(limit)
+            .exec();
+    }
+    async findByAlertId(alertId) {
+        return FraudAlert_1.FraudAlertModel.findById(alertId).exec();
     }
 }
 exports.FraudAlertRepository = FraudAlertRepository;

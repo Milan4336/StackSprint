@@ -6,39 +6,50 @@ export class FraudAlertRepository {
   }
 
   async findRecent(limit = 100): Promise<FraudAlertDocument[]> {
-    return FraudAlertModel.find({}).sort({ createdAt: -1 }).limit(limit);
+    return FraudAlertModel.find({})
+      .limit(Number(limit))
+      .exec();
   }
 
-  async findByAlertId(alertId: string): Promise<FraudAlertDocument | null> {
-    return FraudAlertModel.findOne({ alertId });
+  async findByUser(userId: string, limit = 50): Promise<FraudAlertDocument[]> {
+    return FraudAlertModel.find({ userId })
+      .limit(Number(limit))
+      .exec();
+  }
+
+  async findAll(limit = 100, skip = 0): Promise<FraudAlertDocument[]> {
+    return FraudAlertModel.find({})
+      .skip(Number(skip))
+      .limit(Number(limit))
+      .exec();
   }
 
   async list(options: {
-    page: number;
-    limit: number;
-    status?: 'open' | 'investigating' | 'resolved';
+    page?: number;
+    limit?: number;
+    status?: string;
     search?: string;
-  }): Promise<{ data: FraudAlertDocument[]; total: number; page: number; limit: number; pages: number }> {
-    const query: Record<string, unknown> = {};
+  } = {}): Promise<{ data: FraudAlertDocument[]; total: number; page: number; limit: number; pages: number }> {
+
+    const page = Math.max(1, Number(options.page ?? 1));
+    const limit = Math.max(1, Math.min(500, Number(options.limit ?? 100)));
+    const skip = (page - 1) * limit;
+
+    const query: any = {};
+
     if (options.status) {
       query.status = options.status;
     }
+
     if (options.search) {
-      const safe = options.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { alertId: { $regex: safe, $options: 'i' } },
-        { transactionId: { $regex: safe, $options: 'i' } },
-        { userId: { $regex: safe, $options: 'i' } },
-        { reason: { $regex: safe, $options: 'i' } }
+        { transactionId: { $regex: options.search, $options: 'i' } },
+        { userId: { $regex: options.search, $options: 'i' } }
       ];
     }
 
-    const limit = Math.max(1, Math.min(500, options.limit));
-    const page = Math.max(1, options.page);
-    const skip = (page - 1) * limit;
-
     const [data, total] = await Promise.all([
-      FraudAlertModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      FraudAlertModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
       FraudAlertModel.countDocuments(query)
     ]);
 
@@ -49,5 +60,9 @@ export class FraudAlertRepository {
       limit,
       pages: Math.max(1, Math.ceil(total / limit))
     };
+  }
+
+  async findByAlertId(alertId: string): Promise<FraudAlertDocument | null> {
+    return FraudAlertModel.findById(alertId).exec();
   }
 }

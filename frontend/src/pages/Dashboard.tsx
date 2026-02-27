@@ -131,14 +131,55 @@ export const Dashboard = () => {
         ) : null}
 
         <div className="glass-panel flex items-center justify-between rounded-xl border px-4 py-2 text-xs uppercase tracking-[0.16em] text-slate-700 dark:text-slate-300">
-          <span className="flex items-center gap-2">
-            <Activity size={14} className={connected ? 'text-emerald-400' : 'text-red-400'} />
-            Live Feed {connected ? 'Connected' : 'Disconnected'}
+          <span className="flex items-center gap-2.5">
+            {connected ? (
+              /* ── Connected: animated ECG heartbeat ── */
+              <svg width="42" height="18" viewBox="0 0 42 18" className="text-emerald-500 dark:text-emerald-400" aria-hidden="true">
+                <polyline
+                  points="0,9 6,9 9,2 12,16 15,4 18,14 21,9 42,9"
+                  fill="none" stroke="currentColor" strokeWidth="1.8"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  strokeDasharray="90" strokeDashoffset="90"
+                  style={{ animation: 'live-feed-draw 1.6s ease-in-out infinite' }}
+                />
+                <circle r="2.5" fill="currentColor" opacity="0.9">
+                  <animateMotion dur="1.6s" repeatCount="indefinite"
+                    path="M0,9 L6,9 L9,2 L12,16 L15,4 L18,14 L21,9 L42,9" />
+                </circle>
+              </svg>
+            ) : (
+              /* ── Disconnected: slow orange flatline pulse ── */
+              <svg width="42" height="18" viewBox="0 0 42 18" className="text-orange-500 dark:text-orange-400" aria-hidden="true">
+                <line x1="0" y1="9" x2="42" y2="9"
+                  stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                  strokeDasharray="4 5"
+                  style={{ animation: 'live-feed-flat 2.4s ease-in-out infinite' }}
+                />
+                <circle cx="21" cy="9" r="2.5" fill="currentColor"
+                  style={{ animation: 'live-feed-flat 2.4s ease-in-out infinite' }}
+                />
+              </svg>
+            )}
+            <span className={connected ? 'text-slate-700 dark:text-slate-300' : 'text-orange-600 dark:text-orange-400'}>
+              Live Feed {connected ? 'Connected' : 'Disconnected'}
+            </span>
           </span>
           <span className="flex items-center gap-2">
-            {loading ? 'Syncing...' : 'Operational'} <Sparkles size={13} />
+            {loading ? 'Syncing...' : connected ? 'Operational' : 'Reconnecting...'} <Sparkles size={13} />
           </span>
         </div>
+        <style>{`
+          @keyframes live-feed-draw {
+            0%   { stroke-dashoffset: 90; opacity: 0.3; }
+            40%  { stroke-dashoffset: 0;  opacity: 1;   }
+            70%  { stroke-dashoffset: 0;  opacity: 1;   }
+            100% { stroke-dashoffset: -90; opacity: 0.2; }
+          }
+          @keyframes live-feed-flat {
+            0%, 100% { opacity: 0.35; }
+            50%       { opacity: 0.9;  }
+          }
+        `}</style>
 
         {simulationMessage ? (
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">

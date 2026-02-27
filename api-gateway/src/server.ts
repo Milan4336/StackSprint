@@ -26,12 +26,6 @@ const bootstrap = async (): Promise<void> => {
         logger.error({ error }, 'Mongo connection failed')
       );
 
-    // Connect Redis in background
-    redisClient.connect()
-      .then(() => logger.info('Redis connected'))
-      .catch((error) =>
-        logger.error({ error }, 'Redis connection failed')
-      );
 
   } catch (error) {
     logger.error({ error }, 'Bootstrap failure');

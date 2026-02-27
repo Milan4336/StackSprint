@@ -5,6 +5,15 @@ import { EventBusService } from './EventBusService';
 import { SettingsService } from './SettingsService';
 import { AuditService } from './AuditService';
 
+export interface AutonomousResponseInput {
+  transactionId: string;
+  userId: string;
+  fraudScore: number;
+  location?: string;
+  ruleReasons?: string[];
+  explanations?: FraudExplanationItem[];
+}
+
 export class AutonomousResponseService {
   constructor(
     private readonly fraudAlertRepository: FraudAlertRepository,
@@ -22,72 +31,62 @@ export class AutonomousResponseService {
   }): string {
     const lines: string[] = [];
 
-    for (const reason of input.ruleReasons ?? []) {
-      lines.push(`Rule: ${reason}`);
-    }
+    lines.push(
+      `Autonomous response triggered at score ${input.fraudScore} (threshold ${input.threshold}).`
+    );
 
-    for (const item of input.explanations ?? []) {
-      lines.push(`ML(${item.feature}): ${item.reason}`);
-    }
+    (input.ruleReasons ?? []).forEach((reason, index) => {
+      lines.push(`${index + 1}. Rule: ${reason}`);
+    });
 
-    if (lines.length === 0) {
-      lines.push('No explicit signals available; high aggregate risk score triggered autonomous response.');
-    }
+    (input.explanations ?? []).forEach((exp, index) => {
+      lines.push(
+        `${index + 1 + (input.ruleReasons?.length ?? 0)}. ML(${exp.feature}): ${exp.reason}`
+      );
+    });
 
-    const deDuplicated = Array.from(new Set(lines));
-    const detail = deDuplicated.map((line, index) => `${index + 1}. ${line}`).join('\n');
-    return `Autonomous response triggered at score ${input.fraudScore} (threshold ${input.threshold}).\n${detail}`;
+    return lines.join('\n');
   }
 
-  async process(input: {
-    transactionId: string;
-    userId: string;
-    fraudScore: number;
-    riskLevel: 'Low' | 'Medium' | 'High';
-    ruleReasons?: string[];
-    explanations?: FraudExplanationItem[];
-  }): Promise<void> {
-    const runtime = await this.settingsService.getRuntimeConfig().catch(() => null);
-    const threshold = runtime?.autonomousAlertThreshold ?? this.fallbackThreshold;
+  async process(input: AutonomousResponseInput) {
+    const threshold = this.fallbackThreshold;
 
     if (input.fraudScore < threshold) {
-      return;
+      return null;
     }
 
-    const reason = this.composeReason({ ...input, threshold });
+    const reason = this.composeReason({
+      fraudScore: input.fraudScore,
+      threshold,
+      ruleReasons: input.ruleReasons,
+      explanations: input.explanations
+    });
 
     const alert = await this.fraudAlertRepository.create({
       alertId: uuidv4(),
       transactionId: input.transactionId,
       userId: input.userId,
       fraudScore: input.fraudScore,
-      riskLevel: input.riskLevel,
+      riskLevel: 'High',
       reason,
-      status: 'open'
+      status: 'open',
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
+    await this.eventBusService.publishFraudAlert(alert);
+
     await this.auditService.log({
-      eventType: 'ALERT_GENERATED',
+      eventType: 'fraud.alert.created',
       action: 'create',
-      entityType: 'fraud_alert',
+      entityType: 'fraudAlert',
       entityId: alert.alertId,
       metadata: {
-        transactionId: alert.transactionId,
-        userId: alert.userId,
-        fraudScore: alert.fraudScore,
-        riskLevel: alert.riskLevel
+        userId: input.userId,
+        fraudScore: input.fraudScore
       }
     });
 
-    await this.eventBusService.publishFraudAlert({
-      alertId: alert.alertId,
-      transactionId: alert.transactionId,
-      userId: alert.userId,
-      fraudScore: alert.fraudScore,
-      riskLevel: alert.riskLevel,
-      reason: alert.reason,
-      status: alert.status,
-      createdAt: alert.createdAt
-    });
+    return alert;
   }
 }

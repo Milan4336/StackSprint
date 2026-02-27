@@ -17,6 +17,11 @@ const errorHandler_1 = require("./middleware/errorHandler");
 const routes_1 = require("./routes");
 const metrics_1 = require("./utils/metrics");
 exports.app = (0, express_1.default)();
+/**
+ * REQUIRED for Azure Container Apps, reverse proxies, and load balancers.
+ * This allows Express to correctly read X-Forwarded-* headers.
+ */
+exports.app.set('trust proxy', 1);
 exports.app.disable('x-powered-by');
 exports.app.use((0, helmet_1.default)());
 exports.app.use((0, cors_1.default)({
@@ -32,7 +37,11 @@ exports.app.use((0, pino_http_1.default)({
 }));
 exports.app.use((0, morgan_1.default)('combined'));
 exports.app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'ok', service: 'api-gateway' });
+    res.status(200).json({
+        status: 'ok',
+        service: 'api-gateway',
+        timestamp: new Date().toISOString()
+    });
 });
 exports.app.get('/metrics', async (_req, res) => {
     res.set('Content-Type', metrics_1.register.contentType);
@@ -40,7 +49,11 @@ exports.app.get('/metrics', async (_req, res) => {
 });
 exports.app.use((req, res, next) => {
     res.on('finish', () => {
-        metrics_1.httpRequestsTotal.inc({ method: req.method, route: req.path, status: String(res.statusCode) });
+        metrics_1.httpRequestsTotal.inc({
+            method: req.method,
+            route: req.path,
+            status: String(res.statusCode)
+        });
     });
     next();
 });

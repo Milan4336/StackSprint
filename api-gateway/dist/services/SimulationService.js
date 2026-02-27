@@ -29,14 +29,12 @@ class SimulationService {
             const location = locations[Math.floor(Math.random() * locations.length)];
             const userId = `sim-user-${(i % 12) + 1}`;
             await this.transactionService.create({
-                transactionId: `sim-${(0, uuid_1.v4)()}`,
                 userId,
                 amount,
                 currency: 'USD',
                 location,
                 deviceId: i % 5 === 0 ? `unknown-${(0, uuid_1.v4)().slice(0, 6)}` : `device-${(i % 20) + 1}`,
                 ipAddress: `10.0.${(i % 10) + 1}.${(i % 200) + 1}`,
-                timestamp: new Date(now - i * 1000)
             });
         }
         await this.eventBusService.publishSimulationEvent({

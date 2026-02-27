@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
-import { Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { ErrorState } from '../components/ErrorState';
 import { monitoringApi } from '../api/client';
 import { useTransactions } from '../context/TransactionContext';
@@ -50,7 +50,7 @@ export const Alerts = () => {
   });
 
   const selectedAlert = useMemo(
-    () => alertsQuery.data?.data.find((alert) => alert.alertId === selectedAlertId) ?? null,
+    () => (alertsQuery.data?.data ?? []).find((alert) => alert.alertId === selectedAlertId) ?? null,
     [alertsQuery.data, selectedAlertId]
   );
 
@@ -187,42 +187,42 @@ export const Alerts = () => {
             <tbody>
               {alertsQuery.isLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i}>
-                      <td colSpan={9} className="px-3 py-2">
-                        <div className="skeleton h-10" />
-                      </td>
-                    </tr>
-                  ))
+                  <tr key={i}>
+                    <td colSpan={9} className="px-3 py-2">
+                      <div className="skeleton h-10" />
+                    </td>
+                  </tr>
+                ))
                 : alertsQuery.data?.data.map((alert) => {
-                    const relatedTx = txLookup.get(alert.transactionId);
-                    return (
-                      <tr
-                        key={alert.alertId}
-                        className={[
-                          'cursor-pointer table-row',
-                          selectedAlertId === alert.alertId ? 'ring-1 ring-blue-400/50' : ''
-                        ].join(' ')}
-                        onClick={() => {
-                          setSelectedAlertId(alert.alertId);
-                          setActiveTab('Overview');
-                        }}
-                      >
-                        <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-200">{alert.alertId}</td>
-                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{alert.transactionId}</td>
-                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{alert.userId}</td>
-                        <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{alert.fraudScore}</td>
-                        <td className="px-3 py-3">
-                          <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${riskTone(alert.riskLevel)}`}>
-                            {alert.riskLevel}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{relatedTx?.location ?? 'N/A'}</td>
-                        <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{relatedTx?.deviceId ?? 'N/A'}</td>
-                        <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(alert.createdAt)}</td>
-                        <td className="px-3 py-3 text-slate-700 capitalize dark:text-slate-300">{alert.status}</td>
-                      </tr>
-                    );
-                  })}
+                  const relatedTx = txLookup.get(alert.transactionId);
+                  return (
+                    <tr
+                      key={alert.alertId}
+                      className={[
+                        'cursor-pointer table-row',
+                        selectedAlertId === alert.alertId ? 'ring-1 ring-blue-400/50' : ''
+                      ].join(' ')}
+                      onClick={() => {
+                        setSelectedAlertId(alert.alertId);
+                        setActiveTab('Overview');
+                      }}
+                    >
+                      <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-200">{alert.alertId}</td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{alert.transactionId}</td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{alert.userId}</td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{alert.fraudScore}</td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${riskTone(alert.riskLevel)}`}>
+                          {alert.riskLevel}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{relatedTx?.location ?? 'N/A'}</td>
+                      <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{relatedTx?.deviceId ?? 'N/A'}</td>
+                      <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(alert.createdAt)}</td>
+                      <td className="px-3 py-3 text-slate-700 capitalize dark:text-slate-300">{alert.status}</td>
+                    </tr>
+                  );
+                })}
               {!alertsQuery.isLoading && !alertsQuery.data?.data.length ? (
                 <tr>
                   <td className="px-3 py-8 text-center text-slate-500 dark:text-slate-400" colSpan={9}>
@@ -291,8 +291,22 @@ export const Alerts = () => {
             <div className="h-44 rounded-xl border border-slate-200/80 bg-white/40 p-2 dark:border-slate-700/70 dark:bg-slate-900/40">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Tooltip />
-                  <Pie data={scoreBreakdown} dataKey="value" nameKey="name" outerRadius={60} innerRadius={34} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'rgba(15,23,42,0.95)',
+                      border: '1px solid rgba(148,163,184,0.2)',
+                      borderRadius: 10,
+                      color: '#e2e8f0',
+                      fontSize: 13
+                    }}
+                    itemStyle={{ color: '#e2e8f0' }}
+                    labelStyle={{ color: '#94a3b8' }}
+                  />
+                  <Pie data={scoreBreakdown} dataKey="value" nameKey="name" outerRadius={60} innerRadius={34}>
+                    {scoreBreakdown.map((entry) => (
+                      <Cell key={entry.name} fill={entry.fill} />
+                    ))}
+                  </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>

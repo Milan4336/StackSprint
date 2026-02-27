@@ -54,10 +54,26 @@ const computeStatsFromTransactions = (transactions: Transaction[]): TransactionS
     .sort((a, b) => b.count - a.count)
     .slice(0, 6);
 
+  const countryMap = new Map<string, { fraudCount: number; total: number }>();
+  for (const tx of transactions) {
+    const country = tx.country || tx.location || 'Unknown';
+    const entry = countryMap.get(country) ?? { fraudCount: 0, total: 0 };
+    entry.total += 1;
+    if (tx.isFraud) entry.fraudCount += 1;
+    countryMap.set(country, entry);
+  }
+  const fraudByCountry = Array.from(countryMap.entries())
+    .map(([country, v]) => ({ country, ...v }))
+    .sort((a, b) => b.fraudCount - a.fraudCount)
+    .slice(0, 8);
+
   return {
     fraudRate: total ? fraudCount / total : 0,
     avgRiskScore,
-    highRiskUsers
+    highRiskUsers,
+    totalTransactions: total,
+    fraudTransactions: fraudCount,
+    fraudByCountry
   };
 };
 

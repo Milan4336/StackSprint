@@ -34,7 +34,17 @@ export const FraudPieChart = ({ transactions }: FraudPieChartProps) => {
                   <Cell key={slice.name} fill={slice.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  background: 'rgba(15,23,42,0.95)',
+                  border: '1px solid rgba(148,163,184,0.2)',
+                  borderRadius: 10,
+                  color: '#e2e8f0',
+                  fontSize: 13
+                }}
+                itemStyle={{ color: '#e2e8f0' }}
+                labelStyle={{ color: '#94a3b8' }}
+              />
             </PieChart>
           </ResponsiveContainer>
         )}

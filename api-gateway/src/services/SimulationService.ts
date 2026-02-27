@@ -33,14 +33,12 @@ export class SimulationService {
       const userId = `sim-user-${(i % 12) + 1}`;
 
       await this.transactionService.create({
-        transactionId: `sim-${uuidv4()}`,
         userId,
         amount,
         currency: 'USD',
         location,
         deviceId: i % 5 === 0 ? `unknown-${uuidv4().slice(0, 6)}` : `device-${(i % 20) + 1}`,
         ipAddress: `10.0.${(i % 10) + 1}.${(i % 200) + 1}`,
-        timestamp: new Date(now - i * 1000)
       });
     }
 

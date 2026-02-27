@@ -1,0 +1,4 @@
+src/services/SimulationService.ts(35,44): error TS2345: Argument of type '{ userId: string; amount: number; currency: string; location: string; deviceId: string; ipAddress: string; }' is not assignable to parameter of type 'CreateTransactionInput'.
+  Type '{ userId: string; amount: number; currency: string; location: string; deviceId: string; ipAddress: string; }' is missing the following properties from type 'CreateTransactionInput': transactionId, timestamp
+src/services/TransactionService.ts(44,7): error TS2783: 'transactionId' is specified more than once, so this usage will be overwritten.
+src/services/TransactionService.ts(67,22): error TS2304: Cannot find name 'TransactionQuery'.
