@@ -1,21 +1,22 @@
 import { Socket, io } from 'socket.io-client';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 let socket: Socket | null = null;
 
-const resolveSocketUrl = (): string => {
-  return "https://fraudapi.whiteocean-c75706ba.centralindia.azurecontainerapps.io";
+export const getSocket = (): Socket => {
+  if (!socket) {
+    const token = localStorage.getItem('token');
+    socket = io(API_URL, {
+      transports: ['websocket'],
+      auth: token ? { token } : undefined
+    });
+  }
+  return socket;
 };
 
 export const connectSocket = (): Socket => {
-  if (socket) return socket;
-
-  const token = localStorage.getItem('token');
-  socket = io(resolveSocketUrl(), {
-    transports: ['websocket'],
-    auth: token ? { token } : undefined
-  });
-
-  return socket;
+  return getSocket();
 };
 
 export const disconnectSocket = (): void => {
@@ -24,4 +25,17 @@ export const disconnectSocket = (): void => {
   socket = null;
 };
 
-export const getSocket = (): Socket | null => socket;
+export const updateSocketAuth = (token: string | null): void => {
+  if (!socket) return;
+
+  if (token) {
+    socket.auth = { token };
+    // Force a reconnect with the new credentials if disconnected
+    if (!socket.connected) {
+      socket.connect();
+    }
+  } else {
+    socket.auth = {};
+    socket.disconnect();
+  }
+};

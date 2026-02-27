@@ -1,10 +1,21 @@
 import { create } from 'zustand';
 
+interface UserProfile {
+  userId: string;
+  email: string;
+  role: 'admin' | 'analyst' | 'user';
+  status: string;
+  riskScore: number;
+  lastLogin?: string;
+}
+
 interface AuthState {
   token: string | null;
+  user: UserProfile | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string, user?: UserProfile) => void;
   logout: () => void;
+  setUser: (user: UserProfile | null) => void;
 }
 
 const parseJwtPayload = (token: string): Record<string, unknown> | null => {
@@ -47,15 +58,21 @@ const getInitialToken = (): string | null => {
 
 const initialToken = getInitialToken();
 
+import { updateSocketAuth } from '../services/socket';
+
 export const useAuthStore = create<AuthState>((set) => ({
   token: initialToken,
+  user: null,
   isAuthenticated: Boolean(initialToken),
-  login: (token: string) => {
+  login: (token: string, user?: UserProfile) => {
     localStorage.setItem('token', token);
-    set({ token, isAuthenticated: true });
+    updateSocketAuth(token);
+    set({ token, isAuthenticated: true, user: user || null });
   },
   logout: () => {
     localStorage.removeItem('token');
-    set({ token: null, isAuthenticated: false });
-  }
+    updateSocketAuth(null);
+    set({ token: null, isAuthenticated: false, user: null });
+  },
+  setUser: (user: UserProfile | null) => set({ user })
 }));

@@ -31,8 +31,21 @@ export const useActionsSlice = create<State>((set) => ({
     socket.off('transactions.live');
     socket.off('fraud.alerts');
 
-    socket.on('connect', () => set({ connected: true }));
-    socket.on('disconnect', () => set({ connected: false }));
+    socket.on('connect', () => {
+      console.log('Actions socket connected');
+      set({ connected: true });
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Actions socket connection error:', error);
+      set({ connected: false });
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('Actions socket disconnected:', reason);
+      set({ connected: false });
+    });
+
     set({ connected: socket.connected });
 
     // Stream filtering for the Actions page
