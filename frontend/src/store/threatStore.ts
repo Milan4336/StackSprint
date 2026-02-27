@@ -31,6 +31,7 @@ interface ThreatStoreState {
   simulationActive: boolean;
   reason: string;
   highRiskAlertTimestamps: number[];
+  listenersAttached?: boolean;
   setThreatIndex: (value: number) => void;
   setFraudRate: (rate: number) => void;
   setMlStatus: (status: MlStatus) => void;

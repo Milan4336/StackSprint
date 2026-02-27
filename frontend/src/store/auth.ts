@@ -3,7 +3,7 @@ import { create } from 'zustand';
 interface UserProfile {
   userId: string;
   email: string;
-  role: 'admin' | 'analyst' | 'user';
+  role: string;
   status: string;
   riskScore: number;
   lastLogin?: string;
