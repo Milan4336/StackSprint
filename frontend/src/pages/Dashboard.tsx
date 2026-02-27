@@ -12,6 +12,9 @@ import { RiskDistributionChart } from '../components/dashboard/RiskDistributionC
 import { TransactionVolumeChart } from '../components/dashboard/TransactionVolumeChart';
 import { FraudTrendChart } from '../components/dashboard/FraudTrendChart';
 import { CreateTransactionForm } from '../components/CreateTransactionForm';
+import { ScoringFormulaCard } from '../components/dashboard/ScoringFormulaCard';
+import { ForensicDetailModal } from '../components/transactions/ForensicDetailModal';
+import { monitoringApi } from '../api/client';
 import { SystemBootIntro } from '../components/intro/SystemBootIntro';
 import { RiskBadge } from '../components/RiskBadge';
 import { FraudRadarMap } from '../components/radar/FraudRadarMap';
@@ -32,6 +35,7 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 
 export const Dashboard = () => {
   const { transactions, stats, loading, error, refreshTransactions } = useTransactions();
+  const [selectedForensicTx, setSelectedForensicTx] = useState<Transaction | null>(null);
   const hasHydrated = useIntroStore((state) => state.hasHydrated);
   const shouldPlayBootIntro = useIntroStore((state) => state.shouldPlayBootIntro);
   const isBootIntroActive = useIntroStore((state) => state.isBootIntroActive);
@@ -190,6 +194,7 @@ export const Dashboard = () => {
         {error ? <div className="app-error text-sm">{error}</div> : null}
 
         <ThreatStatusCard />
+        <ScoringFormulaCard />
 
         <AnalyticsCards
           transactions={transactions}
@@ -277,8 +282,12 @@ export const Dashboard = () => {
                     </td>
                   </tr>
                 ) : null}
-                {sortedTransactions.map((tx) => (
-                  <tr key={tx.transactionId} className="table-row">
+                {sortedTransactions.slice(0, 50).map((tx) => (
+                  <tr
+                    key={tx.transactionId}
+                    onClick={() => setSelectedForensicTx(tx)}
+                    className="table-row cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                  >
                     <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</td>
                     <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.userId}</td>
                     <td className="px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</td>
@@ -305,6 +314,14 @@ export const Dashboard = () => {
 
       <AnimatePresence>
         {isBootIntroActive ? <SystemBootIntro onComplete={completeBootIntro} /> : null}
+      </AnimatePresence>
+      <AnimatePresence>
+        {selectedForensicTx && (
+          <ForensicDetailModal
+            transaction={selectedForensicTx}
+            onClose={() => setSelectedForensicTx(null)}
+          />
+        )}
       </AnimatePresence>
     </>
   );

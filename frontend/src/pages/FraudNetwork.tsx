@@ -109,6 +109,16 @@ export const FraudNetwork = () => {
         };
     }, [graphQuery.data]);
 
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+    const handleAnalyzeClusters = () => {
+        setIsAnalyzing(true);
+        setTimeout(() => {
+            setIsAnalyzing(false);
+            // In a real app, this would trigger a more refined graph or heuristic report
+        }, 2000);
+    };
+
     return (
         <div className="space-y-6 pb-12">
             <header className="flex items-center justify-between">
@@ -188,8 +198,19 @@ export const FraudNetwork = () => {
                                         <p className="text-lg font-black text-slate-800 dark:text-slate-100">0.15<span className="text-xs text-blue-500 font-bold ml-1">AVG</span></p>
                                     </div>
                                 </div>
-                                <button className="w-full glass-btn justify-center border-blue-500/40 text-blue-500 font-black text-xs uppercase tracking-widest">
-                                    Analyze Network Clusters
+                                <button
+                                    onClick={handleAnalyzeClusters}
+                                    disabled={isAnalyzing}
+                                    className="w-full glass-btn justify-center border-blue-500/40 text-blue-500 font-black text-xs uppercase tracking-widest disabled:opacity-50"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <RefreshCw className="mr-2 animate-spin" size={14} />
+                                            Analyzing Clusters...
+                                        </>
+                                    ) : (
+                                        'Analyze Network Clusters'
+                                    )}
                                 </button>
                             </div>
                         ) : (

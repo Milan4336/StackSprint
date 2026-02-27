@@ -46,12 +46,14 @@ The platform follows a modular **Microservices Architecture** designed for high 
 
 ## 3. Forensic Intelligence Engine
 
-### Hybrid Scoring Pipeline
-The system executes a multi-stage scoring pipeline for every transaction:
-1.  **Rule Engine**: Behavioral heuristics (Velocity, Amount thresholds, Geo-jumps).
-2.  **ML Ensemble**: Three-model anomaly detection for pattern recognition.
-3.  **Graph Bias**: D3 Relationship Graph analysis for collusion rings.
-4.  **Weighted Fusion**: Final risk score calculation (`0-100`).
+### Hybrid Scoring Pipeline (Phase 2)
+The system executes a precision-weighted scoring pipeline for every transaction:
+1.  **Rule Engine (0.25)**: Expert heuristics (Velocity, Amount, Geo-velocity, Device Churn).
+2.  **ML Ensemble (0.35)**: Multi-model anomaly detection (XGBoost + Autoencoder + Isolation Forest).
+3.  **Behavioral Bias (0.25)**: Context-aware footprint profiling & historical entropy analysis.
+4.  **Graph Forensics (0.15)**: Entity relationship linkage & collusion ring detection bias.
+
+**Weighted Fusion Formula**: `Risk Score = Σ ( Layer_i * Weight_i )`
 
 ### Explainable AI (XAI)
 Every ML prediction returns a forensic payload detailing the top features contributing to the score, including impact percentages and human-readable reasons, persisted for investigator review.
