@@ -29,7 +29,10 @@ export const FraudByCountryChart = ({ stats }: FraudByCountryChartProps) => {
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.6} />
             <XAxis dataKey="country" stroke="#94a3b8" />
             <YAxis stroke="#94a3b8" />
-            <Tooltip contentStyle={tooltipStyle} />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{ fill: 'rgba(59, 130, 246, 0.08)' }}
+            />
             <Bar dataKey="fraudCount" fill="#ef4444" name="Fraud" radius={[8, 8, 0, 0]} />
             <Bar dataKey="total" fill="#3b82f6" name="Total" radius={[8, 8, 0, 0]} />
           </BarChart>

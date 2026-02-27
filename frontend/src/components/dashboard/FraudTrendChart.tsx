@@ -53,7 +53,10 @@ export const FraudTrendChart = ({ transactions }: FraudTrendChartProps) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.6} />
               <XAxis dataKey="time" stroke="#94a3b8" minTickGap={24} />
               <YAxis stroke="#94a3b8" />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ stroke: '#4f46e5', strokeWidth: 1, strokeDasharray: '4 4' }}
+              />
               <Legend />
               <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} dot={false} name="Total" />
               <Line type="monotone" dataKey="fraud" stroke="#ef4444" strokeWidth={2} dot={false} name="Fraud" />

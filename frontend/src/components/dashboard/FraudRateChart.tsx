@@ -58,7 +58,11 @@ export const FraudRateChart = memo(({ transactions }: FraudRateChartProps) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.6} />
               <XAxis dataKey="time" stroke="#94a3b8" minTickGap={20} />
               <YAxis stroke="#94a3b8" domain={[0, 100]} />
-              <Tooltip formatter={(value: number) => `${value}%`} contentStyle={tooltipStyle} />
+              <Tooltip
+                formatter={(value: number) => `${value}%`}
+                contentStyle={tooltipStyle}
+                cursor={{ stroke: '#ef4444', strokeWidth: 1, strokeDasharray: '2 2' }}
+              />
               <Area dataKey="fraudRate" stroke="#ef4444" fill="url(#fraudRateFill)" strokeWidth={2.6} />
             </AreaChart>
           </ResponsiveContainer>
