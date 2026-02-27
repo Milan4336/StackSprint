@@ -20,82 +20,18 @@ const Globe = ({ size }: { size: number }) => (
     </svg>
 );
 
-const updates: UpdateItem[] = [
-    {
-        version: 'Release v3.0',
-        date: 'Today',
-        title: 'Modular Intelligence Console',
-        description: 'Transformed the legacy dashboard into a 10-module enterprise intelligence console. Rebuilt navigation with a collapsible LeftNav and dynamic routing for optimal workspace utilization.',
-        type: 'major',
-        icon: Layout,
-        color: 'indigo'
-    },
-    {
-        version: 'Patch v3.1',
-        date: 'Today',
-        title: 'Redis Realtime Event Bus',
-        description: 'Re-architected the realtime websocket layer to use a centralized Redis Pub/Sub Event Bus. Subscriptions are now route-dependent, reducing global client payload by 85%.',
-        type: 'major',
-        icon: Database,
-        color: 'red'
-    },
-    {
-        version: 'Patch v3.2',
-        date: 'Today',
-        title: 'Dashboard Intelligence Worker',
-        description: 'Introduced background cron jobs to pre-compute rolling aggregations (Threat Index, Velocity, Risk Pulse) every 10 seconds, drastically lowering API Gateway load.',
-        type: 'feature',
-        icon: Cpu,
-        color: 'emerald'
-    },
-    {
-        version: 'Patch v3.3',
-        date: 'Today',
-        title: 'Executive Mode Dashboard',
-        description: 'Added an Executive Mode toggle that strips away detailed datatables and forensic tools, presenting only top-level KPIs (KL Divergence, System Stress) to c-suite users.',
-        type: 'feature',
-        icon: Rocket,
-        color: 'blue'
-    },
-    {
-        version: 'Patch v2.5',
-        date: 'Feb 2026',
-        title: 'Multi-Dimensional Intelligence Fusion',
-        description: 'Integrated behavioral profiling and fraud graph relationship detection into the core scoring pipeline. Implemented weighted fusion of Rules, ML, Behavior, and Graph scores.',
-        type: 'major',
-        icon: Database,
-        color: 'emerald'
-    },
-    {
-        version: 'Patch v2.1',
-        date: 'Feb 2026',
-        title: 'Bank-Grade ML Ensemble System',
-        description: 'Upgraded to a 3-model weighted ensemble (XGBoost + Autoencoder + iForest) with refined confidence scoring and model fallback logic.',
-        type: 'major',
-        icon: Cpu,
-        color: 'blue'
-    },
-    {
-        version: 'Patch v1.9',
-        date: 'Feb 2026',
-        title: 'Cinematic Boot & ECG Pulsation',
-        description: 'Implemented high-impact SystemBootIntro orbital animations and realtime ECG-pulse connectivity indicators for command center presence.',
-        type: 'feature',
-        icon: Zap,
-        color: 'amber'
-    },
-    {
-        version: 'Patch v1.5',
-        date: 'Jan 2026',
-        title: 'Enterprise Fraud Radar',
-        description: 'Launched geospatial fraud intelligence with heatmaps, clustering, and suspicious geo-jump path detection.',
-        type: 'major',
-        icon: Globe,
-        color: 'indigo'
-    }
-];
+import { useQuery } from '@tanstack/react-query';
+import { monitoringApi } from '../api/client';
 
 export const Updates = () => {
+    const query = useQuery({
+        queryKey: ['system-updates'],
+        queryFn: () => monitoringApi.getSystemUpdates(),
+        staleTime: 5 * 60 * 1000
+    });
+
+    const updatesResponse = [...(query.data || [])];
+
     return (
         <div className="space-y-8 pb-12">
             {/* ── Header ───────────────────────────────────────────── */}
@@ -110,8 +46,17 @@ export const Updates = () => {
 
             {/* ── Timeline ─────────────────────────────────────────── */}
             <div className="relative space-y-12 before:absolute before:left-[19px] before:top-4 before:h-[calc(100%-16px)] before:w-0.5 before:bg-gradient-to-b before:from-blue-500 before:via-blue-500/50 before:to-transparent">
-                {updates.map((update, idx) => {
-                    const Icon = update.icon;
+                {query.isLoading ? (
+                    <div className="text-sm font-bold text-slate-500 animate-pulse pl-12">Loading system updates via API...</div>
+                ) : updatesResponse.map((update, idx) => {
+                    // Match string icon name from API to actual Lucide component
+                    let Icon: any = Globe;
+                    if (update.icon === 'Layout') Icon = Layout;
+                    if (update.icon === 'Database') Icon = Database;
+                    if (update.icon === 'Cpu') Icon = Cpu;
+                    if (update.icon === 'Rocket') Icon = Rocket;
+                    if (update.icon === 'Zap') Icon = Zap;
+
                     return (
                         <motion.div
                             key={update.version}

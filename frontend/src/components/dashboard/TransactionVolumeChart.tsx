@@ -48,7 +48,10 @@ export const TransactionVolumeChart = memo(({ transactions }: TransactionVolumeC
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.6} />
               <XAxis dataKey="time" stroke="#94a3b8" minTickGap={24} />
               <YAxis stroke="#94a3b8" />
-              <Tooltip contentStyle={tooltipStyle} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+              />
               <Bar dataKey="count" fill="#3b82f6" radius={[9, 9, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
