@@ -14,22 +14,21 @@ interface ActionEvent {
 interface State {
   connected: boolean;
   actions: ActionEvent[];
+  listenersAttached: boolean;
   connectLive: () => void;
   disconnectLive: () => void;
 }
 
-export const useActionsSlice = create<State>((set) => ({
+export const useActionsSlice = create<State>((set, get) => ({
   connected: false,
   actions: [],
+  listenersAttached: false,
 
   connectLive: () => {
     const socket = connectSocket();
+    set({ connected: socket.connected });
 
-    // Clear existing listeners to avoid duplicates
-    socket.off('connect');
-    socket.off('disconnect');
-    socket.off('transactions.live');
-    socket.off('fraud.alerts');
+    if (get().listenersAttached) return;
 
     socket.on('connect', () => {
       console.log('Actions socket connected');
@@ -46,9 +45,6 @@ export const useActionsSlice = create<State>((set) => ({
       set({ connected: false });
     });
 
-    set({ connected: socket.connected });
-
-    // Stream filtering for the Actions page
     socket.on('transactions.live', (payload: any) => {
       const action = payload.action;
       if (!action || action === 'ALLOW') return;
@@ -85,14 +81,11 @@ export const useActionsSlice = create<State>((set) => ({
         actions: [event, ...state.actions].slice(0, 50)
       }));
     });
+
+    set({ listenersAttached: true });
   },
 
   disconnectLive: () => {
-    const socket = getSocket();
-    socket.off('connect');
-    socket.off('disconnect');
-    socket.off('transactions.live');
-    socket.off('fraud.alerts');
-    set({ connected: false });
+    // We stay connected for HUD persistence
   }
 }));

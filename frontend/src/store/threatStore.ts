@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { MlStatus } from '../types';
 import { safeDate } from '../utils/date';
+import { getSocket } from '../services/socket';
 
-export type ThreatLevel = 'NORMAL' | 'ELEVATED' | 'CRITICAL';
+export type ThreatLevel = 'NORMAL' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
 
 const HIGH_RISK_WINDOW_MS = 5 * 60 * 1000;
 const HIGH_RISK_BURST_THRESHOLD = 4;
@@ -23,12 +24,14 @@ interface AlertLike {
 
 interface ThreatStoreState {
   threatLevel: ThreatLevel;
+  threatIndex: number;
   recentHighRiskCount: number;
   fraudRate: number;
   mlStatus: MlStatus;
   simulationActive: boolean;
   reason: string;
   highRiskAlertTimestamps: number[];
+  setThreatIndex: (value: number) => void;
   setFraudRate: (rate: number) => void;
   setMlStatus: (status: MlStatus) => void;
   setSimulationActive: (active: boolean) => void;
@@ -36,6 +39,7 @@ interface ThreatStoreState {
   syncRecentHighRiskFromAlerts: (alerts: AlertLike[]) => void;
   recomputeThreat: () => void;
   resetThreatState: () => void;
+  connectThreatSocket: () => void;
 }
 
 const clampFraudRate = (value: number): number => Math.max(0, Math.min(100, value));
@@ -96,12 +100,23 @@ const evaluateThreat = (state: Pick<ThreatStoreState, 'fraudRate' | 'recentHighR
 
 export const useThreatStore = create<ThreatStoreState>((set, get) => ({
   threatLevel: 'NORMAL',
+  threatIndex: 0,
   recentHighRiskCount: 0,
   fraudRate: 0,
   mlStatus: 'HEALTHY',
   simulationActive: false,
   reason: 'Threat indicators are within baseline levels.',
   highRiskAlertTimestamps: [],
+
+  setThreatIndex: (value: number) => {
+    const clamped = Math.max(0, Math.min(100, value));
+    // Derive threat level from numeric index (Part 8 of master prompt)
+    const level: ThreatLevel =
+      clamped >= 86 ? 'CRITICAL' :
+        clamped >= 66 ? 'HIGH' :
+          clamped >= 41 ? 'ELEVATED' : 'NORMAL';
+    set({ threatIndex: clamped, threatLevel: level });
+  },
 
   setFraudRate: (rate) => {
     set({
@@ -164,11 +179,18 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
         simulationActive: state.simulationActive
       });
 
+      // Derive numeric threat index from fraud rate and high-risk burst count
+      const fromFraud = Math.min(100, state.fraudRate * 2);
+      const fromBurst = Math.min(50, nextWindow.length * 12);
+      const levelBonus = evaluation.threatLevel === 'CRITICAL' ? 20 : evaluation.threatLevel === 'ELEVATED' ? 10 : 0;
+      const computedIndex = Math.min(100, Math.round(fromFraud * 0.6 + fromBurst * 0.3 + levelBonus));
+
       return {
         highRiskAlertTimestamps: nextWindow,
         recentHighRiskCount: nextWindow.length,
         threatLevel: evaluation.threatLevel,
-        reason: evaluation.reason
+        reason: evaluation.reason,
+        threatIndex: computedIndex
       };
     });
   },
@@ -176,6 +198,7 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
   resetThreatState: () => {
     set({
       threatLevel: 'NORMAL',
+      threatIndex: 0,
       recentHighRiskCount: 0,
       fraudRate: 0,
       mlStatus: 'HEALTHY',
@@ -183,6 +206,25 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
       reason: 'Threat indicators are within baseline levels.',
       highRiskAlertTimestamps: []
     });
+  },
+
+  connectThreatSocket: () => {
+    const socket = getSocket();
+    socket.on('system.threatIndex', (payload: any) => {
+      // Backend emits { score: 0-1 } OR { value: 0-100 } — handle both
+      const raw = payload?.score ?? payload?.value ?? null;
+      if (raw !== null) {
+        const normalized = raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
+        get().setThreatIndex(normalized);
+      }
+    });
+    socket.on('system.status', (payload: { fraudRate?: number; mlStatus?: MlStatus }) => {
+      if (typeof payload.fraudRate === 'number') {
+        get().setFraudRate(payload.fraudRate);
+      }
+      if (payload.mlStatus) {
+        get().setMlStatus(payload.mlStatus);
+      }
+    });
   }
 }));
-

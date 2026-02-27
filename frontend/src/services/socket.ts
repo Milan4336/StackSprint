@@ -20,9 +20,11 @@ export const connectSocket = (): Socket => {
 };
 
 export const disconnectSocket = (): void => {
-  if (!socket) return;
-  socket.disconnect();
-  socket = null;
+  // We keep the socket alive during tab swaps for HUD persistence.
+  // Explicit disconnection is handled by updateSocketAuth(null) during logout.
+  if (socket && !socket.connected) {
+    socket.disconnect();
+  }
 };
 
 export const updateSocketAuth = (token: string | null): void => {
