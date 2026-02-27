@@ -15,6 +15,8 @@ export const FraudExplanationPanel = ({ transactions, explanations }: FraudExpla
       return {
         transactionId: fromTransaction.transactionId,
         fraudScore: fromTransaction.fraudScore,
+        confidence: fromTransaction.modelConfidence,
+        modelScores: fromTransaction.modelScores,
         explanations: fromTransaction.explanations
       };
     }
@@ -43,9 +45,33 @@ export const FraudExplanationPanel = ({ transactions, explanations }: FraudExpla
   return (
     <motion.article className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, delay: 0.08 }}>
       <h3 className="panel-title">Explainable AI Panel</h3>
-      <p className="mb-3 text-xs uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
-        Transaction {selected.transactionId} · Score {selected.fraudScore}
-      </p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">
+          Transaction {selected.transactionId} · Score {selected.fraudScore}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Confidence</span>
+          <span className={`flex h-6 items-center px-2 rounded-lg text-[10px] font-bold ring-1 ${(selected.confidence ?? 0) > 0.8 ? 'bg-emerald-500/10 text-emerald-500 ring-emerald-500/30' :
+              (selected.confidence ?? 0) > 0.5 ? 'bg-amber-500/10 text-amber-500 ring-amber-500/30' :
+                'bg-slate-500/10 text-slate-400 ring-slate-500/30'
+            }`}>
+            {Math.round((selected.confidence ?? 0) * 100)}%
+          </span>
+        </div>
+      </div>
+
+      {selected.modelScores && (
+        <div className="mb-5 grid grid-cols-3 gap-2">
+          {Object.entries(selected.modelScores).map(([name, score]) => (
+            <div key={name} className="flex flex-col rounded-xl border border-slate-200/50 bg-slate-50/50 p-2 dark:border-slate-800/50 dark:bg-slate-900/40">
+              <span className="text-[9px] uppercase tracking-tighter text-slate-400 block truncate">{name.replace('_', ' ')}</span>
+              <span className={`text-xs font-mono font-bold ${score > 0.7 ? 'text-red-500' : score > 0.4 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                {Math.round(score * 100)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mb-4 space-y-2">
         {selected.explanations.map((item) => (

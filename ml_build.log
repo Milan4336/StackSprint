@@ -1,0 +1,215 @@
+time="2026-02-27T15:07:50+05:30" level=warning msg="/home/milan/Stack_Sprint/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image stack_sprint-ml-service Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 548B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile:
+#2 transferring dockerfile: 665B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 0.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [1/6] FROM docker.io/library/python:3.12-slim@sha256:39e4e1ccb01578e3c86f7a0cf7b7fd89b8dbe2c27a88de11cf726ba669469f49
+#5 resolve docker.io/library/python:3.12-slim@sha256:39e4e1ccb01578e3c86f7a0cf7b7fd89b8dbe2c27a88de11cf726ba669469f49 0.0s done
+#5 DONE 0.0s
+
+#6 [internal] load build context
+#6 transferring context: 337B done
+#6 DONE 0.0s
+
+#7 [2/6] WORKDIR /app
+#7 CACHED
+
+#8 [3/6] COPY requirements.txt ./
+#8 CACHED
+
+#9 [4/6] RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 &&     rm -rf /var/lib/apt/lists/* &&     pip install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu &&     pip install --no-cache-dir -r requirements.txt
+#9 0.329 Hit:1 http://deb.debian.org/debian trixie InRelease
+#9 0.354 Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
+#9 0.423 Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
+#9 0.470 Get:4 http://deb.debian.org/debian trixie/main amd64 Packages [9670 kB]
+#9 10.91 Get:5 http://deb.debian.org/debian trixie-updates/main amd64 Packages [5412 B]
+#9 11.14 Get:6 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [113 kB]
+#9 11.43 Fetched 9879 kB in 11s (877 kB/s)
+#9 11.43 Reading package lists...
+#9 11.82 Reading package lists...
+#9 12.18 Building dependency tree...
+#9 12.26 Reading state information...
+#9 12.38 The following NEW packages will be installed:
+#9 12.38   libgomp1
+#9 12.66 0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded.
+#9 12.66 Need to get 137 kB of archives.
+#9 12.66 After this operation, 377 kB of additional disk space will be used.
+#9 12.66 Get:1 http://deb.debian.org/debian trixie/main amd64 libgomp1 amd64 14.2.0-19 [137 kB]
+#9 12.82 debconf: unable to initialize frontend: Dialog
+#9 12.82 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#9 12.82 debconf: falling back to frontend: Readline
+#9 12.82 debconf: unable to initialize frontend: Readline
+#9 12.82 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC entries checked: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.40.1 /usr/local/share/perl/5.40.1 /usr/lib/x86_64-linux-gnu/perl5/5.40 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.40 /usr/share/perl/5.40 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 8, <STDIN> line 1.)
+#9 12.82 debconf: falling back to frontend: Teletype
+#9 12.82 debconf: unable to initialize frontend: Teletype
+#9 12.82 debconf: (This frontend requires a controlling tty.)
+#9 12.82 debconf: falling back to frontend: Noninteractive
+#9 13.23 Fetched 137 kB in 0s (439 kB/s)
+#9 13.25 Selecting previously unselected package libgomp1:amd64.
+#9 13.25 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 5645 files and directories currently installed.)
+#9 13.27 Preparing to unpack .../libgomp1_14.2.0-19_amd64.deb ...
+#9 13.28 Unpacking libgomp1:amd64 (14.2.0-19) ...
+#9 13.31 Setting up libgomp1:amd64 (14.2.0-19) ...
+#9 13.32 Processing triggers for libc-bin (2.41-12+deb13u1) ...
+#9 14.46 Requirement already satisfied: pip in /usr/local/lib/python3.12/site-packages (25.0.1)
+#9 14.64 Collecting pip
+#9 14.82   Downloading pip-26.0.1-py3-none-any.whl.metadata (4.7 kB)
+#9 14.86 Downloading pip-26.0.1-py3-none-any.whl (1.8 MB)
+#9 15.37    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 3.5 MB/s eta 0:00:00
+#9 15.38 Installing collected packages: pip
+#9 15.38   Attempting uninstall: pip
+#9 15.38     Found existing installation: pip 25.0.1
+#9 15.41     Uninstalling pip-25.0.1:
+#9 15.52       Successfully uninstalled pip-25.0.1
+#9 16.11 Successfully installed pip-26.0.1
+#9 16.11 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#9 16.79 Looking in indexes: https://download.pytorch.org/whl/cpu
+#9 18.54 Collecting torch
+#9 18.60   Downloading https://download.pytorch.org/whl/cpu/torch-2.10.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (29 kB)
+#9 19.50 Collecting filelock (from torch)
+#9 19.64   Downloading filelock-3.20.0-py3-none-any.whl.metadata (2.1 kB)
+#9 20.32 Collecting typing-extensions>=4.10.0 (from torch)
+#9 20.34   Downloading https://download.pytorch.org/whl/typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+#9 21.01 Collecting setuptools (from torch)
+#9 21.04   Downloading https://download.pytorch.org/whl/setuptools-70.2.0-py3-none-any.whl.metadata (5.8 kB)
+#9 21.93 Collecting sympy>=1.13.3 (from torch)
+#9 21.96   Downloading sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+#9 23.05 Collecting networkx>=2.5.1 (from torch)
+#9 23.06   Downloading networkx-3.6.1-py3-none-any.whl.metadata (6.8 kB)
+#9 23.73 Collecting jinja2 (from torch)
+#9 23.76   Downloading https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+#9 24.64 Collecting fsspec>=0.8.5 (from torch)
+#9 24.66   Downloading fsspec-2025.12.0-py3-none-any.whl.metadata (10 kB)
+#9 25.46 Collecting mpmath<1.4,>=1.1.0 (from sympy>=1.13.3->torch)
+#9 25.48   Downloading mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+#9 25.82 Collecting MarkupSafe>=2.0 (from jinja2->torch)
+#9 25.89   Downloading https://download.pytorch.org/whl/MarkupSafe-3.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.0 kB)
+#9 25.92 Downloading https://download.pytorch.org/whl/cpu/torch-2.10.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (188.9 MB)
+#9 171.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.9/188.9 MB 1.9 MB/s  0:02:25
+#9 171.6 Downloading fsspec-2025.12.0-py3-none-any.whl (201 kB)
+#9 171.8 Downloading networkx-3.6.1-py3-none-any.whl (2.1 MB)
+#9 174.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 873.3 kB/s  0:00:02
+#9 174.1 Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+#9 179.7    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 1.1 MB/s  0:00:05
+#9 179.7 Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+#9 180.1    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 2.1 MB/s  0:00:00
+#9 180.1 Downloading https://download.pytorch.org/whl/typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+#9 180.1 Downloading filelock-3.20.0-py3-none-any.whl (16 kB)
+#9 180.2 Downloading https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl (134 kB)
+#9 180.2 Downloading https://download.pytorch.org/whl/MarkupSafe-3.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23 kB)
+#9 180.2 Downloading https://download.pytorch.org/whl/setuptools-70.2.0-py3-none-any.whl (930 kB)
+#9 180.5    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 930.8/930.8 kB 3.6 MB/s  0:00:00
+#9 180.8 Installing collected packages: mpmath, typing-extensions, sympy, setuptools, networkx, MarkupSafe, fsspec, filelock, jinja2, torch
+#9 193.8 
+#9 193.8 Successfully installed MarkupSafe-3.0.2 filelock-3.20.0 fsspec-2025.12.0 jinja2-3.1.6 mpmath-1.3.0 networkx-3.6.1 setuptools-70.2.0 sympy-1.14.0 torch-2.10.0+cpu typing-extensions-4.15.0
+#9 193.8 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#9 195.6 Collecting fastapi==0.115.8 (from -r requirements.txt (line 1))
+#9 195.7   Downloading fastapi-0.115.8-py3-none-any.whl.metadata (27 kB)
+#9 195.7 Collecting uvicorn==0.34.0 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 195.8   Downloading uvicorn-0.34.0-py3-none-any.whl.metadata (6.5 kB)
+#9 195.9 Collecting pydantic==2.10.6 (from -r requirements.txt (line 3))
+#9 195.9   Downloading pydantic-2.10.6-py3-none-any.whl.metadata (30 kB)
+#9 196.2 Collecting numpy==2.2.2 (from -r requirements.txt (line 4))
+#9 196.3   Downloading numpy-2.2.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+#9 196.5 Collecting scikit-learn==1.6.1 (from -r requirements.txt (line 5))
+#9 196.5   Downloading scikit_learn-1.6.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (18 kB)
+#9 196.6 Collecting prometheus-client==0.21.1 (from -r requirements.txt (line 6))
+#9 196.6   Downloading prometheus_client-0.21.1-py3-none-any.whl.metadata (1.8 kB)
+#9 196.7 Collecting xgboost==2.1.3 (from -r requirements.txt (line 7))
+#9 196.7   Downloading xgboost-2.1.3-py3-none-manylinux_2_28_x86_64.whl.metadata (2.1 kB)
+#9 196.8 Collecting torch==2.6.0 (from -r requirements.txt (line 8))
+#9 196.8   Downloading torch-2.6.0-cp312-cp312-manylinux1_x86_64.whl.metadata (28 kB)
+#9 196.9 Collecting starlette<0.46.0,>=0.40.0 (from fastapi==0.115.8->-r requirements.txt (line 1))
+#9 196.9   Downloading starlette-0.45.3-py3-none-any.whl.metadata (6.3 kB)
+#9 196.9 Requirement already satisfied: typing-extensions>=4.8.0 in /usr/local/lib/python3.12/site-packages (from fastapi==0.115.8->-r requirements.txt (line 1)) (4.15.0)
+#9 197.0 Collecting annotated-types>=0.6.0 (from pydantic==2.10.6->-r requirements.txt (line 3))
+#9 197.0   Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+#9 198.0 Collecting pydantic-core==2.27.2 (from pydantic==2.10.6->-r requirements.txt (line 3))
+#9 198.0   Downloading pydantic_core-2.27.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+#9 198.1 Collecting click>=7.0 (from uvicorn==0.34.0->uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 198.1   Downloading click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+#9 198.1 Collecting h11>=0.8 (from uvicorn==0.34.0->uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 198.2   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+#9 198.3 Collecting scipy>=1.6.0 (from scikit-learn==1.6.1->-r requirements.txt (line 5))
+#9 198.3   Downloading scipy-1.17.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+#9 198.4 Collecting joblib>=1.2.0 (from scikit-learn==1.6.1->-r requirements.txt (line 5))
+#9 198.4   Downloading joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+#9 198.5 Collecting threadpoolctl>=3.1.0 (from scikit-learn==1.6.1->-r requirements.txt (line 5))
+#9 198.5   Downloading threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+#9 198.5 Collecting nvidia-nccl-cu12 (from xgboost==2.1.3->-r requirements.txt (line 7))
+#9 198.6   Downloading nvidia_nccl_cu12-2.29.3-py3-none-manylinux_2_18_x86_64.whl.metadata (2.1 kB)
+#9 198.6 Requirement already satisfied: filelock in /usr/local/lib/python3.12/site-packages (from torch==2.6.0->-r requirements.txt (line 8)) (3.20.0)
+#9 198.6 Requirement already satisfied: networkx in /usr/local/lib/python3.12/site-packages (from torch==2.6.0->-r requirements.txt (line 8)) (3.6.1)
+#9 198.6 Requirement already satisfied: jinja2 in /usr/local/lib/python3.12/site-packages (from torch==2.6.0->-r requirements.txt (line 8)) (3.1.6)
+#9 198.6 Requirement already satisfied: fsspec in /usr/local/lib/python3.12/site-packages (from torch==2.6.0->-r requirements.txt (line 8)) (2025.12.0)
+#9 198.6 Collecting nvidia-cuda-nvrtc-cu12==12.4.127 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 198.6   Downloading nvidia_cuda_nvrtc_cu12-12.4.127-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 198.7 Collecting nvidia-cuda-runtime-cu12==12.4.127 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 198.7   Downloading nvidia_cuda_runtime_cu12-12.4.127-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 198.7 Collecting nvidia-cuda-cupti-cu12==12.4.127 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 198.8   Downloading nvidia_cuda_cupti_cu12-12.4.127-py3-none-manylinux2014_x86_64.whl.metadata (1.6 kB)
+#9 198.8 Collecting nvidia-cudnn-cu12==9.1.0.70 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 198.8   Downloading nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl.metadata (1.6 kB)
+#9 198.9 Collecting nvidia-cublas-cu12==12.4.5.8 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 198.9   Downloading nvidia_cublas_cu12-12.4.5.8-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 198.9 Collecting nvidia-cufft-cu12==11.2.1.3 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.0   Downloading nvidia_cufft_cu12-11.2.1.3-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 199.0 Collecting nvidia-curand-cu12==10.3.5.147 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.0   Downloading nvidia_curand_cu12-10.3.5.147-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 199.1 Collecting nvidia-cusolver-cu12==11.6.1.9 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.1   Downloading nvidia_cusolver_cu12-11.6.1.9-py3-none-manylinux2014_x86_64.whl.metadata (1.6 kB)
+#9 199.1 Collecting nvidia-cusparse-cu12==12.3.1.170 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.1   Downloading nvidia_cusparse_cu12-12.3.1.170-py3-none-manylinux2014_x86_64.whl.metadata (1.6 kB)
+#9 199.2 Collecting nvidia-cusparselt-cu12==0.6.2 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.2   Downloading nvidia_cusparselt_cu12-0.6.2-py3-none-manylinux2014_x86_64.whl.metadata (6.8 kB)
+#9 199.2 Collecting nvidia-nccl-cu12 (from xgboost==2.1.3->-r requirements.txt (line 7))
+#9 199.2   Downloading nvidia_nccl_cu12-2.21.5-py3-none-manylinux2014_x86_64.whl.metadata (1.8 kB)
+#9 199.2 Collecting nvidia-nvtx-cu12==12.4.127 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.3   Downloading nvidia_nvtx_cu12-12.4.127-py3-none-manylinux2014_x86_64.whl.metadata (1.7 kB)
+#9 199.3 Collecting nvidia-nvjitlink-cu12==12.4.127 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.3   Downloading nvidia_nvjitlink_cu12-12.4.127-py3-none-manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 199.4 Collecting triton==3.2.0 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.4   Downloading triton-3.2.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.4 kB)
+#9 199.4 Requirement already satisfied: setuptools in /usr/local/lib/python3.12/site-packages (from torch==2.6.0->-r requirements.txt (line 8)) (70.2.0)
+#9 199.4 Collecting sympy==1.13.1 (from torch==2.6.0->-r requirements.txt (line 8))
+#9 199.5   Downloading sympy-1.13.1-py3-none-any.whl.metadata (12 kB)
+#9 199.5 Requirement already satisfied: mpmath<1.4,>=1.1.0 in /usr/local/lib/python3.12/site-packages (from sympy==1.13.1->torch==2.6.0->-r requirements.txt (line 8)) (1.3.0)
+#9 199.5 Collecting httptools>=0.6.3 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 199.6   Downloading httptools-0.7.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+#9 199.6 Collecting python-dotenv>=0.13 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 199.6   Downloading python_dotenv-1.2.1-py3-none-any.whl.metadata (25 kB)
+#9 199.8 Collecting pyyaml>=5.1 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 199.8   Downloading pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+#9 199.9 Collecting uvloop!=0.15.0,!=0.15.1,>=0.14.0 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 199.9   Downloading uvloop-0.22.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+#9 200.0 Collecting watchfiles>=0.13 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 200.0   Downloading watchfiles-1.1.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+#9 200.1 Collecting websockets>=10.4 (from uvicorn[standard]==0.34.0->-r requirements.txt (line 2))
+#9 200.2   Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+#9 200.2 Collecting anyio<5,>=3.6.2 (from starlette<0.46.0,>=0.40.0->fastapi==0.115.8->-r requirements.txt (line 1))
+#9 200.2   Downloading anyio-4.12.1-py3-none-any.whl.metadata (4.3 kB)
+#9 200.2 Collecting idna>=2.8 (from anyio<5,>=3.6.2->starlette<0.46.0,>=0.40.0->fastapi==0.115.8->-r requirements.txt (line 1))
+#9 200.2   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+#9 200.2 Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.12/site-packages (from jinja2->torch==2.6.0->-r requirements.txt (line 8)) (3.0.2)
+#9 200.3 Downloading fastapi-0.115.8-py3-none-any.whl (94 kB)
+#9 200.3 Downloading pydantic-2.10.6-py3-none-any.whl (431 kB)
+#9 200.7 Downloading uvicorn-0.34.0-py3-none-any.whl (62 kB)
+#9 200.8 Downloading numpy-2.2.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.1 MB)
+#9 212.6    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.1/16.1 MB 1.4 MB/s  0:00:11
+#9 212.6 Downloading scikit_learn-1.6.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (13.1 MB)
+#9 220.3    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.1/13.1 MB 1.7 MB/s  0:00:07
+#9 220.3 Downloading prometheus_client-0.21.1-py3-none-any.whl (54 kB)
+#9 220.4 Downloading xgboost-2.1.3-py3-none-manylinux_2_28_x86_64.whl (153.9 MB)

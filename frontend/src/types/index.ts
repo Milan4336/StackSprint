@@ -34,6 +34,8 @@ export interface Transaction {
   modelVersion?: string;
   modelName?: string;
   modelConfidence?: number;
+  modelScores?: Record<string, number>;
+  modelWeights?: Record<string, number>;
   fraudScore: number;
   riskLevel: RiskLevel;
   isFraud: boolean;
@@ -162,11 +164,20 @@ export interface AuditLog {
   createdAt: string;
 }
 
-export interface ModelInfo {
+export interface EnsembleModelMetadata {
   modelName: string;
-  modelVersion: string;
-  mlStatus: MlStatus;
-  lastLatencyMs: number;
+  version: string;
+  trainedAt: string;
+  metrics: Record<string, number>;
+  status: string;
+}
+
+export interface ModelInfo {
+  models: EnsembleModelMetadata[];
+  ensemble: {
+    weights: Record<string, number>;
+    fraud_threshold: number;
+  }
 }
 
 export interface MlStatusSnapshot {

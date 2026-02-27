@@ -33,7 +33,7 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 export const Dashboard = () => {
   const { transactions, stats, loading, error, refreshTransactions } = useTransactions();
   const hasHydrated = useIntroStore((state) => state.hasHydrated);
-  const hasSeenBootIntro = useIntroStore((state) => state.hasSeenBootIntro);
+  const shouldPlayBootIntro = useIntroStore((state) => state.shouldPlayBootIntro);
   const isBootIntroActive = useIntroStore((state) => state.isBootIntroActive);
   const startBootIntro = useIntroStore((state) => state.startBootIntro);
   const completeBootIntro = useIntroStore((state) => state.completeBootIntro);
@@ -48,14 +48,14 @@ export const Dashboard = () => {
   const [sortKey, setSortKey] = useState<SortKey>('timestamp');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+  // Play boot animation only when Login.tsx sets pendingIntro = true (fresh login)
+  // NOT on page reload — pendingIntro is non-persisted and resets to false on load
   useEffect(() => {
-    if (!hasHydrated || hasSeenBootIntro || isBootIntroActive) {
-      return;
-    }
-    if (!isBootIntroActive) {
+    if (!hasHydrated || isBootIntroActive) return;
+    if (shouldPlayBootIntro()) {
       startBootIntro();
     }
-  }, [hasHydrated, hasSeenBootIntro, isBootIntroActive, startBootIntro]);
+  }, [hasHydrated, isBootIntroActive, shouldPlayBootIntro, startBootIntro]);
 
   const sortedTransactions = useMemo(() => {
     const sorted = [...transactions];

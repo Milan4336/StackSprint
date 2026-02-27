@@ -8,14 +8,13 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 - It is deployable: Docker, Kubernetes manifests, and Azure Container Apps automation are included.
 - It is built with production architecture patterns (microservices, clean separation, validation, auth, observability).
 
-### Latest UI/UX Improvements (Feb 2026)
-- **System boot animation** — Orbital ring CSS animation with glowing dots, pulsing core, radar sweep, and sci-fi grid plays on every login.
-- **Live Feed ECG animation** — Animated heartbeat SVG (green) when connected; pulsing orange flatline when disconnected. Both states always animate.
-- **Fraud by Country** — Computed client-side from live transaction data; bar chart now always populated.
-- **Light theme polish** — Metric value gradients, Live Activity Feed panel, and all severity badges now fully readable in both light and dark modes.
-- **Pie chart tooltips** — Dark background with light text; visible in both themes.
-- **Alerts investigation page** — Fixed backend paginated response shape; page loads correctly.
-- **Sidebar collapse** — Toggle button always visible; icon-only mode with tooltips when collapsed.
+### Latest Feature Upgrades (Phase 1 — Bank-Grade Platform)
+- **Multi-Model ML Ensemble** — Now using a 3-model weighted ensemble (XGBoost Classifier + PyTorch Autoencoder + Isolation Forest) for ultra-reliable detection.
+- **Explainable AI Evolution** — Prediction payloads now include confidence scores, model-specific scores, and voting weights for maximum transparency.
+- **Model Registry & Retraining** — New enterprise-grade registry tracks model versions, training metadata, and accuracy; background retraining can be triggered from UI.
+- **Cinematic Boot Fix** — Boot animation now correctly only plays after a fresh login (persisted via session-only pending flag). Reloads no longer trigger the intro.
+- **ECG Live Feed** — Realtime heartbeat animation (green) vs pulsing flatline (orange) for connection status.
+- **Light/Dark Polish** — Full enterprise-grade theme support across all charts, panels, and indicators.
 
 ---
 

@@ -9,7 +9,7 @@ export class FraudScoringService {
     private readonly ruleEngineService: RuleEngineService,
     private readonly mlServiceClient: MlServiceClient,
     private readonly settingsService: SettingsService
-  ) {}
+  ) { }
 
   private classify(score: number): 'Low' | 'Medium' | 'High' {
     if (score <= 30) return 'Low';
@@ -40,9 +40,10 @@ export class FraudScoringService {
     ruleScore: number;
     mlScore: number;
     mlStatus: 'HEALTHY' | 'DEGRADED' | 'OFFLINE';
-    modelVersion: string;
     modelName: string;
     modelConfidence: number;
+    modelScores?: Record<string, number>;
+    modelWeights?: Record<string, number>;
     explanations: FraudExplanationItem[];
     ruleReasons: string[];
     geoVelocityFlag: boolean;
@@ -67,6 +68,24 @@ export class FraudScoringService {
       mlScore = mlResult.fraudScore;
       explanations = mlResult.explanations ?? [];
       mlStatus = this.mlServiceClient.getStatus().status;
+
+      return {
+        fraudScore: Math.round(mlResult.fraudScore * 100), // simplified mapping for ensemble
+        riskLevel: this.classify(Math.round(mlResult.fraudScore * 100)),
+        isFraud: mlResult.isFraud,
+        action: this.responseAction(Math.round(mlResult.fraudScore * 100)),
+        ruleScore,
+        mlScore: mlResult.fraudScore,
+        mlStatus,
+        modelVersion: env.MODEL_VERSION,
+        modelName: env.MODEL_NAME,
+        modelConfidence: mlResult.confidence,
+        modelScores: mlResult.modelScores,
+        modelWeights: mlResult.modelWeights,
+        explanations,
+        ruleReasons: ruleEvaluation.reasons,
+        geoVelocityFlag: ruleEvaluation.geoVelocityFlag
+      };
     } catch {
       mlScore = 0;
       explanations = [];
@@ -74,13 +93,11 @@ export class FraudScoringService {
       mlStatus = this.mlServiceClient.getStatus().status;
     }
 
-    const weighted = useRuleFallbackOnly
-      ? ruleScore
-      : ruleScore * runtimeConfig.scoreRuleWeight + mlScore * 100 * runtimeConfig.scoreMlWeight;
+    // Fallback logic if ML service is down
+    const weighted = ruleScore; // in fallback, rely 100% on rules
     const fraudScore = Math.max(0, Math.min(100, Math.round(weighted)));
     const riskLevel = this.classify(fraudScore);
     const action = this.responseAction(fraudScore);
-    const modelConfidence = Math.max(0, Math.min(1, useRuleFallbackOnly ? ruleScore / 100 : mlScore));
 
     return {
       fraudScore,
@@ -88,12 +105,12 @@ export class FraudScoringService {
       isFraud: riskLevel === 'High',
       action,
       ruleScore,
-      mlScore,
+      mlScore: 0,
       mlStatus,
       modelVersion: env.MODEL_VERSION,
       modelName: env.MODEL_NAME,
-      modelConfidence,
-      explanations,
+      modelConfidence: 0,
+      explanations: [],
       ruleReasons: ruleEvaluation.reasons,
       geoVelocityFlag: ruleEvaluation.geoVelocityFlag
     };

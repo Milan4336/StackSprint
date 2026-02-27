@@ -21,6 +21,8 @@ export interface TransactionDocument extends Document {
   modelVersion: string;
   modelName: string;
   modelConfidence: number;
+  modelScores?: Record<string, number>;
+  modelWeights?: Record<string, number>;
   fraudScore: number;
   riskLevel: 'Low' | 'Medium' | 'High';
   isFraud: boolean;
@@ -60,6 +62,8 @@ const transactionSchema = new Schema<TransactionDocument>(
     modelVersion: { type: String, required: true },
     modelName: { type: String, required: true },
     modelConfidence: { type: Number, required: true },
+    modelScores: { type: Map, of: Number, required: false },
+    modelWeights: { type: Map, of: Number, required: false },
     fraudScore: { type: Number, required: true },
     riskLevel: { type: String, enum: ['Low', 'Medium', 'High'], required: true, index: true },
     isFraud: { type: Boolean, required: true, index: true },

@@ -174,5 +174,9 @@ export const monitoringApi = {
   }> {
     const { data } = await apiClient.get('/search', { params: { q: query } });
     return data;
+  },
+  async retrainModel(): Promise<{ status: string; async: boolean }> {
+    const { data } = await apiClient.post('/model/retrain', { async_mode: true });
+    return data;
   }
 };

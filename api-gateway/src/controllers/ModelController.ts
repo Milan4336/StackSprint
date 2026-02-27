@@ -6,10 +6,11 @@ export class ModelController {
   constructor(
     private readonly mlServiceClient: MlServiceClient,
     private readonly modelMetricsService: ModelMetricsService
-  ) {}
+  ) { }
 
   info = async (_req: Request, res: Response): Promise<void> => {
-    res.status(200).json(this.mlServiceClient.getModelInfo());
+    const info = await this.mlServiceClient.fetchRemoteModelInfo();
+    res.status(200).json(info);
   };
 
   health = async (req: Request, res: Response): Promise<void> => {

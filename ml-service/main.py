@@ -1,16 +1,20 @@
 from __future__ import annotations
 
-from datetime import datetime
+import time
+from collections import deque
+from datetime import datetime, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
-from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from fastapi.responses import Response
 
 from features import FeatureEngineer
-from model import AnomalyModel
+from ensemble import EnsembleModel
+from registry import ModelRegistry
 
 
+# ── Pydantic schemas ────────────────────────────────────────────────────────
 class PredictRequest(BaseModel):
     userId: str = Field(min_length=1)
     amount: float = Field(gt=0)
@@ -19,18 +23,36 @@ class PredictRequest(BaseModel):
     timestamp: datetime
 
 
-app = FastAPI(title="Fraud ML Service", version="1.0.0")
+class RetrainRequest(BaseModel):
+    async_mode: bool = True
+
+
+# ── App bootstrap ────────────────────────────────────────────────────────────
+app = FastAPI(title="Fraud ML Service", version="2.0.0")
 
 feature_engineer = FeatureEngineer()
-model = AnomalyModel()
-model.train_or_load()
+registry = ModelRegistry()
+ensemble = EnsembleModel(registry)
+ensemble.train_all()
 
+# ── Prometheus metrics ───────────────────────────────────────────────────────
 requests_total = Counter("ml_requests_total", "Total ML requests", ["endpoint"])
+fraud_score_hist = Histogram("ml_fraud_score", "Distribution of fraud scores", buckets=[0.1 * i for i in range(11)])
+
+# ── Runtime stats (in-memory ring buffer for last 1000 predictions) ──────────
+_recent_scores: deque[float] = deque(maxlen=1000)
+_retraining = False
 
 
+# ── Routes ───────────────────────────────────────────────────────────────────
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "service": "ml-service"}
+def health() -> dict:
+    return {
+        "status": "ok",
+        "service": "ml-service",
+        "version": "2.0.0",
+        "models": [m["modelName"] for m in registry.all()],
+    }
 
 
 @app.get("/metrics")
@@ -49,8 +71,74 @@ def predict(payload: PredictRequest) -> dict:
         device_id=payload.deviceId,
         timestamp=payload.timestamp,
     )
-    return model.predict_with_explanations(
-        feats,
-        location=payload.location,
-        device_id=payload.deviceId,
-    )
+    result = ensemble.predict(feats, location=payload.location, device_id=payload.deviceId)
+
+    fraud_score_hist.observe(result.fraud_score)
+    _recent_scores.append(result.fraud_score)
+
+    return {
+        "fraudScore":   result.fraud_score,
+        "isFraud":      result.is_fraud,
+        "confidence":   result.confidence,
+        "modelScores":  result.model_scores,
+        "modelWeights": result.model_weights,
+        "explanations": result.explanations,
+    }
+
+
+@app.get("/model/info")
+def model_info() -> dict:
+    """Returns version, training date, and status for all registered models."""
+    return {
+        "models": registry.all(),
+        "ensemble": {
+            "weights": {
+                "isolation_forest": 0.35,
+                "xgboost":          0.45,
+                "autoencoder":      0.20,
+            },
+            "fraud_threshold": 0.55,
+        },
+    }
+
+
+@app.get("/model/metrics")
+def model_metrics() -> dict:
+    """Runtime prediction statistics from the in-memory ring buffer."""
+    scores = list(_recent_scores)
+    if not scores:
+        return {"message": "No predictions yet", "sampleSize": 0}
+
+    import numpy as np  # noqa: PLC0415
+    return {
+        "sampleSize":    len(scores),
+        "meanScore":     round(float(np.mean(scores)), 4),
+        "p50":           round(float(np.percentile(scores, 50)), 4),
+        "p95":           round(float(np.percentile(scores, 95)), 4),
+        "fraudRate":     round(sum(s >= 0.55 for s in scores) / len(scores), 4),
+        "capturedAt":    datetime.now(tz=timezone.utc).isoformat(),
+    }
+
+
+@app.post("/model/retrain")
+def retrain(payload: RetrainRequest, background_tasks: BackgroundTasks) -> dict:
+    """Trigger a full model retrain (on synthetic data for now)."""
+    global _retraining  # noqa: PLW0603
+
+    if _retraining:
+        raise HTTPException(status_code=409, detail="Retrain already in progress")
+
+    def _do_retrain() -> None:
+        global _retraining  # noqa: PLW0603
+        _retraining = True
+        try:
+            ensemble.train_all()
+        finally:
+            _retraining = False
+
+    if payload.async_mode:
+        background_tasks.add_task(_do_retrain)
+        return {"status": "started", "async": True}
+
+    _do_retrain()
+    return {"status": "complete", "async": False, "models": registry.all()}

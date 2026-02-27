@@ -7,7 +7,11 @@ ENV PORT=8000
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN useradd --create-home --shell /bin/bash appuser && chown -R appuser:appuser /app

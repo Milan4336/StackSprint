@@ -62,6 +62,9 @@ export class MlServiceClient {
   async score(payload: MlRequest): Promise<{
     fraudScore: number;
     isFraud: boolean;
+    confidence: number;
+    modelScores: Record<string, number>;
+    modelWeights: Record<string, number>;
     explanations: FraudExplanationItem[];
   }> {
     if (!this.canAttempt()) {
@@ -72,6 +75,9 @@ export class MlServiceClient {
     const response = await axios.post<{
       fraudScore: number;
       isFraud: boolean;
+      confidence: number;
+      modelScores: Record<string, number>;
+      modelWeights: Record<string, number>;
       explanations: FraudExplanationItem[];
     }>(`${env.ML_SERVICE_URL}/predict`, payload, {
       timeout: 2500
@@ -97,6 +103,15 @@ export class MlServiceClient {
       lastError: this.lastError,
       circuitOpenUntil: this.circuitOpenUntil ? new Date(this.circuitOpenUntil).toISOString() : null
     };
+  }
+
+  async fetchRemoteModelInfo(): Promise<any> {
+    try {
+      const resp = await axios.get(`${env.ML_SERVICE_URL}/model/info`, { timeout: 2000 });
+      return resp.data;
+    } catch {
+      return { models: [], ensemble: {} };
+    }
   }
 
   getModelInfo() {

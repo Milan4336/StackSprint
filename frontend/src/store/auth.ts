@@ -52,8 +52,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: Boolean(initialToken),
   login: (token: string) => {
     localStorage.setItem('token', token);
-    // Reset boot intro so it plays on every sign-in
-    localStorage.removeItem('fraud-boot-intro');
     set({ token, isAuthenticated: true });
   },
   logout: () => {
