@@ -16,6 +16,12 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 - **ECG Live Feed** — Realtime heartbeat animation (green) vs pulsing flatline (orange) for connection status.
 - **Light/Dark Polish** — Full enterprise-grade theme support across all charts, panels, and indicators.
 
+### Latest Feature Upgrades (Phase 2 — Forensic Intelligence)
+- **Fraud Relationship Graph** — Realtime D3-powered network analysis detecting shared devices, proxies, and collusion rings.
+- **Multi-Dimensional Scoring** — Integrated scoring fusion combining Rules + ML + Behavioral Profiles + Graph Relationship bias.
+- **Behavioral Fingerprinting** — Advanced tracking of user behavior patterns, device churn, and geo-velocity anomalies.
+- **Platform Evolution Timeline** — New interactive updates system tracking chronological system upgrades and forensics enhancements.
+
 ---
 
 ## 1) Features
@@ -143,6 +149,12 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 - Fraud rate, risk distribution, trend, volume, and country charts.
 - Device intelligence and explainability views integrated in dashboard.
 
+## Advanced Forensic Graph
+- D3.js force-directed graph for relationship analysis.
+- Entity nodes: `USER`, `DEVICE`, `IP`.
+- Live degree and risk bias calculations.
+- Collusion detection engine for fraud ring identification.
+
 ## Model Ops + Reliability
 - ML circuit breaker in API gateway.
 - Runtime ML status states:
@@ -184,6 +196,9 @@ A production-grade, cloud-native fraud intelligence platform that detects, expla
 - `/analytics` - advanced fraud analytics visualizations.
 - `/audit` - compliance and action audit timeline.
 - `/model-health` - model drift/performance monitoring.
+- `/fraud-network` - forensic relationship graph analysis.
+- `/behavior-profiles` - deep behavioral intelligence.
+- `/updates` - platform evolution timeline.
 - `/system` - service health and reliability telemetry.
 - `/settings` - runtime threshold/weights/simulation controls + theme controls.
 
@@ -303,6 +318,9 @@ Base: `http://localhost:8080/api/v1`
 - `GET /transactions/query`
 - `GET /transactions/:transactionId`
 - `GET /transactions/stats`
+
+## Forensic Intelligence
+- `GET /api/v1/graph` (D3 network graph data)
 
 ## Simulation
 - `POST /simulation/start` (admin)
@@ -571,4 +589,4 @@ This project delivers the full lifecycle of fraud defense:
 It is built as a real fintech operations platform, not a toy dashboard.
 
 ### Closing Line
-"We are not just predicting fraud. We built a complete fraud operations system where detection, explanation, autonomous response, investigation, compliance, and reliability monitoring work together in realtime."
+"We are not just predicting fraud. We built a complete fraud operations system where detection, explanation, autonomous response, investigation, graph forensics, and reliability monitoring work together in realtime."

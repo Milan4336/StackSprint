@@ -16,6 +16,7 @@ import { SystemController } from '../controllers/SystemController';
 import { ModelController } from '../controllers/ModelController';
 import { SettingsController } from '../controllers/SettingsController';
 import { SearchController } from '../controllers/SearchController';
+import { GraphController } from '../controllers/GraphController';
 import { UserRepository } from '../repositories/UserRepository';
 import { FraudAlertRepository } from '../repositories/FraudAlertRepository';
 import { UserDeviceRepository } from '../repositories/UserDeviceRepository';
@@ -25,7 +26,7 @@ import { ModelMetricRepository } from '../repositories/ModelMetricRepository';
 import { SystemSettingRepository } from '../repositories/SystemSettingRepository';
 import { UserRiskProfileRepository } from '../repositories/UserRiskProfileRepository';
 import { AuthService } from '../services/AuthService';
-import { AutonomousResponseService } from '../services/AutonomousResponseService';
+import { FraudResponseService } from '../services/FraudResponseService';
 import { DeviceFingerprintService } from '../services/DeviceFingerprintService';
 import { FraudExplanationService } from '../services/FraudExplanationService';
 import { SimulationService } from '../services/SimulationService';
@@ -37,6 +38,9 @@ import { ModelMetricsService } from '../services/ModelMetricsService';
 import { SystemHealthService } from '../services/SystemHealthService';
 import { SearchService } from '../services/SearchService';
 import { UserRiskProfileService } from '../services/UserRiskProfileService';
+import { UserBehaviorService } from '../services/UserBehaviorService';
+import { FraudGraphService } from '../services/FraudGraphService';
+import { OtpRepository } from '../repositories/OtpRepository';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authMiddleware, roleMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -63,19 +67,28 @@ const userDeviceRepository = new UserDeviceRepository();
 const fraudExplanationRepository = new FraudExplanationRepository();
 const geoService = new GeoService();
 const auditService = new AuditService(auditLogRepository);
-const modelMetricsService = new ModelMetricsService(modelMetricRepository, transactionRepository);
+const userBehaviorService = new (UserBehaviorService as any)(geoService);
+const fraudGraphService = new FraudGraphService();
+const otpRepository = new OtpRepository();
+const mlServiceClient = new MlServiceClient();
+
+const modelMetricsService = new ModelMetricsService(modelMetricRepository, transactionRepository, mlServiceClient);
 const settingsService = new SettingsService(systemSettingRepository, auditService);
 const userRiskProfileService = new UserRiskProfileService(transactionRepository, userRiskProfileRepository);
 const ruleEngineService = new RuleEngineService(transactionRepository, userRiskProfileService, settingsService);
-const mlServiceClient = new MlServiceClient();
-const fraudScoringService = new FraudScoringService(ruleEngineService, mlServiceClient, settingsService);
+const fraudScoringService = new FraudScoringService(
+  ruleEngineService,
+  mlServiceClient,
+  settingsService,
+  userBehaviorService,
+  fraudGraphService
+);
 
-const autonomousResponseService = new AutonomousResponseService(
+const fraudResponseService = new FraudResponseService(
   fraudAlertRepository,
   eventBusService,
   settingsService,
-  auditService,
-  env.AUTONOMOUS_ALERT_THRESHOLD
+  auditService
 );
 const deviceFingerprintService = new DeviceFingerprintService(userDeviceRepository);
 const fraudExplanationService = new FraudExplanationService(fraudExplanationRepository);
@@ -84,7 +97,7 @@ const transactionService = new TransactionService(
   transactionRepository,
   fraudScoringService,
   eventBusService,
-  autonomousResponseService,
+  fraudResponseService as any, // Cast due to name change in constructor pattern
   deviceFingerprintService,
   fraudExplanationService,
   geoService,
@@ -112,13 +125,19 @@ const searchService = new SearchService();
 const searchController = new SearchController(searchService);
 
 const userRepository = new UserRepository();
-const authService = new AuthService(userRepository, auditService);
+const authService = new AuthService(userRepository, auditService, otpRepository);
 const authController = new AuthController(authService);
+
+const graphController = new GraphController();
 
 export const router = Router();
 
+router.get('/api/v1/graph', authMiddleware, asyncHandler(graphController.getNetwork));
+
 router.post('/api/v1/auth/register', validate(registerSchema), asyncHandler(authController.register));
 router.post('/api/v1/auth/login', validate(loginSchema), asyncHandler(authController.login));
+router.post('/api/v1/auth/request-otp', asyncHandler(authController.requestOtp));
+router.post('/api/v1/auth/verify-otp', asyncHandler(authController.verifyOtp));
 
 router.post(
   '/api/v1/transactions',
