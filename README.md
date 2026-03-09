@@ -1,4 +1,4 @@
-# FRAUD COMMAND CENTER (Ultra-HUD Editon v3.9)
+# FRAUD COMMAND CENTER (Planetary Threat Edition v4.0)
 
 A high-performance, cloud-native fraud intelligence platform designed for realtime detection, deep forensic investigation, and autonomous risk response. This platform has been evolved into a high-fidelity "Cinematic Ultra-HUD" environment, balancing expert heuristics with advanced ML ensemble scoring.
 
@@ -18,9 +18,9 @@ The platform features a "WOW"-factor UI designed for maximum situational awarene
 - **Threat Shockwave**: Full-screen radial energy waves triggered by sudden risk spikes.
 
 ### 🎯 Localized Intelligence
+- **Planetary Threat Matrix**: Immersive 3D Globe visualization showing global fraud flows, hotspots, and coordinated attack trajectories in real-time.
 - **Transaction Auras**: Risk-reactive energy glows centered around individual high-risk transaction records.
 - **Forensic Scanlines**: Cinematic grid overlays embedded within deep investigation modals.
-- **Explosion Markers**: Particle bursts highlighting fraud events on geospatial maps.
 - **Interactive Neural Flow**: Live data throughput visualization representing ML model activity.
 
 ### 🔊 Audio & Semantic Intelligence
@@ -33,10 +33,11 @@ The platform features a "WOW"-factor UI designed for maximum situational awarene
 Transformed investigation workflows from standard tables into a multi-dimensional intelligence platform.
 
 ### 🕵️ Investigation Modules
+- **Planetary Threat Matrix**: 3D and 2D geospatial dashboards for monitoring global attack waves and suspicious IP origins.
 - **Relationship Graph (D3)**: Zoomable, interactive link analysis for detecting collusion rings and complex entity relationship structures.
 - **Entity Profiles**: Comprehensive 360° views of Users, Devices, and IP addresses with chronological forensics.
-- **Forensic Detail Modal**: Multi-layer risk breakdown including Expert Rules, ML Ensemble explanations (XAI), and behavioral anomalies.
-- **Autonomous AI Copilot**: Persistent assistant providing real-time triage, automated case creation, and risk explanation.
+- **Forensic Detail Modal**: Multi-layer risk breakdown including Expert Rules, ML Ensemble explanations (SHAP), and behavioral anomalies.
+- **Autonomous SOC Intelligence**: Persistent AI partner providing real-time triage, autonomous report generation, and relationship tracing.
 
 ### 🛂 Role-Based Access Control (RBAC)
 - **Analyst Command Center**: The full high-fidelity SOC experience for fraud investigators.

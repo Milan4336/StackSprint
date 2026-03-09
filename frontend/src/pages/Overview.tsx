@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle, Activity, Zap, ShieldAlert, Cpu, FileText } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { AlertTriangle, Activity, Zap, ShieldAlert, Cpu, FileText, Globe } from 'lucide-react';
 import { useDashboardOverviewSlice } from '../store/slices/dashboardOverviewSlice';
 import { useUiStore } from '../store/ui';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { monitoringApi } from '../api/client';
 import { TransactionVolumeChart } from '../components/dashboard/TransactionVolumeChart';
@@ -10,17 +10,22 @@ import { FraudExplanationPanel } from '../components/dashboard/FraudExplanationP
 import { VelocityChart } from '../components/dashboard/VelocityChart';
 import { TransactionStream } from '../components/transactions/TransactionStream';
 import { useThreatStore } from '../store/threatStore';
-import { HUDPanel, HUDDataReadout } from '../components/visual/HUDDecorations';
+import { HUDCard } from '../components/layout/HUDCard';
+import { HolographicIndicator } from '../components/visual/HolographicIndicator';
+import { HUDDataReadout } from '../components/visual/HUDDecorations';
 import { IsolationPanel } from '../components/dashboard/IsolationPanel';
 import { FraudResponseLog } from '../components/dashboard/FraudResponseLog';
 import { AdminControlPanel } from '../components/dashboard/AdminControlPanel';
 import { DeviceIntelligencePanel } from '../components/dashboard/DeviceIntelligencePanel';
+import { useUISound } from '../hooks/useUISound';
+import { useThemeStore, ThemeType } from '../store/themeStore';
+import { HUDPanel, HUDCorner, HUDScanline } from '../components/visual/HUDDecorations';
 
 const threatLevelColor = (index: number) => {
-    if (index >= 86) return { text: 'text-red-400', label: 'Critical', bar: 'from-red-600 to-red-400' };
-    if (index >= 66) return { text: 'text-orange-400', label: 'High', bar: 'from-orange-600 to-orange-400' };
-    if (index >= 41) return { text: 'text-amber-400', label: 'Elevated', bar: 'from-amber-500 to-yellow-400' };
-    return { text: 'text-emerald-400', label: 'Normal', bar: 'from-emerald-600 to-emerald-400' };
+    if (index >= 86) return { text: 'text-red-400', label: 'CRITICAL THREAT', bar: 'from-red-600 to-red-400', glow: 'rgba(239, 68, 68, 0.4)' };
+    if (index >= 66) return { text: 'text-orange-400', label: 'HIGH RISK', bar: 'from-orange-600 to-orange-400', glow: 'rgba(249, 115, 22, 0.4)' };
+    if (index >= 41) return { text: 'text-amber-400', label: 'ELEVATED', bar: 'from-amber-500 to-yellow-400', glow: 'rgba(245, 158, 11, 0.4)' };
+    return { text: 'text-emerald-400', label: 'NOMINAL', bar: 'from-emerald-600 to-emerald-400', glow: 'rgba(34, 197, 94, 0.4)' };
 };
 
 export const Overview = () => {
@@ -33,16 +38,25 @@ export const Overview = () => {
         setOverviewData
     } = useDashboardOverviewSlice();
 
-    const { isExecutiveMode } = useUiStore();
+    const isExecutiveMode = useUiStore();
     const liveThreatIndex = useThreatStore((state) => state.threatIndex);
+    const { playSound } = useUISound();
+    const { theme } = useThemeStore();
     const [fraudCount, setFraudCount] = useState(0);
 
-    // Part 1 — dashboard overview API with refetchInterval
+    const themeColors = useMemo(() => {
+        const colors: Record<ThemeType, { primary: string; secondary: string; critical: string; text: string; bg: string }> = {
+            cyber: { primary: '#3b82f6', secondary: '#f59e0b', critical: '#ef4444', text: 'text-blue-400', bg: 'bg-blue-500' },
+            neon: { primary: '#a855f7', secondary: '#f472b6', critical: '#ef4444', text: 'text-purple-400', bg: 'bg-purple-500' },
+            tactical: { primary: '#10b981', secondary: '#facc15', critical: '#3b82f6', text: 'text-emerald-400', bg: 'bg-emerald-500' }
+        };
+        return colors[theme] || colors.cyber;
+    }, [theme]);
+
     const { data: overview } = useQuery({
         queryKey: ['dashboard-overview'],
         queryFn: () => monitoringApi.getDashboardOverview(),
         refetchInterval: 5000,
-        retry: 2,
     });
 
     const { data: recentTxs } = useQuery({
@@ -67,176 +81,164 @@ export const Overview = () => {
         if (overview) {
             setOverviewData(overview);
             setFraudCount(overview.fraudCount ?? 0);
-
-            // Sync API threat index to store so visual enhancers (border glow) fire immediately
             useThreatStore.getState().setThreatIndex(overview.threatIndex);
         }
     }, [overview, setOverviewData]);
 
     useEffect(() => {
         connectLive();
+        if (connected) playSound('SCAN');
         return () => disconnectLive();
-    }, [connectLive, disconnectLive]);
+    }, [connectLive, disconnectLive, connected]);
 
-    // Use live socket data when available, fall back to API snapshot
     const threatIndex = liveThreatIndex || overview?.threatIndex || 0;
     const txCount = overview?.transactionCount ?? socketTxCount;
-    const alertCount = overview?.alertCount ?? socketAlertCount;
     const tl = threatLevelColor(threatIndex);
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tighter text-white italic">
-                        Mission <span className="text-blue-500">Control</span>
-                    </h1>
-                    <div className="flex gap-4 mt-1">
-                        <HUDDataReadout label="System Mode" value="Active Intelligence" />
-                        <HUDDataReadout label="Security Protocol" value="Elite-v3.7" />
-                        <HUDDataReadout label="Telemetry" value="Real-time / Socket-Bound" />
-                    </div>
-                </div>
-                <div className="flex items-center gap-3 bg-blue-500/5 px-6 py-3 rounded-xl border border-blue-500/20 glass-panel">
-                    <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                        <div className="relative flex h-3 w-3">
-                            {connected ? (
-                                <>
-                                    <motion.span
-                                        animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        className="absolute inline-flex h-full w-full rounded-full bg-emerald-400"
-                                    />
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                                </>
-                            ) : (
-                                <>
-                                    <span className="animate-pulse absolute inline-flex h-full w-full rounded-full opacity-40 bg-red-500" />
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-                                </>
-                            )}
-                        </div>
-                        <span className={connected ? 'text-emerald-400' : 'text-red-500'}>
-                            {connected ? 'Neural Link Established' : 'Attempting Engine Handshake...'}
+        <div className="space-y-8 pb-10">
+            {/* Cinematic Header Section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+                <div className="space-y-2">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-3"
+                    >
+                        <div className={`h-4 w-1 ${themeColors.bg}`} />
+                        <span className={`text-[10px] font-black uppercase tracking-[0.5em] ${themeColors.text} opacity-60`}>
+                            Neural Intelligence Layer
                         </span>
-                    </div>
+                    </motion.div>
+                    <h1 className="text-5xl font-black uppercase tracking-tighter text-white italic">
+                        TACTICAL <span className={`${themeColors.text} bg-gradient-to-r from-slate-200 to-white bg-clip-text text-transparent`}>OVERVIEW</span>
+                    </h1>
                 </div>
-            </div>
 
-            {/* KPI Row — 3 panels */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* KPI 1: Transaction Volume */}
-                <HUDPanel title="Total Transactions">
-                    <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                        <Activity size={100} className="text-blue-500" />
+                {/* Connection Status Badge */}
+                <div className="flex items-center gap-4">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Telemetry Status</p>
+                        <p className={`text-[11px] font-bold uppercase tracking-wider ${connected ? 'text-emerald-400' : 'text-red-500'}`}>
+                            {connected ? 'Neural Link Online' : 'Signal Disconnected'}
+                        </p>
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-end gap-3">
-                            <span className="text-6xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                                {txCount.toLocaleString()}
-                            </span>
-                            <div className="mb-2">
-                                <span className="hud-readout border-l border-blue-500/30 pl-2">TX / SESSION</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-4 mt-4 border-t border-white/5 pt-4">
-                            <HUDDataReadout label="Status" value="Processing" />
-                            <HUDDataReadout label="Peak" value="Live" />
-                            <HUDDataReadout label="Unit" value="Global" />
-                        </div>
-                    </div>
-                </HUDPanel>
-
-                {/* KPI 2: Threat Matrix */}
-                <HUDPanel title="Neural Threat Matrix">
-                    <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                        <Zap size={100} className="text-red-500" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-end gap-3">
-                            <span className={`text-6xl font-black italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] ${tl.text}`}>
-                                {threatIndex.toFixed(0)}
-                            </span>
-                            <div className="mb-2">
-                                <span className={`hud-readout border-l pl-2 ${tl.text} opacity-100`}>{tl.label}</span>
-                            </div>
-                        </div>
-
-                        <div className="w-full bg-white/5 h-1.5 rounded-sm mt-4 overflow-hidden relative border border-white/5">
+                    <div className={`h-12 px-6 flex items-center gap-3 rounded-lg border border-white/5 bg-black/40 backdrop-blur-md`}>
+                        <div className="relative">
                             <motion.div
-                                className={`h-full bg-gradient-to-r ${tl.bar} shadow-[0_0_10px_rgba(239,68,68,0.5)]`}
-                                animate={{ width: `${threatIndex}%` }}
-                                transition={{ type: 'spring', stiffness: 50, damping: 15 }}
+                                animate={connected ? { scale: [1, 2, 1], opacity: [1, 0, 1] } : {}}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-red-500'}`}
                             />
                         </div>
-
-                        <div className="flex gap-4 mt-4 border-t border-white/5 pt-4">
-                            <HUDDataReadout label="Vector" value="ML-Ensemble" />
-                            <HUDDataReadout label="Severity" value={tl.label} />
-                            <HUDDataReadout label="Bias" value="Active" />
-                        </div>
+                        <span className="text-[10px] font-mono text-white/50">{connected ? 'STABLE' : 'RETRYING'}</span>
                     </div>
-                </HUDPanel>
-
-                {/* KPI 3: Fraud Intelligence */}
-                <HUDPanel title="Actionable Intelligence">
-                    <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                        <ShieldAlert size={100} className="text-amber-500" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-end gap-3">
-                            <span className={`text-6xl font-black italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(245,158,11,0.5)] ${fraudCount > 0 ? 'text-amber-400' : 'text-white'}`}>
-                                {fraudCount}
-                            </span>
-                            <div className="mb-2">
-                                <span className="hud-readout border-l border-amber-500/30 pl-2">DETECTED EVENTS</span>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 mt-6 border-t border-white/5 pt-4">
-                            <HUDDataReadout label="Rate" value={txCount > 0 ? `${((fraudCount / txCount) * 100).toFixed(1)}%` : '0.0%'} />
-                            <HUDDataReadout label="Engine" value="Verified" />
-                            <HUDDataReadout label="Audit" value="Pending" />
-                        </div>
-                    </div>
-                </HUDPanel>
+                </div>
             </div>
 
+            {/* Central Intelligence Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-center">
+                {/* Left: Holographic Indicator */}
+                <div className="flex justify-center py-10 relative">
+                    <HolographicIndicator
+                        threatIndex={Math.round(threatIndex)}
+                        label={tl.label}
+                    />
+                    {/* Floating HUD Annotations */}
+                    <div className="absolute top-0 right-0 p-4 border border-white/5 bg-black/40 rounded-lg flex flex-col gap-1 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                        <HUDCorner position="top-right" />
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Ensemble Bias</span>
+                        <span className={`text-[11px] font-black ${themeColors.text} uppercase tracking-widest`}>+0.0024_CORR</span>
+                    </div>
+                </div>
 
+                {/* Right: Key Analytics HUD Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="relative">
+                        <HUDScanline />
+                        <HUDCard title="System Throughput" icon={<Activity size={18} />}>
+                            <div className="flex flex-col">
+                                <span className="metric-value-huge text-4xl italic">
+                                    {txCount.toLocaleString()}
+                                </span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 mt-3">
+                                    Total_Inbound_Stream
+                                </span>
+                                <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div
+                                        animate={{ width: '65%' }}
+                                        className={`h-full ${themeColors.bg} shadow-[0_0_15px_${themeColors.primary}40]`}
+                                    />
+                                </div>
+                            </div>
+                        </HUDCard>
+                    </div>
 
-            {
-                !isExecutiveMode && (
-                    <>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <HUDPanel title="Network Throughput">
-                                <TransactionVolumeChart transactions={recentTxs || []} />
-                            </HUDPanel>
-                            <HUDPanel title="Heuristic Explanations">
-                                <FraudExplanationPanel transactions={recentTxs || []} explanations={explanations || []} />
-                            </HUDPanel>
-                        </div>
+                    <div className="relative">
+                        <HUDScanline />
+                        <HUDCard title="Anomaly Detection" icon={<ShieldAlert size={18} />}>
+                            <div className="flex flex-col">
+                                <span className={`metric-value-huge text-4xl italic ${fraudCount > 0 ? 'text-red-500' : ''}`} style={fraudCount > 0 ? { filter: `drop-shadow(0 0 15px ${themeColors.critical}60)` } : {}}>
+                                    {fraudCount}
+                                </span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 mt-3">
+                                    Positive_Intercepts
+                                </span>
+                                <div className="mt-4 flex gap-2">
+                                    <span className={`text-[10px] font-black px-3 py-1 rounded-sm border ${fraudCount > 0 ? 'border-red-500/30 text-red-500 bg-red-500/5' : `border-${themeColors.primary}-500/30 ${themeColors.text} bg-${themeColors.primary}-500/5`}`}>
+                                        {txCount > 0 ? ((fraudCount / txCount) * 100).toFixed(2) : '0.00'}% DEVIATION
+                                    </span>
+                                </div>
+                            </div>
+                        </HUDCard>
+                    </div>
+                </div>
+            </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <HUDPanel title="Risk Velocity Vectors">
-                                <VelocityChart />
-                            </HUDPanel>
-                            <HUDPanel title="Live Intelligence Stream">
-                                <TransactionStream />
-                            </HUDPanel>
-                        </div>
+            {/* Deep Analytics Section */}
+            {!isExecutiveMode && (
+                <div className="space-y-8 pt-8">
+                    <div className="flex items-center gap-4">
+                        <div className="h-0.5 flex-1 bg-gradient-to-r from-blue-500/20 to-transparent" />
+                        <h2 className="text-xs font-black uppercase tracking-[0.5em] text-slate-500">Forensic Intelligence</h2>
+                        <div className="h-0.5 flex-1 bg-gradient-to-l from-blue-500/20 to-transparent" />
+                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <HUDCard title="Temporal Flux" icon={<Activity size={18} />} delay={0.1}>
+                            <TransactionVolumeChart transactions={recentTxs || []} />
+                        </HUDCard>
+                        <HUDCard title="Logic Traces" icon={<FileText size={18} />} delay={0.2}>
+                            <FraudExplanationPanel transactions={recentTxs || []} explanations={explanations || []} />
+                        </HUDCard>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <HUDCard title="Vector Velocity" icon={<Zap size={18} />} delay={0.3}>
+                            <VelocityChart />
+                        </HUDCard>
+                        <HUDCard title="Live Stream Overlay" icon={<Globe size={18} />} delay={0.4}>
+                            <TransactionStream />
+                        </HUDCard>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <HUDCard title="Isolation Metrics" delay={0.5}>
                             <IsolationPanel />
+                        </HUDCard>
+                        <HUDCard title="Response Log v2" delay={0.6}>
                             <FraudResponseLog />
-                        </div>
+                        </HUDCard>
+                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <DeviceIntelligencePanel devices={deviceIntelligence || []} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <DeviceIntelligencePanel devices={deviceIntelligence || []} />
+                        <HUDCard title="Signal Command" delay={0.7}>
                             <AdminControlPanel />
-                        </div>
-                    </>
-                )
-            }
-        </div >
+                        </HUDCard>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };

@@ -1,5 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
+import { useUISound } from '../../hooks/useUISound';
+import { motion } from 'framer-motion';
+import { useThemeStore } from '../../store/themeStore';
 
 interface NavItemProps {
     to: string;
@@ -10,30 +13,50 @@ interface NavItemProps {
 
 export const NavItem = ({ to, icon: Icon, label, isCollapsed }: NavItemProps) => {
     const location = useLocation();
+    const { playSound } = useUISound();
+    const { theme } = useThemeStore();
     const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+    const color = theme === 'neon' ? 'text-purple-400' : theme === 'tactical' ? 'text-emerald-400' : 'text-blue-400';
+    const bgColor = theme === 'neon' ? 'bg-purple-500' : theme === 'tactical' ? 'bg-emerald-500' : 'bg-blue-500';
+    const borderColor = theme === 'neon' ? 'border-purple-500' : theme === 'tactical' ? 'border-emerald-500' : 'border-blue-500';
+    const shadowColor = theme === 'neon' ? 'rgba(168,85,247,0.3)' : theme === 'tactical' ? 'rgba(16,185,129,0.3)' : 'rgba(14,165,233,0.3)';
 
     return (
         <Link
             to={to}
-            className={`group relative flex items-center rounded-xl px-3 py-2.5 transition-all duration-200 ${isActive
-                ? 'bg-blue-500/10 text-blue-500'
-                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+            onMouseEnter={() => playSound('HOVER')}
+            onClick={() => playSound('CLICK')}
+            className={`group relative flex items-center rounded-lg px-3 py-3 transition-all duration-300 ${isActive
+                ? `bg-${theme === 'neon' ? 'purple' : theme === 'tactical' ? 'emerald' : 'blue'}-500/10 ${color}`
+                : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'
                 }`}
         >
-            <Icon size={isCollapsed ? 22 : 18} className={`shrink-0 transition-colors ${isActive ? 'text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'group-hover:text-slate-200'}`} />
+            {/* Active Glow Indicator */}
+            {isActive && (
+                <motion.div
+                    layoutId="activeNav"
+                    className={`absolute inset-0 bg-${theme === 'neon' ? 'purple' : theme === 'tactical' ? 'emerald' : 'blue'}-500/5 border-l-2 ${borderColor}`}
+                    style={{ boxShadow: `inset 10px 0 15px -10px ${shadowColor}` }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                />
+            )}
+
+            <Icon
+                size={isCollapsed ? 22 : 18}
+                className={`relative z-10 shrink-0 transition-all duration-300 ${isActive ? `${color}` : 'group-hover:text-blue-300'}`}
+                style={isActive ? { filter: `drop-shadow(0 0 8px ${shadowColor})` } : {}}
+            />
 
             {!isCollapsed && (
-                <span className={`ml-3 text-sm font-semibold tracking-wide transition-colors ${isActive ? 'text-blue-500' : ''}`}>
+                <span className={`relative z-10 ml-3 text-xs font-black uppercase tracking-[0.15em] transition-colors ${isActive ? 'text-blue-100' : ''}`}>
                     {label}
                 </span>
             )}
 
-            {isActive && (
-                <div className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-r-md bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-            )}
-
             {isCollapsed && (
-                <div className="pointer-events-none absolute left-full ml-4 w-max rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 opacity-0 shadow-xl transition-opacity group-hover:opacity-100 z-50">
+                <div className="pointer-events-none absolute left-full ml-4 w-max rounded-md border border-white/10 bg-[#0b1629] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-200 opacity-0 shadow-2xl transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-1 z-50 backdrop-blur-md">
                     {label}
                 </div>
             )}

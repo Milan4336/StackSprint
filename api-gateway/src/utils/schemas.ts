@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createTransactionSchema = z.object({
-  transactionId: z.string().min(1),
+  transactionId: z.string().min(1).optional(),
   userId: z.string().min(1),
   amount: z.number().positive(),
   currency: z.string().length(3),
@@ -14,7 +14,10 @@ export const createTransactionSchema = z.object({
 export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(10),
-  role: z.enum(['admin', 'analyst'])
+  role: z.enum(['admin', 'analyst', 'user']),
+  fullName: z.string().min(1),
+  phone: z.string().optional(),
+  mfaEnabled: z.boolean().optional()
 });
 
 export const loginSchema = z.object({

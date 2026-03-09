@@ -3,6 +3,8 @@ import { FraudExplanationItem } from '../models/FraudExplanation';
 import { RuleEngineService } from './RuleEngineService';
 import { MlServiceClient } from './MlServiceClient';
 import { SettingsService } from './SettingsService';
+import { GeoFraudService } from './GeoFraudService';
+import { realtimeEventBus } from './RealtimeEventBus';
 
 export class FraudScoringService {
   constructor(
@@ -10,7 +12,8 @@ export class FraudScoringService {
     private readonly mlServiceClient: MlServiceClient,
     private readonly settingsService: SettingsService,
     private readonly userBehaviorService: any,
-    private readonly fraudGraphService: any
+    private readonly fraudGraphService: any,
+    private readonly geoService: GeoFraudService
   ) { }
 
   private classify(score: number): 'Low' | 'Medium' | 'High' {
@@ -59,6 +62,9 @@ export class FraudScoringService {
     const runtimeConfig = await this.settingsService.getRuntimeConfig();
     const ruleScore = ruleEvaluation.score;
 
+    const ip = input.ipAddress || (input as any).sourceIp || '127.0.0.1';
+    const geo = await this.geoService.resolveIp(ip);
+
     let mlScore = 0;
     let mlConfidence = 0;
     let mlModelScores = {};
@@ -105,22 +111,21 @@ export class FraudScoringService {
       let action = this.responseAction(finalFraudScore);
       let verificationStatus: 'NOT_REQUIRED' | 'PENDING' | 'VERIFIED' | 'FAILED' = 'NOT_REQUIRED';
 
-      // Zero Trust Trigger condition
+      // Zero Trust Trigger condition: Fire if high amount OR high fraud score
       if (
-        finalFraudScore > 70 &&
-        input.amount > runtimeConfig.highAmountThreshold &&
-        input.deviceLabel === 'New Device'
+        input.amount >= runtimeConfig.highAmountThreshold ||
+        finalFraudScore > 70
       ) {
         action = 'STEP_UP_AUTH';
         verificationStatus = 'PENDING';
-        ruleEvaluation.reasons.push('Zero Trust Triggered: High score + new device + high amount.');
+        ruleEvaluation.reasons.push(input.amount >= runtimeConfig.highAmountThreshold ? 'Zero Trust: High-value transaction requires step-up.' : 'Zero Trust: High fraud score requires step-up.');
       } else if (action === 'BLOCK') {
         verificationStatus = 'FAILED';
       } else if (action === 'STEP_UP_AUTH') {
         verificationStatus = 'PENDING';
       }
 
-      return {
+      const result = {
         fraudScore: finalFraudScore,
         riskLevel: this.classify(finalFraudScore),
         isFraud: finalFraudScore >= 70,
@@ -140,6 +145,20 @@ export class FraudScoringService {
         ruleReasons: ruleEvaluation.reasons,
         geoVelocityFlag: ruleEvaluation.geoVelocityFlag
       };
+
+      // BROADCAST GEOSPATIAL TELEMETRY
+      realtimeEventBus.publish('transactions.geo', {
+        transactionId: (input as any).transactionId || `TX-${Date.now()}`,
+        userId: input.userId,
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+        country: geo.country,
+        city: geo.city,
+        fraudScore: finalFraudScore / 100,
+        timestamp: input.timestamp.getTime()
+      });
+
+      return result;
     } catch (error) {
       mlStatus = this.mlServiceClient.getStatus().status;
       const [behaviorScore, graphScore] = await Promise.all([
@@ -165,13 +184,12 @@ export class FraudScoringService {
       let verificationStatus: 'NOT_REQUIRED' | 'PENDING' | 'VERIFIED' | 'FAILED' = 'NOT_REQUIRED';
 
       if (
-        fallbackScore > 70 &&
-        input.amount > runtimeConfig.highAmountThreshold &&
-        input.deviceLabel === 'New Device'
+        input.amount >= runtimeConfig.highAmountThreshold ||
+        fallbackScore > 70
       ) {
         action = 'STEP_UP_AUTH';
         verificationStatus = 'PENDING';
-        ruleEvaluation.reasons.push('Zero Trust Triggered: High score + new device + high amount.');
+        ruleEvaluation.reasons.push(input.amount >= runtimeConfig.highAmountThreshold ? 'Zero Trust: High-value transaction requires step-up.' : 'Zero Trust: High fraud score requires step-up.');
       } else if (action === 'BLOCK') {
         verificationStatus = 'FAILED';
       } else if (action === 'STEP_UP_AUTH') {

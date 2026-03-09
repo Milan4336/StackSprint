@@ -38,6 +38,7 @@ class EnsembleResult:
     confidence: float
     model_scores: dict[str, float]
     model_weights: dict[str, float]
+    feature_contributions: list[dict]
     explanations: list[dict]
 
 
@@ -116,21 +117,33 @@ class EnsembleModel:
 
         return float(np.clip(ensemble, 0.0, 1.0)), confidence
 
+    # Graph score blending weight (the 3 models share the remaining weight)
+    GRAPH_WEIGHT = 0.15
+
     # ------------------------------------------------------------------
-    def predict(self, features: list[float], location: str, device_id: str) -> EnsembleResult:
+    def predict(self, features: list[float], location: str, device_id: str, graph_score: float = 0.0) -> EnsembleResult:
         results = [
             self._safe_score(self._if, features, "isolation_forest"),
             self._safe_score(self._xgb, features, "xgboost"),
             self._safe_score(self._ae, features, "autoencoder"),
         ]
 
-        ensemble_score, confidence = self._weighted_score(results)
+        model_ensemble_score, confidence = self._weighted_score(results)
+
+        # Blend graph score at 15% — models share remaining 85%
+        ensemble_score = float(np.clip(
+            model_ensemble_score * (1.0 - self.GRAPH_WEIGHT) + graph_score * self.GRAPH_WEIGHT,
+            0.0, 1.0
+        ))
 
         model_scores  = {r.name: round(r.score, 4) for r in results}
         model_weights = {r.name: round(self._weights[r.name], 4) for r in results}
 
-        # Build explanations from feature values (same logic as before)
-        explanations = self._build_explanations(features, ensemble_score, location, device_id)
+        # Feature contributions via SHAP (from XGBoost)
+        feature_contributions = self._xgb.get_feature_contributions(features)
+
+        # Build explanations from feature values (enhanced with SHAP context)
+        explanations = self._build_explanations(features, ensemble_score, location, device_id, feature_contributions)
 
         return EnsembleResult(
             fraud_score=round(ensemble_score, 4),
@@ -138,16 +151,18 @@ class EnsembleModel:
             confidence=round(confidence, 4),
             model_scores=model_scores,
             model_weights=model_weights,
+            feature_contributions=feature_contributions,
             explanations=explanations,
         )
 
     # ------------------------------------------------------------------
-    @staticmethod
     def _build_explanations(
+        self,
         features: list[float],
         prob: float,
         location: str,
         device_id: str,
+        contributions: list[dict]
     ) -> list[dict]:
         amount, amount_z, tx_freq, geo_delta, device_entropy = features
 
@@ -169,3 +184,7 @@ class EnsembleModel:
             {"feature": feat, "impact": round(imp / total, 2), "reason": reasons[feat]}
             for feat, imp in ordered
         ]
+
+# Global instance for the service
+from registry import model_registry
+ensemble = EnsembleModel(model_registry)

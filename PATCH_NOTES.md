@@ -4,6 +4,16 @@ This document tracks the technical evolution of the Fraud Command Center, arrang
 
 ---
 
+## [Release v4.0] — Today
+### Planetary Threat Matrix & Autonomous Intelligence
+- **Planetary Threat Matrix**: Launched the immersive 3D Global Fraud Map (`react-globe.gl`) with real-time trajectory arcs, automated risk pulses, and tactical HUD overlays.
+- **Autonomous Investigation Engine**: Transformed the AI Copilot into a deep forensic partner capable of autonomous triage, entity relationship tracing, and markdown report generation.
+- **SHAP Explainability**: Integrated Shapley value analysis into the forensics panel, providing mathematical breakdowns of ML decisions.
+- **User Portal v2**: Finalized the cardholder registration workflow and identity safety dashboard with real-time asset monitoring.
+- **System Stability Sync**: Resolved all Docker build compilation issues and synchronized high-frequency socket telemetry for v4.0 parity.
+
+---
+
 ## [Patch v3.13] — Today
 ### Security & Zero Trust Verification
 - **Dynamic Step-Up Auth**: Introduced targeted multi-factor verification hurdles for anomalies matching the high-value, new-device risk profile.
