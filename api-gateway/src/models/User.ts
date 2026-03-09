@@ -8,6 +8,8 @@ export interface UserDocument extends Document {
   password: string;
   role: UserRole;
   status: 'ACTIVE' | 'RESTRICTED' | 'FROZEN';
+  riskScore: number;
+  lastLogin?: Date;
 }
 
 const userSchema = new Schema<UserDocument>(
@@ -16,7 +18,9 @@ const userSchema = new Schema<UserDocument>(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['admin', 'analyst', 'user'], required: true },
-    status: { type: String, enum: ['ACTIVE', 'RESTRICTED', 'FROZEN'], default: 'ACTIVE' }
+    status: { type: String, enum: ['ACTIVE', 'RESTRICTED', 'FROZEN'], default: 'ACTIVE' },
+    riskScore: { type: Number, default: 0 },
+    lastLogin: { type: Date }
   },
   { timestamps: true }
 );

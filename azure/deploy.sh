@@ -330,7 +330,7 @@ fi
 REGISTER_CODE="$(curl -s -o /tmp/azure-register.json -w '%{http_code}' \
   -X POST "${API_URL}/api/v1/auth/register" \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@fraud.local","password":"StrongPass123!","role":"admin"}')"
+  -d '{"email":"admin@fraud.local","password":"StrongPassword123!","role":"admin"}')"
 
 if [[ "${REGISTER_CODE}" != "201" && "${REGISTER_CODE}" != "409" ]]; then
   echo "Register verification failed (${REGISTER_CODE})."
@@ -340,7 +340,7 @@ fi
 
 LOGIN_JSON="$(curl -s -X POST "${API_URL}/api/v1/auth/login" \
   -H 'Content-Type: application/json' \
-  -d '{"email":"admin@fraud.local","password":"StrongPass123!"}')"
+  -d '{"email":"admin@fraud.local","password":"StrongPassword123!"}')"
 
 TOKEN="$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("token",""))' <<<"${LOGIN_JSON}")"
 if [[ -z "${TOKEN}" ]]; then

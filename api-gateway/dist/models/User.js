@@ -36,8 +36,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const userSchema = new mongoose_1.Schema({
+    userId: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'analyst'], required: true }
+    role: { type: String, enum: ['admin', 'analyst', 'user'], required: true },
+    status: { type: String, enum: ['ACTIVE', 'RESTRICTED', 'FROZEN'], default: 'ACTIVE' },
+    riskScore: { type: Number, default: 0 },
+    lastLogin: { type: Date }
 }, { timestamps: true });
 exports.UserModel = mongoose_1.default.model('User', userSchema);

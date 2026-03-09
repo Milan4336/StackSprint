@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserDeviceRepository = void 0;
 const UserDevice_1 = require("../models/UserDevice");
 class UserDeviceRepository {
+    async findById(id) {
+        return UserDevice_1.UserDeviceModel.findOne({ $or: [{ deviceId: id }, { userId: id }] });
+    }
     async findByUserAndDevice(userId, deviceId) {
         return UserDevice_1.UserDeviceModel.findOne({ userId, deviceId });
     }

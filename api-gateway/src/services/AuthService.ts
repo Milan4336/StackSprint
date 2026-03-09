@@ -65,6 +65,12 @@ export class AuthService {
     try {
       const user = await this.userRepository.findByEmail(email);
 
+      console.error(`[DEBUG LOGIN] email: ${email}`);
+      console.error(`[DEBUG LOGIN] user exists?: ${!!user}`);
+      if (user) {
+        console.error(`[DEBUG LOGIN] password hash match?: ${comparePassword(password, user.password)}`);
+      }
+
       if (!user || !comparePassword(password, user.password)) {
         throw new AppError('Invalid credentials', 401);
       }
@@ -72,6 +78,13 @@ export class AuthService {
       if (user.status === 'FROZEN') {
         throw new AppError('Account is frozen due to suspicious activity. Contact support.', 403);
       }
+
+      // Update last login
+      user.lastLogin = new Date();
+      if (!user.userId) {
+        user.userId = user.email;
+      }
+      await user.save();
 
       await this.auditService.log({
         eventType: 'AUTH_LOGIN',
@@ -98,6 +111,7 @@ export class AuthService {
 
     } catch (error: any) {
       if (error instanceof AppError) throw error;
+      console.error("Inner Login Error:", error);
       throw new AppError('Login failed', 500);
     }
   }
@@ -142,5 +156,19 @@ export class AuthService {
     });
 
     return { message: 'OTP verified successfully' };
+  }
+
+  async me(userId: string) {
+    const user = await this.userRepository.findByEmail(userId);
+    if (!user) throw new AppError('User not found', 404);
+
+    return {
+      userId: user.userId,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      riskScore: user.riskScore,
+      lastLogin: user.lastLogin
+    };
   }
 }

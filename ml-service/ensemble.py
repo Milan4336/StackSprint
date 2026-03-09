@@ -89,15 +89,31 @@ class EnsembleModel:
         """Returns (ensemble_score, confidence)."""
         available = [r for r in results if r.available]
         if not available:
+            logger.error("No models available for scoring! Falling back to safe default.")
             return 0.0, 0.0
 
+        # Calculate weighted average
         total_weight = sum(r.weight for r in available)
+        if total_weight <= 0:
+            logger.warning("Total weight of available models is zero or negative. Falling back.")
+            return 0.0, 0.0
+
         ensemble = sum(r.score * r.weight for r in available) / total_weight
 
         # Confidence: 1 - stddev of available model scores (all agree → high confidence)
+        # For bank-grade, we penalize confidence if models are unavailable
         scores = [r.score for r in available]
-        confidence = float(1.0 - np.std(scores)) if len(scores) > 1 else 0.7
+        agreement_factor = float(1.0 - np.std(scores)) if len(scores) > 1 else 0.8
+        availability_factor = len(available) / len(results)
+
+        # Final confidence is a blend of agreement and model availability
+        confidence = agreement_factor * availability_factor
         confidence = float(np.clip(confidence, 0.0, 1.0))
+
+        if availability_factor < 1.0:
+            logger.warning("Ensemble degraded: only %d/%d models available. Availability factor: %.2f",
+                           len(available), len(results), availability_factor)
+
         return float(np.clip(ensemble, 0.0, 1.0)), confidence
 
     # ------------------------------------------------------------------

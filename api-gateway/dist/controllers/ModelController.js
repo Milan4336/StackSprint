@@ -9,7 +9,8 @@ class ModelController {
         this.modelMetricsService = modelMetricsService;
     }
     info = async (_req, res) => {
-        res.status(200).json(this.mlServiceClient.getModelInfo());
+        const info = await this.mlServiceClient.fetchRemoteModelInfo();
+        res.status(200).json(info);
     };
     health = async (req, res) => {
         const limit = Number(req.query.limit ?? 100);
@@ -18,6 +19,10 @@ class ModelController {
             this.modelMetricsService.listRecent(Math.max(1, Math.min(500, limit)))
         ]);
         res.status(200).json({ latest, metrics });
+    };
+    updateConfig = async (req, res) => {
+        const result = await this.mlServiceClient.updateModelConfig(req.body);
+        res.status(200).json(result);
     };
 }
 exports.ModelController = ModelController;

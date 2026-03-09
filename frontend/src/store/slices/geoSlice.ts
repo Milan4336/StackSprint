@@ -12,13 +12,12 @@ export const useGeoSlice = create<State>((set) => ({
 
   connectLive: () => {
     const socket = connectSocket();
-    
+
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on('geo.live', (payload) => {
-      console.log('Received geo.live', payload);
-      // handle geo.live
+      window.dispatchEvent(new CustomEvent('geo:live', { detail: payload }));
     });
   },
 

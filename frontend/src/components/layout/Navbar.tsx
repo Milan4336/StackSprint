@@ -95,16 +95,16 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
   const mlStatus = mlStatusQuery.data?.status ?? 'OFFLINE';
   const systemHealthy = Boolean(
     systemQuery.data &&
-      systemQuery.data.mongoStatus === 'UP' &&
-      systemQuery.data.redisStatus === 'UP' &&
-      systemQuery.data.mlStatus === 'UP'
+    systemQuery.data.mongoStatus === 'UP' &&
+    systemQuery.data.redisStatus === 'UP' &&
+    systemQuery.data.mlStatus === 'UP'
   );
   const mlTone =
     mlStatus === 'HEALTHY'
       ? 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10'
       : mlStatus === 'DEGRADED'
-      ? 'text-amber-300 border-amber-500/30 bg-amber-500/10'
-      : 'text-red-300 border-red-500/30 bg-red-500/10';
+        ? 'text-amber-300 border-amber-500/30 bg-amber-500/10'
+        : 'text-red-300 border-red-500/30 bg-red-500/10';
 
   useEffect(() => {
     setMlStatus(mlStatus);
@@ -118,21 +118,28 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
   return (
     <header
       className={[
-        'sticky top-0 z-30 border-b backdrop-blur-2xl',
+        'sticky top-0 z-30 border-b backdrop-blur-3xl transition-all duration-500',
         threatLevel === 'CRITICAL'
-          ? 'border-red-500/40 bg-red-500/10 shadow-[0_6px_35px_-20px_rgba(239,68,68,0.85)] dark:border-red-500/35 dark:bg-red-950/20'
-          : 'border-slate-200/80 bg-white/55 dark:border-slate-700/70 dark:bg-slate-950/55'
+          ? 'border-red-500/40 bg-red-950/40 shadow-[0_0_50px_rgba(239,68,68,0.2)]'
+          : 'border-blue-500/10 bg-[#020617]/80'
       ].join(' ')}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="min-w-[220px]">
-          <p className="chip mb-1 border-blue-500/35 bg-blue-500/10 text-blue-200">Enterprise Risk Intelligence</p>
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-[1.65rem]">
-            Fraud Detection Command Center
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+        <div className="min-w-[280px]">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="hud-readout text-blue-400 opacity-60">HQ_COMMAND_CENTER</span>
+            <div className="h-[1px] w-12 bg-blue-500/20" />
+            <span className="hud-readout text-blue-500">v3.7_LTS</span>
+          </div>
+          <h1 className="text-2xl font-black uppercase tracking-tighter text-white italic">
+            FRAUD <span className="text-blue-500">INTELLIGENCE</span> MISSION
           </h1>
-          <p className="text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
-            {lastUpdated ? `Last sync ${formatSafeDate(lastUpdated)}` : 'Awaiting first sync'}
-          </p>
+          <div className="flex gap-4 mt-1 opacity-40">
+            <div className="hud-readout flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-blue-500 animate-pulse" />
+              {lastUpdated ? `SYNCED_${formatSafeDate(lastUpdated).toUpperCase()}` : 'WAITING_FOR_DATA_STREAM'}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -145,10 +152,10 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
                 setSearchOpen(true);
               }}
               onFocus={() => setSearchOpen(true)}
-              placeholder="Search transactions, users, alerts, cases..."
-              className="input w-[25rem] py-2 pl-9"
+              placeholder="GLOBAL_INDEX_SCAN..."
+              className="input w-[25rem] py-2 pl-9 bg-blue-500/5 border-blue-500/20 text-white placeholder:text-blue-500/30 focus:border-blue-500/50 focus:bg-blue-500/10 rounded-sm font-mono text-xs uppercase tracking-widest"
             />
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-blue-500/40" size={14} />
             <AnimatePresence>
               {searchOpen && debounced.length >= 2 && searchQuery.data ? (
                 <motion.div
@@ -233,29 +240,27 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
             </AnimatePresence>
           </div>
 
-          <span className={`hidden items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold md:inline-flex ${mlTone}`}>
-            <span
-              className={[
-                'h-2 w-2 rounded-full',
-                mlStatus === 'HEALTHY' ? 'bg-emerald-400' : mlStatus === 'DEGRADED' ? 'bg-amber-400' : 'bg-red-400'
-              ].join(' ')}
-            />
-            ML {mlStatus}
-          </span>
+          <div className={`hidden flex-col items-end gap-0.5 md:flex pr-4 border-r border-blue-500/10`}>
+            <span className="hud-readout text-blue-500 opacity-60">ML_UNIT_STATE</span>
+            <div className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor] ${mlStatus === 'HEALTHY' ? 'bg-emerald-400 text-emerald-400' : mlStatus === 'DEGRADED' ? 'bg-amber-400 text-amber-400' : 'bg-red-400 text-red-400'}`} />
+              <span className={`font-mono text-[10px] font-black uppercase tracking-tighter ${mlStatus === 'HEALTHY' ? 'text-emerald-400' : mlStatus === 'DEGRADED' ? 'text-amber-400' : 'text-red-400'}`}>
+                {mlStatus}
+              </span>
+            </div>
+          </div>
 
           <ThreatLevelIndicator />
 
-          <span
-            className={[
-              'hidden items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold md:inline-flex',
-              systemHealthy
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
-            ].join(' ')}
-          >
-            <Circle size={10} className={systemHealthy ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'} />
-            System {systemHealthy ? 'Healthy' : 'Degraded'}
-          </span>
+          <div className={`hidden flex-col items-end gap-0.5 md:flex pr-4 border-r border-blue-500/10`}>
+            <span className="hud-readout text-blue-500 opacity-60">CORE_TELEMETRY</span>
+            <div className="flex items-center gap-2">
+              <span className={`h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor] ${systemHealthy ? 'bg-emerald-400 text-emerald-400' : 'bg-amber-400 text-amber-400'}`} />
+              <span className={`font-mono text-[10px] font-black uppercase tracking-tighter ${systemHealthy ? 'text-emerald-400' : 'text-amber-400'}`}>
+                SYS_{systemHealthy ? 'OPTIMAL' : 'DEGRADED'}
+              </span>
+            </div>
+          </div>
 
           <button
             type="button"

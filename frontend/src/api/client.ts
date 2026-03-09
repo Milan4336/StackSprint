@@ -46,6 +46,25 @@ apiClient.interceptors.response.use(
 );
 
 export const monitoringApi = {
+  async getMe(): Promise<{
+    userId: string;
+    email: string;
+    role: string;
+    status: string;
+    riskScore: number;
+    lastLogin?: string;
+  }> {
+    const { data } = await apiClient.get('/auth/me');
+    return data;
+  },
+  async getEntity(id: string): Promise<any> {
+    const { data } = await apiClient.get(`/entities/${id}`);
+    return data;
+  },
+  async getTimeline(id: string): Promise<any[]> {
+    const { data } = await apiClient.get(`/timeline/${id}`);
+    return data;
+  },
   async getTransactions(limit = 300): Promise<Transaction[]> {
     const { data } = await apiClient.get<Transaction[]>('/transactions', { params: { limit } });
     return data;
@@ -150,6 +169,12 @@ export const monitoringApi = {
     const { data } = await apiClient.get<ModelInfo>('/model/info');
     return data;
   },
+  async updateModelConfig(
+    payload: { weights?: Record<string, number>; fraud_threshold?: number }
+  ): Promise<any> {
+    const { data } = await apiClient.patch('/model/config', payload);
+    return data;
+  },
   async getModelHealth(limit = 100): Promise<ModelHealthPayload> {
     const { data } = await apiClient.get<ModelHealthPayload>('/model/health', { params: { limit } });
     return data;
@@ -160,6 +185,18 @@ export const monitoringApi = {
   },
   async getSystemHealth(): Promise<SystemHealth> {
     const { data } = await apiClient.get<SystemHealth>('/system/health');
+    return data;
+  },
+  async getSystemUpdates(): Promise<any[]> {
+    const { data } = await apiClient.get<any[]>('/system/updates');
+    return data;
+  },
+  async getDashboardModelConfidence(): Promise<{ time: string; value: number }[]> {
+    const { data } = await apiClient.get<{ time: string; value: number }[]>('/dashboard/model-confidence');
+    return data;
+  },
+  async getDashboardDrift(): Promise<{ time: string; value: number }[]> {
+    const { data } = await apiClient.get<{ time: string; value: number }[]>('/dashboard/drift');
     return data;
   },
   async getSettings(): Promise<SystemSettings> {
@@ -181,6 +218,54 @@ export const monitoringApi = {
   },
   async retrainModel(): Promise<{ status: string; async: boolean }> {
     const { data } = await apiClient.post('/model/retrain', { async_mode: true });
+    return data;
+  },
+
+  // Dashboard intelligence endpoints
+  async getDashboardOverview(): Promise<{
+    transactionCount: number;
+    fraudCount: number;
+    alertCount: number;
+    threatIndex: number;
+    fraudRate: number;
+    velocity: number;
+    riskDistribution: { Low: number; Medium: number; High: number };
+    systemHealth: string;
+    lastUpdated: string;
+  }> {
+    const { data } = await apiClient.get('/dashboard/overview');
+    return data;
+  },
+  async getGeoIntensity(): Promise<{ lat: number; lng: number; risk: number }[]> {
+    const { data } = await apiClient.get('/dashboard/geo-intensity');
+    return data;
+  },
+  async getRiskTrend(): Promise<{ time: string; value: number }[]> {
+    const { data } = await apiClient.get('/dashboard/risk-trend');
+    return data;
+  },
+  async getRiskDistribution(): Promise<{ Low: number; Medium: number; High: number }> {
+    const { data } = await apiClient.get('/dashboard/risk-distribution');
+    return data;
+  },
+  async getFraudTrend(): Promise<{ time: string; fraudCount: number; total: number; blocked: number; fraudRate: number }[]> {
+    const { data } = await apiClient.get('/dashboard/fraud-trend');
+    return data;
+  },
+  async getAnalyticsVelocity(): Promise<{ time: string; value: number }[]> {
+    const { data } = await apiClient.get('/dashboard/velocity');
+    return data;
+  },
+  async unfreezeUser(userId: string): Promise<any> {
+    const { data } = await apiClient.post('/admin/unfreeze-user', { userId });
+    return data;
+  },
+  async unfreezeDevice(deviceId: string): Promise<any> {
+    const { data } = await apiClient.post('/admin/unfreeze-device', { deviceId });
+    return data;
+  },
+  async releaseTransaction(transactionId: string): Promise<any> {
+    const { data } = await apiClient.post('/admin/release-transaction', { transactionId });
     return data;
   }
 };

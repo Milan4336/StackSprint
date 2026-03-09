@@ -4,11 +4,13 @@ exports.ModelMetricsService = void 0;
 class ModelMetricsService {
     modelMetricRepository;
     transactionRepository;
+    mlServiceClient;
     lastRecordedAt = 0;
     minSnapshotIntervalMs = 60 * 1000;
-    constructor(modelMetricRepository, transactionRepository) {
+    constructor(modelMetricRepository, transactionRepository, mlServiceClient) {
         this.modelMetricRepository = modelMetricRepository;
         this.transactionRepository = transactionRepository;
+        this.mlServiceClient = mlServiceClient;
     }
     async recordSnapshotIfDue() {
         const now = Date.now();
@@ -44,6 +46,15 @@ class ModelMetricsService {
                 ? 'Distribution shift detected in fraud rate/score compared to previous snapshot.'
                 : undefined
         });
+        if (driftDetected) {
+            console.log('[MODEL_HEALTH] Drift detected. Triggering autonomous retraining pipeline...');
+            try {
+                await this.mlServiceClient.triggerRetrain();
+            }
+            catch (err) {
+                console.error('[MODEL_HEALTH] Failed to trigger autonomous retrain:', err);
+            }
+        }
     }
     async listRecent(limit = 100) {
         return this.modelMetricRepository.findRecent(Math.max(1, Math.min(500, limit)));

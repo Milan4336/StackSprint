@@ -7,9 +7,11 @@ const jwt_1 = require("../utils/jwt");
 class AuthService {
     userRepository;
     auditService;
-    constructor(userRepository, auditService) {
+    otpRepository;
+    constructor(userRepository, auditService, otpRepository) {
         this.userRepository = userRepository;
         this.auditService = auditService;
+        this.otpRepository = otpRepository;
     }
     async register(email, password, role) {
         try {
@@ -37,33 +39,42 @@ class AuthService {
             // Return JWT token
             return {
                 token: (0, jwt_1.signJwt)({
-                    sub: String(user._id),
+                    sub: user.userId || String(user._id),
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    status: user.status
                 })
             };
         }
         catch (error) {
-            // Handle CosmosDB / Mongo duplicate key error
-            if (error?.code === 11000 ||
-                error?.message?.includes('duplicate key') ||
-                error?.message?.includes('E11000')) {
+            if (error?.code === 11000 || error?.message?.includes('duplicate key')) {
                 throw new errors_1.AppError('User already exists', 409);
             }
-            // Re-throw known AppError
-            if (error instanceof errors_1.AppError) {
+            if (error instanceof errors_1.AppError)
                 throw error;
-            }
-            // Unknown error → convert to safe AppError
             throw new errors_1.AppError('Failed to register user', 500);
         }
     }
     async login(email, password) {
         try {
             const user = await this.userRepository.findByEmail(email);
+            console.error(`[DEBUG LOGIN] email: ${email}`);
+            console.error(`[DEBUG LOGIN] user exists?: ${!!user}`);
+            if (user) {
+                console.error(`[DEBUG LOGIN] password hash match?: ${(0, password_1.comparePassword)(password, user.password)}`);
+            }
             if (!user || !(0, password_1.comparePassword)(password, user.password)) {
                 throw new errors_1.AppError('Invalid credentials', 401);
             }
+            if (user.status === 'FROZEN') {
+                throw new errors_1.AppError('Account is frozen due to suspicious activity. Contact support.', 403);
+            }
+            // Update last login
+            user.lastLogin = new Date();
+            if (!user.userId) {
+                user.userId = user.email;
+            }
+            await user.save();
             await this.auditService.log({
                 eventType: 'AUTH_LOGIN',
                 action: 'login',
@@ -79,18 +90,67 @@ class AuthService {
             });
             return {
                 token: (0, jwt_1.signJwt)({
-                    sub: String(user._id),
+                    sub: user.userId || String(user._id),
                     email: user.email,
-                    role: user.role
+                    role: user.role,
+                    status: user.status
                 })
             };
         }
         catch (error) {
-            if (error instanceof errors_1.AppError) {
+            if (error instanceof errors_1.AppError)
                 throw error;
-            }
+            console.error("Inner Login Error:", error);
             throw new errors_1.AppError('Login failed', 500);
         }
+    }
+    async requestOtp(userId) {
+        const user = await this.userRepository.findByEmail(userId);
+        if (!user)
+            throw new errors_1.AppError('User not found', 404);
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        await this.otpRepository.create(user.userId, code);
+        console.log(`[BANK-GRADE SECURITY] OTP for ${user.email}: ${code}`);
+        await this.auditService.log({
+            eventType: 'AUTH_OTP_REQUESTED',
+            action: 'request',
+            entityType: 'otp',
+            entityId: user.userId,
+            actor: { actorId: user.userId, actorEmail: user.email },
+            metadata: { method: 'SMS_FALLBACK' }
+        });
+        return { message: 'OTP sent successfully' };
+    }
+    async verifyOtp(userId, code) {
+        const isValid = await this.otpRepository.verify(userId, code);
+        if (!isValid)
+            throw new errors_1.AppError('Invalid or expired OTP', 401);
+        const user = await this.userRepository.findByEmail(userId);
+        if (user && user.status === 'RESTRICTED') {
+            user.status = 'ACTIVE';
+            await user.save();
+        }
+        await this.auditService.log({
+            eventType: 'AUTH_OTP_VERIFIED',
+            action: 'verify',
+            entityType: 'otp',
+            entityId: userId,
+            metadata: { success: true }
+        });
+        return { message: 'OTP verified successfully' };
+    }
+    async me(userId) {
+        const user = await this.userRepository.findByEmail(userId);
+        if (!user)
+            throw new errors_1.AppError('User not found', 404);
+        return {
+            userId: user.userId,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+            riskScore: user.riskScore,
+            lastLogin: user.lastLogin
+        };
     }
 }
 exports.AuthService = AuthService;

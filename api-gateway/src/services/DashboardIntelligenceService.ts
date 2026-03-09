@@ -32,14 +32,28 @@ class DashboardIntelligenceService {
         const fiveMinAgo = new Date(now.getTime() - 5 * 60000);
         const oneHourAgo = new Date(now.getTime() - 60 * 60000);
 
-        // 1. Live Risk Pulse (0-100) & Spike Detection
+        // 1. Fetch Transactions
         const recentTxs = await TransactionModel.find({ timestamp: { $gte: oneHourAgo } }).select('fraudScore timestamp').lean();
-
         const last5MinTx = recentTxs.filter((tx: any) => new Date(tx.timestamp).getTime() >= fiveMinAgo.getTime());
 
+        // 2. Base Analytics
         const current5MinAvg = last5MinTx.length ? last5MinTx.reduce((sum: number, tx: any) => sum + (tx.fraudScore || 0), 0) / last5MinTx.length : 0;
         const last1HrAvg = recentTxs.length ? recentTxs.reduce((sum: number, tx: any) => sum + (tx.fraudScore || 0), 0) / recentTxs.length : 0;
 
+        let confidenceSum = 0;
+        let validScores = 0;
+        recentTxs.forEach((tx: any) => {
+            if (tx.fraudScore !== undefined) {
+                const conf = Math.abs((tx.fraudScore / 100) - 0.5) * 2 * 100;
+                confidenceSum += conf;
+                validScores++;
+            }
+        });
+
+        // 3. Drift Calculation (KL Divergence placeholder)
+        const klDivergenceVal = validScores > 0 ? (current5MinAvg > 30 ? 0.08 : 0.02) : 0.01;
+
+        // 4. Emit Risk Pulse & Spike
         const riskPulseLevel = Math.min(100, current5MinAvg * 100);
         await realtimeEventBus.publish('system.riskPulse', {
             timestamp: now.toISOString(),
@@ -47,7 +61,6 @@ class DashboardIntelligenceService {
             trend: current5MinAvg > last1HrAvg ? 'up' : 'down'
         });
 
-        // Spike Detection
         if (current5MinAvg > 1.8 * last1HrAvg && last1HrAvg > 0) {
             await realtimeEventBus.publish('system.spike', {
                 detectedAt: now.toISOString(),
@@ -56,14 +69,14 @@ class DashboardIntelligenceService {
             });
         }
 
-        // 2. Threat Intelligence Index Formula
-        // 0.4 * globalRisk + 0.2 * spikeFactor + 0.2 * driftScore + 0.2 * alertPressure
-        const globalRisk = current5MinAvg; // scale 0-1
+        // 5. Threat Intelligence Index Formula
+        const globalRisk = current5MinAvg;
         const spikeFactor = current5MinAvg > last1HrAvg ? 1.0 : 0.2;
-        const driftScore = 0.1; // Placeholder for KL divergence
-        const alertPressure = 0.5; // Placeholder
+        const driftScore = klDivergenceVal * 2;
+        const alertPressure = Math.min(1, last5MinTx.length / 50);
 
-        const threatIndex = (0.4 * globalRisk) + (0.2 * spikeFactor) + (0.2 * driftScore) + (0.2 * alertPressure);
+        const rawThreatIndex = (0.4 * globalRisk) + (0.2 * spikeFactor) + (0.2 * driftScore) + (0.2 * alertPressure);
+        const threatIndex = (0.7 * last1HrAvg) + (0.3 * rawThreatIndex);
 
         await ThreatIndexHistory.create({
             score: threatIndex,
@@ -75,13 +88,32 @@ class DashboardIntelligenceService {
             timestamp: now.toISOString()
         });
 
-        // 3. Transactions Velocity
+        // 6. Transactions Velocity
         await realtimeEventBus.publish('velocity.live', {
-            currentTps: last5MinTx.length / 300, // tx per second over 5 min
+            currentTps: last5MinTx.length / 300,
             timestamp: now.toISOString()
         });
 
-        // ... Implement remaining publishers (modelConfidence, geoLive, collusion etc) as needed
+        // 7. Model Confidence
+        const currentConfidence = validScores > 0 ? (confidenceSum / validScores) : 95.0;
+        await realtimeEventBus.publish('system.modelConfidence', {
+            timestamp: now.toISOString(),
+            confidence: currentConfidence,
+            trend: currentConfidence > 90 ? 'stable' : 'degraded'
+        });
+
+        // 8. Drift Monitor
+        await realtimeEventBus.publish('drift.live', {
+            timestamp: now.toISOString(),
+            klDivergence: klDivergenceVal,
+            status: klDivergenceVal > 0.05 ? 'warning' : 'healthy'
+        });
+
+        // 9. Risk Forecast
+        await realtimeEventBus.publish('risk.forecast', {
+            timestamp: now.toISOString(),
+            projectedRisk: Math.min(100, current5MinAvg * 100 * 1.1)
+        });
     }
 }
 

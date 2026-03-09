@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FraudAlertRepository = void 0;
 const FraudAlert_1 = require("../models/FraudAlert");
 class FraudAlertRepository {
+    async find(query = {}, limit = 100) {
+        return FraudAlert_1.FraudAlertModel.find(query).limit(limit).sort({ createdAt: -1 });
+    }
     async create(payload) {
         return FraudAlert_1.FraudAlertModel.create(payload);
     }
@@ -24,7 +27,7 @@ class FraudAlertRepository {
     }
     async list(options = {}) {
         const page = Math.max(1, Number(options.page ?? 1));
-        const limit = Number(options.limit ?? 100);
+        const limit = Math.max(1, Math.min(500, Number(options.limit ?? 100)));
         const skip = (page - 1) * limit;
         const query = {};
         if (options.status) {
@@ -36,13 +39,20 @@ class FraudAlertRepository {
                 { userId: { $regex: options.search, $options: 'i' } }
             ];
         }
-        return FraudAlert_1.FraudAlertModel.find(query)
-            .skip(skip)
-            .limit(limit)
-            .exec();
+        const [data, total] = await Promise.all([
+            FraudAlert_1.FraudAlertModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+            FraudAlert_1.FraudAlertModel.countDocuments(query)
+        ]);
+        return {
+            data,
+            total,
+            page,
+            limit,
+            pages: Math.max(1, Math.ceil(total / limit))
+        };
     }
     async findByAlertId(alertId) {
-        return FraudAlert_1.FraudAlertModel.findById(alertId).exec();
+        return FraudAlert_1.FraudAlertModel.findOne({ alertId }).exec();
     }
 }
 exports.FraudAlertRepository = FraudAlertRepository;

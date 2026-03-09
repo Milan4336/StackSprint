@@ -4,6 +4,23 @@ This document tracks the technical evolution of the Fraud Command Center, arrang
 
 ---
 
+## [Patch v3.12] — Today
+### Risk-Based Containment & Safe Mode
+- **4-Tier Threat Engine**: Replaced legacy system lockdown with a granular 4-tier risk architecture (Normal, Suspicious, High Risk, Critical).
+- **Micro-Isolation**: Introduced targeted account and device freezing at critical threat levels to prevent global service disruptions.
+- **Fraud Protection Mode**: Implemented threshold-based automatic safe mode requiring manual review for high-value transactions during intense threat events.
+- **Admin Control Panel**: Added an MFA-gated administrative override interface to safely unfreeze accounts, devices, and release transactions.
+
+---
+
+## [Patch v3.11] — Today
+### 3D Global Visualization & Neural Configuration
+- **Global Threat Globe**: Replaced the Autonomous Actions feed with a premium 3D Earth visualization featuring dynamic forensic trajectories (arcs), pulse rings, and a technical HUD overlay.
+- **ML Ensemble Settings**: Restored elite control over the neural scoring plane. Users can now dynamically adjust individual weights for XGBoost, Isolation Forest, and Autoencoder models.
+- **Settings Routing**: Restored side-navigation access to the Settings menu and added preference toggles for high-threat visual effects.
+
+---
+
 ## [Patch v3.9] — Today
 ### Surgical Intelligence & Deployment Sync
 - **Autonomous Response Logic**: Fixed the connection hang in the Autonomous Actions feed with proactive socket lifecycle guards.

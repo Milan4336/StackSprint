@@ -41,6 +41,11 @@ Transformed investigation workflows from standard tables into a multi-dimensiona
 - **Personal Security Portal**: A dedicated user-facing dashboard for cardholders to monitor their identity safety score, risk breakdown, and activity maps.
 - **Executive Mode**: A high-level view for C-suite stakeholders, focused on top-tier KPIs like KL Divergence and system stress.
 
+### 🛡️ Risk-Based Containment
+- **4-Tier Action Engine**: Automated responses scale from nominal `ALLOW`, up step-up authentication (`SUSPICIOUS`), localized `REQUIRE_MANUAL_REVIEW` account freezing (`HIGH RISK`), and `BLOCK_TRANSACTION` micro-device isolation (`CRITICAL`).
+- **Fraud Protection Mode (Safe Mode)**: A threshold-activated system state that dynamically triggers when multiple high-severity threats occur in rapid succession, temporarily requiring manual human authorization on all high-value outbound pipelines.
+- **MFA Admin Override**: Secure, role-gated mechanism to bypass system freezes on individual entities.
+
 ---
 
 ## ⚙️ 3. Technical Architecture

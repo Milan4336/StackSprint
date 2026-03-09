@@ -18,6 +18,13 @@ class SimulationService {
         if (!runtime.simulationMode) {
             throw new errors_1.AppError('Simulation mode is disabled in settings', 403);
         }
+        // Fire and forget the simulation to prevent HTTP timeouts
+        this.runSimulationTask(count).catch((err) => {
+            console.error('Simulation background task failed:', err);
+        });
+        return { generated: count };
+    }
+    async runSimulationTask(count) {
         await this.eventBusService.publishSimulationEvent({
             type: 'simulation.started',
             count,
@@ -36,13 +43,14 @@ class SimulationService {
                 deviceId: i % 5 === 0 ? `unknown-${(0, uuid_1.v4)().slice(0, 6)}` : `device-${(i % 20) + 1}`,
                 ipAddress: `10.0.${(i % 10) + 1}.${(i % 200) + 1}`,
             });
+            // Small delay between transactions to prevent overwhelming the event bus or Redis
+            await new Promise((resolve) => setTimeout(resolve, 50));
         }
         await this.eventBusService.publishSimulationEvent({
             type: 'simulation.completed',
             count,
             completedAt: new Date().toISOString()
         });
-        return { generated: count };
     }
 }
 exports.SimulationService = SimulationService;

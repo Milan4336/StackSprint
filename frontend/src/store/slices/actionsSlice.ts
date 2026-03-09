@@ -45,6 +45,12 @@ export const useActionsSlice = create<State>((set, get) => ({
       set({ connected: false });
     });
 
+    socket.on('system.status', (payload: any) => {
+      if (payload?.status === 'connected') {
+        set({ connected: true });
+      }
+    });
+
     socket.on('transactions.live', (payload: any) => {
       const action = payload.action;
       if (!action || action === 'ALLOW') return;

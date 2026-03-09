@@ -29,7 +29,9 @@ export class UserRepository {
         email,
         password,
         role,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        riskScore: 0,
+        lastLogin: new Date()
       });
 
       await user.save();

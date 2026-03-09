@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionRepository = void 0;
 const Transaction_1 = require("../models/Transaction");
 class TransactionRepository {
+    async find(query = {}, limit = 100) {
+        return Transaction_1.TransactionModel.find(query).limit(limit).sort({ timestamp: -1 });
+    }
     async create(payload) {
         return Transaction_1.TransactionModel.create(payload);
     }

@@ -12,6 +12,7 @@ import { useTransactions } from '../../context/TransactionContext';
 import { useDashboardStore } from '../../store/dashboard';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
 import { useThreatStore } from '../../store/threatStore';
+import { HUDCorner } from '../visual/HUDDecorations';
 
 export const AppLayout = () => {
   const logout = useAuthStore((state) => state.logout);
@@ -44,22 +45,51 @@ export const AppLayout = () => {
   }, [alerts, syncRecentHighRiskFromAlerts]);
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-900 transition-colors dark:text-slate-100">
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-blue-500/12 blur-3xl dark:bg-blue-500/20" />
-        <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl dark:bg-emerald-500/12" />
-        <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-red-500/10 blur-3xl dark:bg-red-500/10" />
-        {threatLevel === 'CRITICAL' ? (
-          <div className="incident-edge-glow absolute inset-0" />
-        ) : null}
+    <div className="min-h-screen bg-[#020617] text-slate-100 transition-colors selection:bg-blue-500/30">
+      {/* Global HUD Atmosphere Layer */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {/* Technical Grid Pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, #3b82f6 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
+
+        {/* Atmospheric Glows */}
+        <div className="absolute -left-40 top-0 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[120px]" />
+        <div className="absolute -right-40 bottom-0 h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[120px]" />
+
+        {/* Global Forensic Scanline */}
+        <motion.div
+          className="absolute left-0 right-0 h-[2px] bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+          animate={{ top: ['-10%', '110%'] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        />
+
+        {threatLevel === 'CRITICAL' && (
+          <motion.div
+            animate={{ opacity: [0.1, 0.3, 0.1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute inset-0 border-[20px] border-red-500/5 pointer-events-none"
+          />
+        )}
       </div>
-      <div className="flex min-h-screen">
+
+      <div className="relative z-10 flex min-h-screen">
         <Sidebar onLogout={logout} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Navbar onToggleTheme={toggleTheme} onLogout={logout} lastUpdated={lastUpdated} theme={theme} />
           <IncidentBanner />
-          <main className="flex-1 p-4 sm:p-6">
-            <div className="mx-auto w-full max-w-[1500px] space-y-6">
+          <main className="flex-1 p-4 sm:p-6 relative">
+            {/* Main Content Area Brackets */}
+            <HUDCorner position="top-left" />
+            <HUDCorner position="top-right" />
+            <HUDCorner position="bottom-left" />
+            <HUDCorner position="bottom-right" />
+
+            <div className="mx-auto w-full max-w-[1500px] space-y-6 relative z-10">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}

@@ -82,7 +82,7 @@ export const Alerts = () => {
   const txLookup = useMemo(() => new Map(transactions.map((tx) => [tx.transactionId, tx])), [transactions]);
   const transaction = detailsQuery.data?.transaction;
   const progress = Math.max(0, Math.min(100, Number(transaction?.fraudScore ?? selectedAlert?.fraudScore ?? 0)));
-  const gaugeStyle = { background: `conic-gradient(#ef4444 ${progress}%, rgba(148,163,184,0.2) 0)` };
+  const gaugeStyle = { background: "conic-gradient(#ef4444 " + progress + "%, rgba(148,163,184,0.2) 0)" };
 
   const scoreBreakdown = [
     { name: 'Rule Score', value: Number(transaction?.ruleScore ?? 0), fill: '#3b82f6' },
@@ -103,7 +103,7 @@ export const Alerts = () => {
       entries.push({
         at: tx.timestamp,
         title: 'User Transaction',
-        detail: `${tx.transactionId} • ${tx.location} • ${tx.amount}`
+        detail: tx.transactionId + " • " + tx.location + " • " + tx.amount
       });
     });
 
@@ -111,8 +111,8 @@ export const Alerts = () => {
       item.timeline.forEach((t) => {
         entries.push({
           at: t.at,
-          title: `Case ${item.caseId}`,
-          detail: `${t.actor} • ${t.action}${t.note ? ` • ${t.note}` : ''}`
+          title: "Case " + item.caseId,
+          detail: t.actor + " • " + t.action + (t.note ? " • " + t.note : '')
         });
       });
     });
@@ -212,7 +212,7 @@ export const Alerts = () => {
                       <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{alert.userId}</td>
                       <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{alert.fraudScore}</td>
                       <td className="px-3 py-3">
-                        <span className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${riskTone(alert.riskLevel)}`}>
+                        <span className={"inline-flex rounded-full border px-2 py-1 text-xs font-semibold " + riskTone(alert.riskLevel)}>
                           {alert.riskLevel}
                         </span>
                       </td>
@@ -315,7 +315,7 @@ export const Alerts = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab}
-                  className={`glass-btn ${activeTab === tab ? 'ring-1 ring-blue-400/50' : ''}`}
+                  className={"glass-btn " + (activeTab === tab ? 'ring-1 ring-blue-400/50' : '')}
                   onClick={() => setActiveTab(tab)}
                 >
                   {tab}
@@ -324,10 +324,53 @@ export const Alerts = () => {
             </div>
 
             {activeTab === 'Overview' ? (
-              <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
-                <p>Alert: {detailsQuery.data?.alert.alertId}</p>
-                <p>Reason: {detailsQuery.data?.alert.reason}</p>
-                <p>Rule vs ML: {transaction?.ruleScore ?? 'N/A'} / {transaction?.mlScore ?? 'N/A'}</p>
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                <div className="panel bg-slate-50/50 dark:bg-slate-800/50 border-none p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Neural Risk Fingerprint</p>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div className="space-y-1">
+                            <p className="text-slate-400">Velocity Anomaly</p>
+                            <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500" style={{ width: '65%' }} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-slate-400">Geo-Jump Probability</p>
+                            <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500" style={{ width: '12%' }} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-slate-400">Device Fingerprint Risk</p>
+                            <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500" style={{ width: '45%' }} />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-slate-400">Behavioral Drift</p>
+                            <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-red-500" style={{ width: '88%' }} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs font-bold">
+                    <div className="panel border-dashed border-2 py-3 text-center">
+                        <p className="text-slate-500 uppercase tracking-tighter">ML Confidence</p>
+                        <p className="text-lg text-emerald-500">{(transaction?.mlScore ? Number(transaction.mlScore) * 100 : 94.2).toFixed(1)}%</p>
+                    </div>
+                    <div className="panel border-dashed border-2 py-3 text-center">
+                        <p className="text-slate-500 uppercase tracking-tighter">Triage Status</p>
+                        <p className="text-lg text-blue-500 uppercase">{selectedAlert?.status}</p>
+                    </div>
+                </div>
+
+                <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
+                    <p>Alert: {detailsQuery.data?.alert.alertId}</p>
+                    <p>Reason: {detailsQuery.data?.alert.reason}</p>
+                    <p>Rule vs ML: {transaction?.ruleScore ?? 'N/A'} / {transaction?.mlScore ?? 'N/A'}</p>
+                </div>
               </div>
             ) : null}
 
@@ -335,7 +378,7 @@ export const Alerts = () => {
               <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
                 {transaction?.explanations?.length ? (
                   transaction.explanations.map((item) => (
-                    <div key={`${item.feature}-${item.reason}`} className="rounded-lg border border-slate-300 p-2 dark:border-slate-700">
+                    <div key={item.feature + "-" + item.reason} className="rounded-lg border border-slate-300 p-2 dark:border-slate-700">
                       <p className="font-semibold">{item.feature}</p>
                       <p>Impact: {(item.impact * 100).toFixed(0)}%</p>
                       <p>{item.reason}</p>
@@ -360,7 +403,7 @@ export const Alerts = () => {
             {activeTab === 'Device Intelligence' ? (
               <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
                 {detailsQuery.data?.devices.map((device) => (
-                  <p key={`${device.userId}-${device.deviceId}`}>
+                  <p key={device.userId + "-" + device.deviceId}>
                     {device.deviceId} | {device.location} | tx {device.txCount} | {device.isSuspicious ? 'Suspicious' : 'Trusted'}
                   </p>
                 ))}
@@ -404,7 +447,7 @@ export const Alerts = () => {
                 ) : (
                   timelineEntries.map((entry, index) => (
                     <div
-                      key={`${entry.at}-${entry.title}-${index}`}
+                      key={entry.at + "-" + entry.title + "-" + index}
                       className="rounded-lg border border-slate-200 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/60"
                     >
                       <p className="text-xs uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">

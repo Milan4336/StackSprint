@@ -7,7 +7,7 @@ class UserRepository {
     async findByEmail(email) {
         return User_1.UserModel.findOne({ email }).exec();
     }
-    async upsert(email, password, role) {
+    async upsert(email, password, role, userId) {
         try {
             // First check if user already exists
             const existing = await User_1.UserModel.findOne({ email }).exec();
@@ -16,9 +16,13 @@ class UserRepository {
             }
             // Create new user safely
             const user = new User_1.UserModel({
+                userId: userId || email,
                 email,
                 password,
-                role
+                role,
+                status: 'ACTIVE',
+                riskScore: 0,
+                lastLogin: new Date()
             });
             await user.save();
             return user;

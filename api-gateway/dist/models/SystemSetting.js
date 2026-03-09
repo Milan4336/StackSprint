@@ -42,8 +42,11 @@ const systemSettingSchema = new mongoose_1.Schema({
     velocityTxThreshold: { type: Number, required: true },
     scoreRuleWeight: { type: Number, required: true },
     scoreMlWeight: { type: Number, required: true },
+    scoreBehaviorWeight: { type: Number, required: true, default: 0.25 },
+    scoreGraphWeight: { type: Number, required: true, default: 0.15 },
     autonomousAlertThreshold: { type: Number, required: true },
     simulationMode: { type: Boolean, required: true, default: true },
+    safeMode: { type: Boolean, required: true, default: false },
     updatedBy: { type: String, required: false }
 }, { timestamps: true, collection: 'system_settings' });
 exports.SystemSettingModel = mongoose_1.default.model('SystemSetting', systemSettingSchema);

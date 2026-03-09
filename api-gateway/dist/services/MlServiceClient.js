@@ -50,15 +50,18 @@ class MlServiceClient {
             throw new Error(`ML circuit breaker open until ${new Date(this.circuitOpenUntil).toISOString()}`);
         }
         const startedAt = Date.now();
-        const response = await axios_1.default.post(`${env_1.env.ML_SERVICE_URL}/predict`, payload, {
-            timeout: 2500
-        }).catch((error) => {
+        try {
+            const response = await axios_1.default.post(`${env_1.env.ML_SERVICE_URL}/predict`, payload, {
+                timeout: 2500
+            });
+            this.markSuccess(Date.now() - startedAt);
+            return response.data;
+        }
+        catch (error) {
             const reason = error instanceof Error ? error.message : 'Unknown ML error';
             this.markFailure(reason);
             throw error;
-        });
-        this.markSuccess(Date.now() - startedAt);
-        return response.data;
+        }
     }
     async healthCheck() {
         await axios_1.default.get(`${env_1.env.ML_SERVICE_URL}/health`, { timeout: 2500 });
@@ -71,6 +74,35 @@ class MlServiceClient {
             lastError: this.lastError,
             circuitOpenUntil: this.circuitOpenUntil ? new Date(this.circuitOpenUntil).toISOString() : null
         };
+    }
+    async triggerRetrain() {
+        try {
+            const resp = await axios_1.default.post(`${env_1.env.ML_SERVICE_URL}/model/retrain`, {}, { timeout: 30000 });
+            return resp.data;
+        }
+        catch (error) {
+            const reason = error instanceof Error ? error.message : 'Retrain trigger failed';
+            throw new Error(reason);
+        }
+    }
+    async fetchRemoteModelInfo() {
+        try {
+            const resp = await axios_1.default.get(`${env_1.env.ML_SERVICE_URL}/model/info`, { timeout: 2000 });
+            return resp.data;
+        }
+        catch {
+            return { models: [], ensemble: {} };
+        }
+    }
+    async updateModelConfig(payload) {
+        try {
+            const resp = await axios_1.default.patch(`${env_1.env.ML_SERVICE_URL}/model/config`, payload, { timeout: 2000 });
+            return resp.data;
+        }
+        catch (error) {
+            const reason = error.response?.data?.detail || error.message || 'Model config update failed';
+            throw new Error(reason);
+        }
     }
     getModelInfo() {
         return {

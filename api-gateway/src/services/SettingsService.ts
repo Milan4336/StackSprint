@@ -12,6 +12,7 @@ export interface UpdateSettingsInput {
   scoreGraphWeight?: number;
   autonomousAlertThreshold?: number;
   simulationMode?: boolean;
+  safeMode?: boolean;
 }
 
 export class SettingsService {
@@ -35,7 +36,8 @@ export class SettingsService {
       scoreBehaviorWeight: setting.scoreBehaviorWeight,
       scoreGraphWeight: setting.scoreGraphWeight,
       autonomousAlertThreshold: setting.autonomousAlertThreshold,
-      simulationMode: setting.simulationMode
+      simulationMode: setting.simulationMode,
+      safeMode: setting.safeMode
     };
   }
 
@@ -62,6 +64,7 @@ export class SettingsService {
         ? { autonomousAlertThreshold: input.autonomousAlertThreshold }
         : {}),
       ...(input.simulationMode !== undefined ? { simulationMode: input.simulationMode } : {}),
+      ...(input.safeMode !== undefined ? { safeMode: input.safeMode } : {}),
       ...(actor?.actorEmail ? { updatedBy: actor.actorEmail } : {})
     });
 

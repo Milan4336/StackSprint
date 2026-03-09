@@ -12,23 +12,22 @@ export const useIntelligenceSlice = create<State>((set) => ({
 
   connectLive: () => {
     const socket = connectSocket();
-    
+
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on('system.modelConfidence', (payload) => {
-      console.log('Received system.modelConfidence', payload);
-      // handle system.modelConfidence
+      // console.log('Received system.modelConfidence', payload);
+      window.dispatchEvent(new CustomEvent('intelligence:confidence', { detail: payload }));
     });
 
     socket.on('risk.forecast', (payload) => {
-      console.log('Received risk.forecast', payload);
-      // handle risk.forecast
+      window.dispatchEvent(new CustomEvent('intelligence:riskForecast', { detail: payload }));
     });
 
     socket.on('drift.live', (payload) => {
-      console.log('Received drift.live', payload);
-      // handle drift.live
+      // console.log('Received drift.live', payload);
+      window.dispatchEvent(new CustomEvent('intelligence:drift', { detail: payload }));
     });
   },
 

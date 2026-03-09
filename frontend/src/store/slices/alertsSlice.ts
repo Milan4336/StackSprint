@@ -12,13 +12,12 @@ export const useAlertsSlice = create<State>((set) => ({
 
   connectLive: () => {
     const socket = connectSocket();
-    
+
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on('alerts.pressure', (payload) => {
-      console.log('Received alerts.pressure', payload);
-      // handle alerts.pressure
+      window.dispatchEvent(new CustomEvent('alerts:pressure', { detail: payload }));
     });
   },
 

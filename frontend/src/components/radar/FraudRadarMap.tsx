@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { useThreatStore } from '../../store/threatStore';
 import { Transaction } from '../../types';
 import { formatSafeDate, safeDate } from '../../utils/date';
+import { GeoTrajectoryOverlay } from '../visual/GeoTrajectoryOverlay';
 
 interface FraudRadarMapProps {
   transactions: Transaction[];
@@ -508,6 +509,15 @@ export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: 
             showPaths={showPaths}
             incidentMode={incidentMode}
           />
+          {showPaths && (
+            <GeoTrajectoryOverlay
+              trajectories={paths.map(p => ({
+                from: p.from,
+                to: p.to,
+                risk: (p.tx.fraudScore || 0) / 100
+              }))}
+            />
+          )}
         </MapContainer>
       </div>
     </motion.article>

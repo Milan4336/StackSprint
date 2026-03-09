@@ -1,6 +1,8 @@
 import { connectMongo } from '../config/db';
 import { TransactionModel } from '../models/Transaction';
+import { UserModel } from '../models/User';
 import { geocodeLocation } from './geolocation';
+import { hashPassword } from './password';
 
 const seed = async (): Promise<void> => {
   await connectMongo();
@@ -46,6 +48,29 @@ const seed = async (): Promise<void> => {
 
   await TransactionModel.deleteMany({});
   await TransactionModel.insertMany(docs);
+
+  // Seed Users
+  await UserModel.deleteMany({});
+  await UserModel.create([
+    {
+      userId: 'admin-1',
+      email: 'admin@fraud.local',
+      password: hashPassword('StrongPassword123!'),
+      role: 'admin',
+      status: 'ACTIVE',
+      riskScore: 0
+    },
+    {
+      userId: 'analyst-1',
+      email: 'analyst@fraud.local',
+      password: hashPassword('AnalystPassword123!'),
+      role: 'analyst',
+      status: 'ACTIVE',
+      riskScore: 0
+    }
+  ]);
+
+  console.log('Seeding completed successfully');
   process.exit(0);
 };
 

@@ -4,7 +4,8 @@ import { ThreatLevel, useThreatStore } from '../../store/threatStore';
 
 const toneByLevel: Record<ThreatLevel, string> = {
   NORMAL: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200',
-  ELEVATED: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+  SUSPICIOUS: 'border-amber-500/30 bg-amber-500/10 text-amber-200',
+  HIGH: 'border-orange-500/30 bg-orange-500/10 text-orange-200',
   CRITICAL: 'border-red-500/30 bg-red-500/10 text-red-200'
 };
 

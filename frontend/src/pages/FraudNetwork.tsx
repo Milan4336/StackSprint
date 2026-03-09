@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import * as d3 from 'd3';
 import { useQuery } from '@tanstack/react-query';
 import { monitoringApi } from '../api/client';
-import { Activity, Shield, Users, Network, Info, RefreshCw } from 'lucide-react';
+import { Activity, Shield, Network, Info, RefreshCw, Plus, Minus, Maximize2 } from 'lucide-react';
+import { RelationshipGraph } from '../components/dashboard/RelationshipGraph';
+import { useQuery as useQueryTxs } from '@tanstack/react-query';
 
 interface Node extends d3.SimulationNodeDatum {
     id: string;
@@ -32,6 +34,12 @@ export const FraudNetwork = () => {
         refetchInterval: 10000 // Update every 10s
     });
 
+    const { data: recentTxs } = useQueryTxs({
+        queryKey: ["network-transactions"],
+        queryFn: () => monitoringApi.getTransactions(100),
+        refetchInterval: 10000
+    });
+
     useEffect(() => {
         if (!svgRef.current || !graphQuery.data) return;
 
@@ -44,12 +52,24 @@ export const FraudNetwork = () => {
 
         svg.selectAll("*").remove();
 
+        // Create a main container for zoom/pan
+        const g = svg.append("g");
+
+        // Set up zoom behavior
+        const zoom = d3.zoom<SVGSVGElement, unknown>()
+            .scaleExtent([0.1, 8])
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            });
+
+        svg.call(zoom);
+
         const simulation = d3.forceSimulation<Node>(nodes as Node[])
             .force("link", d3.forceLink<Node, Link>(links as Link[]).id((d: Node) => d.id).distance(100))
             .force("charge", d3.forceManyBody().strength(-200))
             .force("center", d3.forceCenter(width / 2, height / 2));
 
-        const link = svg.append("g")
+        const link = g.append("g")
             .attr("stroke", "#94a3b8")
             .attr("stroke-opacity", 0.4)
             .selectAll<SVGLineElement, Link>("line")
@@ -57,7 +77,7 @@ export const FraudNetwork = () => {
             .join("line")
             .attr("stroke-width", (d: Link) => Math.sqrt(d.value || 1) * 2);
 
-        const node = svg.append("g")
+        const node = g.append("g")
             .selectAll<SVGCircleElement, Node>("circle")
             .data(nodes as Node[])
             .join("circle")
@@ -86,6 +106,15 @@ export const FraudNetwork = () => {
                 .attr("cx", (d: Node) => d.x!)
                 .attr("cy", (d: Node) => d.y!);
         });
+
+        // Add Zoom Controls
+        const zoomIn = () => svg.transition().duration(300).call(zoom.scaleBy, 1.5);
+        const zoomOut = () => svg.transition().duration(300).call(zoom.scaleBy, 0.75);
+        const resetZoom = () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+
+        (window as any).zoomInGraph = zoomIn;
+        (window as any).zoomOutGraph = zoomOut;
+        (window as any).resetGraphZoom = resetZoom;
 
         function dragstarted(event: d3.D3DragEvent<SVGCircleElement, Node, Node>) {
             if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -145,6 +174,31 @@ export const FraudNetwork = () => {
 
             <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
                 <div className="panel overflow-hidden p-0 relative min-h-[500px] border-2 border-slate-200/50 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-900/30 backdrop-blur-sm">
+                    {/* Zoom Controls */}
+                    <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
+                        <button
+                            onClick={() => (window as any).zoomInGraph?.()}
+                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md text-slate-300 transition-colors"
+                            title="Zoom In"
+                        >
+                            <Plus size={16} />
+                        </button>
+                        <button
+                            onClick={() => (window as any).zoomOutGraph?.()}
+                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md text-slate-300 transition-colors"
+                            title="Zoom Out"
+                        >
+                            <Minus size={16} />
+                        </button>
+                        <button
+                            onClick={() => (window as any).resetGraphZoom?.()}
+                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md text-slate-300 transition-colors"
+                            title="Reset Zoom"
+                        >
+                            <Maximize2 size={16} />
+                        </button>
+                    </div>
+
                     {graphQuery.isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center">
                             <RefreshCw className="animate-spin text-blue-500" size={32} />
@@ -239,6 +293,13 @@ export const FraudNetwork = () => {
                                 <p className="text-[10px] font-bold text-slate-400 uppercase">No active collusion clusters</p>
                             </div>
                         )}
+                    </div>
+
+                    <div className="h-[300px]">
+                        <RelationshipGraph
+                            transactions={recentTxs || []}
+                            focusUserId={selectedNode?.type === 'USER' ? selectedNode.id : undefined}
+                        />
                     </div>
                 </div>
             </div>

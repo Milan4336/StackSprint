@@ -27,6 +27,11 @@ class RetrainRequest(BaseModel):
     async_mode: bool = True
 
 
+class EnsembleConfigRequest(BaseModel):
+    weights: dict[str, float] | None = None
+    fraud_threshold: float | None = None
+
+
 # ── App bootstrap ────────────────────────────────────────────────────────────
 app = FastAPI(title="Fraud ML Service", version="2.0.0")
 
@@ -92,13 +97,35 @@ def model_info() -> dict:
     return {
         "models": registry.all(),
         "ensemble": {
-            "weights": {
-                "isolation_forest": 0.35,
-                "xgboost":          0.45,
-                "autoencoder":      0.20,
-            },
-            "fraud_threshold": 0.55,
+            "weights": ensemble._weights,
+            "fraud_threshold": ensemble._threshold,
         },
+    }
+
+
+@app.patch("/model/config")
+def update_ensemble_config(payload: EnsembleConfigRequest) -> dict:
+    """Update ensemble weights or fraud threshold dynamically."""
+    if payload.weights:
+        # Validate weights sum to ~1.0
+        total = sum(payload.weights.values())
+        if abs(total - 1.0) > 0.001:
+            raise HTTPException(status_code=400, detail=f"Weights must sum to 1.0 (got {total})")
+        
+        # Ensure all required keys are present if we want to replace, 
+        # or just update the ones provided if they exist in ensemble._weights
+        for k in payload.weights:
+            if k not in ensemble._weights:
+                raise HTTPException(status_code=400, detail=f"Invalid model key: {k}")
+        
+        ensemble._weights.update(payload.weights)
+
+    if payload.fraud_threshold is not None:
+        ensemble._threshold = payload.fraud_threshold
+
+    return {
+        "weights": ensemble._weights,
+        "fraud_threshold": ensemble._threshold,
     }
 
 

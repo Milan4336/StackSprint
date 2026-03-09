@@ -1,6 +1,7 @@
 import { Socket, io } from 'socket.io-client';
 
-const WS_URL = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const WS_URL = import.meta.env.VITE_WS_URL || rawApiUrl.replace(/\/api\/v1\/?$/, '');
 
 let socket: Socket | null = null;
 

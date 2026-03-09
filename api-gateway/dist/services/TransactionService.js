@@ -6,17 +6,17 @@ class TransactionService {
     transactionRepository;
     fraudScoringService;
     eventBusService;
-    autonomousResponseService;
+    fraudResponseService;
     deviceFingerprintService;
     fraudExplanationService;
     geoService;
     auditService;
     modelMetricsService;
-    constructor(transactionRepository, fraudScoringService, eventBusService, autonomousResponseService, deviceFingerprintService, fraudExplanationService, geoService, auditService, modelMetricsService) {
+    constructor(transactionRepository, fraudScoringService, eventBusService, fraudResponseService, deviceFingerprintService, fraudExplanationService, geoService, auditService, modelMetricsService) {
         this.transactionRepository = transactionRepository;
         this.fraudScoringService = fraudScoringService;
         this.eventBusService = eventBusService;
-        this.autonomousResponseService = autonomousResponseService;
+        this.fraudResponseService = fraudResponseService;
         this.deviceFingerprintService = deviceFingerprintService;
         this.fraudExplanationService = fraudExplanationService;
         this.geoService = geoService;
@@ -24,18 +24,41 @@ class TransactionService {
         this.modelMetricsService = modelMetricsService;
     }
     async create(input) {
-        const scoring = await this.fraudScoringService.score(input);
-        const transaction = await this.transactionRepository.create({
-            transactionId: (0, uuid_1.v4)(),
+        const enrichedInput = {
             ...input,
+            timestamp: input.timestamp || new Date()
+        };
+        const scoring = await this.fraudScoringService.score(enrichedInput);
+        const transaction = await this.transactionRepository.create({
+            transactionId: input.transactionId ?? (0, uuid_1.v4)(),
+            ...enrichedInput,
+            // Full scoring result — all fields required by the Mongoose schema
             fraudScore: scoring.fraudScore,
+            riskLevel: scoring.riskLevel,
+            isFraud: scoring.isFraud,
+            action: scoring.action,
+            ruleScore: scoring.ruleScore,
+            mlScore: scoring.mlScore,
+            mlStatus: scoring.mlStatus,
+            behaviorScore: scoring.behaviorScore,
+            graphScore: scoring.graphScore,
+            modelName: scoring.modelName,
+            modelVersion: scoring.modelVersion,
+            modelConfidence: scoring.modelConfidence,
+            modelScores: scoring.modelScores,
+            modelWeights: scoring.modelWeights,
+            geoVelocityFlag: scoring.geoVelocityFlag,
+            ruleReasons: scoring.ruleReasons ?? [],
+            explanations: scoring.explanations ?? [],
             createdAt: new Date(),
             updatedAt: new Date()
         });
-        await this.autonomousResponseService.process({
+        await this.fraudResponseService.process({
             transactionId: transaction.transactionId,
             userId: transaction.userId,
             fraudScore: transaction.fraudScore,
+            deviceId: transaction.deviceId,
+            ipAddress: transaction.ipAddress,
             location: transaction.location,
             ruleReasons: scoring.ruleReasons ?? [],
             explanations: scoring.explanations ?? []

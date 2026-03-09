@@ -14,5 +14,8 @@ router.get('/risk-forecast', dashboardController.getRiskForecast);
 router.get('/alert-pressure', dashboardController.getAlertPressure);
 router.get('/velocity', dashboardController.getVelocity);
 router.get('/risk-distribution', dashboardController.getRiskDistribution);
+router.get('/drift', dashboardController.getDrift);
+router.get('/risk-trend', dashboardController.getRiskTrend);
+router.get('/fraud-trend', dashboardController.getFraudTrend);
 
 export const dashboardRoutes = router;

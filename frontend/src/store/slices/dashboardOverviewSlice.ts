@@ -87,6 +87,7 @@ export const useDashboardOverviewSlice = create<State>((set, get) => ({
     socket.on('velocity.live', (payload: any) => {
       if (payload && payload.currentTps !== undefined) {
         set({ velocity: payload.currentTps });
+        window.dispatchEvent(new CustomEvent('velocity:live', { detail: payload }));
       }
     });
 

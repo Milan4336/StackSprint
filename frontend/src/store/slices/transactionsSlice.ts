@@ -12,23 +12,20 @@ export const useTransactionsSlice = create<State>((set) => ({
 
   connectLive: () => {
     const socket = connectSocket();
-    
+
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on('transactions.live', (payload) => {
-      console.log('Received transactions.live', payload);
-      // handle transactions.live
+      window.dispatchEvent(new CustomEvent('transactions:live', { detail: payload }));
     });
 
     socket.on('system.spike', (payload) => {
-      console.log('Received system.spike', payload);
-      // handle system.spike
+      window.dispatchEvent(new CustomEvent('system:spike', { detail: payload }));
     });
 
     socket.on('risk.distribution.live', (payload) => {
-      console.log('Received risk.distribution.live', payload);
-      // handle risk.distribution.live
+      window.dispatchEvent(new CustomEvent('risk:distribution:live', { detail: payload }));
     });
   },
 

@@ -13,7 +13,7 @@ export const authMiddleware = (req: Request, _res: Response, next: NextFunction)
   next();
 };
 
-export const roleMiddleware = (allowedRoles: Array<'admin' | 'analyst'>) =>
+export const roleMiddleware = (allowedRoles: Array<'admin' | 'analyst' | 'user'>) =>
   (req: Request, _res: Response, next: NextFunction): void => {
     // Explicit comparison to bypass strict array-includes issues in some TS environments
     const userRole = req.user?.role;

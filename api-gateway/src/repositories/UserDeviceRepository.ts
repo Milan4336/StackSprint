@@ -1,6 +1,10 @@
 import { UserDeviceDocument, UserDeviceModel } from '../models/UserDevice';
 
 export class UserDeviceRepository {
+  async findById(id: string): Promise<UserDeviceDocument | null> {
+    return UserDeviceModel.findOne({ $or: [{ deviceId: id }, { userId: id }] });
+  }
+
   async findByUserAndDevice(userId: string, deviceId: string): Promise<UserDeviceDocument | null> {
     return UserDeviceModel.findOne({ userId, deviceId });
   }

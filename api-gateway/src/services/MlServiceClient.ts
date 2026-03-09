@@ -129,6 +129,16 @@ export class MlServiceClient {
     }
   }
 
+  async updateModelConfig(payload: { weights?: Record<string, number>; fraud_threshold?: number }): Promise<any> {
+    try {
+      const resp = await axios.patch(`${env.ML_SERVICE_URL}/model/config`, payload, { timeout: 2000 });
+      return resp.data;
+    } catch (error: any) {
+      const reason = error.response?.data?.detail || error.message || 'Model config update failed';
+      throw new Error(reason);
+    }
+  }
+
   getModelInfo() {
     return {
       modelName: env.MODEL_NAME,

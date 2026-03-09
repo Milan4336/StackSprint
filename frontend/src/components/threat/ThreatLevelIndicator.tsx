@@ -4,13 +4,15 @@ import { ThreatLevel, useThreatStore } from '../../store/threatStore';
 
 const toneByLevel: Record<ThreatLevel, string> = {
   NORMAL: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300',
-  ELEVATED: 'border-amber-500/35 bg-amber-500/10 text-amber-300',
+  SUSPICIOUS: 'border-amber-500/35 bg-amber-500/10 text-amber-300',
+  HIGH: 'border-orange-500/35 bg-orange-500/10 text-orange-300',
   CRITICAL: 'border-red-500/35 bg-red-500/10 text-red-300'
 };
 
 const dotByLevel: Record<ThreatLevel, string> = {
   NORMAL: 'bg-emerald-400',
-  ELEVATED: 'bg-amber-400',
+  SUSPICIOUS: 'bg-amber-400',
+  HIGH: 'bg-orange-400',
   CRITICAL: 'bg-red-400'
 };
 

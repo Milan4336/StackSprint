@@ -16,6 +16,10 @@ export interface TransactionQueryOptions {
 }
 
 export class TransactionRepository {
+  async find(query: any = {}, limit = 100): Promise<TransactionDocument[]> {
+    return TransactionModel.find(query).limit(limit).sort({ timestamp: -1 });
+  }
+
   async create(payload: Partial<TransactionDocument>): Promise<TransactionDocument> {
     return TransactionModel.create(payload);
   }

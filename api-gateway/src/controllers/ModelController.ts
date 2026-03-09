@@ -21,4 +21,9 @@ export class ModelController {
     ]);
     res.status(200).json({ latest, metrics });
   };
+
+  updateConfig = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.mlServiceClient.updateModelConfig(req.body);
+    res.status(200).json(result);
+  };
 }

@@ -44,6 +44,8 @@ exports.updateSettingsSchema = zod_1.z.object({
     velocityTxThreshold: zod_1.z.number().int().min(1).max(200).optional(),
     scoreRuleWeight: zod_1.z.number().min(0).max(1).optional(),
     scoreMlWeight: zod_1.z.number().min(0).max(1).optional(),
+    scoreBehaviorWeight: zod_1.z.number().min(0).max(1).optional(),
+    scoreGraphWeight: zod_1.z.number().min(0).max(1).optional(),
     autonomousAlertThreshold: zod_1.z.number().min(1).max(100).optional(),
     simulationMode: zod_1.z.boolean().optional()
 });

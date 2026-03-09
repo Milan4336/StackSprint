@@ -64,4 +64,14 @@ export class AuthController {
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
+  me = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user = await this.authService.me((req as any).user.email);
+      res.status(200).json(user);
+    } catch (error: any) {
+      logger.error({ error }, 'Get me failed');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
 }

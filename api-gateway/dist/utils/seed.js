@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = require("../config/db");
 const Transaction_1 = require("../models/Transaction");
+const User_1 = require("../models/User");
 const geolocation_1 = require("./geolocation");
+const password_1 = require("./password");
 const seed = async () => {
     await (0, db_1.connectMongo)();
     const now = Date.now();
@@ -40,6 +42,27 @@ const seed = async () => {
     });
     await Transaction_1.TransactionModel.deleteMany({});
     await Transaction_1.TransactionModel.insertMany(docs);
+    // Seed Users
+    await User_1.UserModel.deleteMany({});
+    await User_1.UserModel.create([
+        {
+            userId: 'admin-1',
+            email: 'admin@fraud.local',
+            password: (0, password_1.hashPassword)('StrongPassword123!'),
+            role: 'admin',
+            status: 'ACTIVE',
+            riskScore: 0
+        },
+        {
+            userId: 'analyst-1',
+            email: 'analyst@fraud.local',
+            password: (0, password_1.hashPassword)('AnalystPassword123!'),
+            role: 'analyst',
+            status: 'ACTIVE',
+            riskScore: 0
+        }
+    ]);
+    console.log('Seeding completed successfully');
     process.exit(0);
 };
 seed().catch(() => process.exit(1));

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { CreateTransactionForm } from '../components/CreateTransactionForm';
@@ -10,6 +10,8 @@ import { ForensicDetailModal } from '../components/transactions/ForensicDetailMo
 import { monitoringApi } from '../api/client';
 import { formatSafeDate } from '../utils/date';
 import { Transaction } from '../types';
+import { TransactionAura } from '../components/visual/TransactionAura';
+import { HUDPanel, HUDDataReadout } from '../components/visual/HUDDecorations';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
 
@@ -76,94 +78,104 @@ export const Transactions = () => {
         style={style}
         onClick={() => setSelectedTxId(tx.transactionId)}
         className={[
-          'grid cursor-pointer grid-cols-[1.2fr_1fr_0.9fr_1fr_0.8fr_0.8fr_0.9fr_1.1fr_0.3fr] items-center px-3 text-sm table-row',
+          'grid cursor-pointer grid-cols-[1.2fr_1fr_0.9fr_1fr_0.8fr_0.8fr_0.9fr_1.1fr_0.3fr] items-center px-3 text-sm table-row relative',
           selectedTxId === tx.transactionId ? 'ring-1 ring-blue-400/50' : ''
         ].join(' ')}
       >
-        <p className="truncate font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</p>
-        <p className="truncate text-slate-700 dark:text-slate-300">{tx.userId}</p>
-        <p className="truncate font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</p>
-        <p className="truncate text-slate-700 dark:text-slate-300">{tx.location}</p>
-        <p className="truncate text-slate-700 dark:text-slate-200">{tx.fraudScore}</p>
-        <p>
+        <TransactionAura riskScore={tx.fraudScore || 0} />
+        <p className="truncate font-semibold text-blue-700 dark:text-blue-100 relative z-10">{tx.transactionId}</p>
+        <p className="truncate text-slate-700 dark:text-slate-300 relative z-10">{tx.userId}</p>
+        <p className="truncate font-semibold text-slate-900 dark:text-slate-100 relative z-10">{money.format(tx.amount)}</p>
+        <p className="truncate text-slate-700 dark:text-slate-300 relative z-10">{tx.location}</p>
+        <p className="truncate text-slate-700 dark:text-slate-200 relative z-10">{tx.fraudScore}</p>
+        <p className="relative z-10">
           <RiskBadge value={tx.riskLevel} />
         </p>
-        <p className="truncate text-slate-700 dark:text-slate-200">{tx.action ?? 'N/A'}</p>
-        <p className="truncate text-slate-500 dark:text-slate-400">{formatSafeDate(tx.timestamp)}</p>
-        <p className={tx.isFraud ? 'text-red-400' : 'text-emerald-400'}>{tx.isFraud ? '●' : '●'}</p>
+        <p className="truncate text-slate-700 dark:text-slate-200 relative z-10">{tx.action ?? 'N/A'}</p>
+        <p className="truncate text-slate-500 dark:text-slate-400 relative z-10">{formatSafeDate(tx.timestamp)}</p>
+        <p className={`relative z-10 ${tx.isFraud ? 'text-red-400' : 'text-emerald-400'}`}>{tx.isFraud ? '●' : '●'}</p>
       </div>
     );
   };
 
   return (
     <div className="space-y-6">
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="panel">
+      <HUDPanel title="Management Controller">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="section-title">Transaction Management</h2>
-            <p className="section-subtitle mt-1">Enterprise transaction monitoring with advanced filters, sorting, and investigation.</p>
+            <div className="flex gap-4">
+              <HUDDataReadout label="Module" value="Transactional Forensics" />
+              <HUDDataReadout label="Access" value="L4 Investigator" />
+              <HUDDataReadout label="State" value="Real-time Feed" />
+            </div>
+            <p className="section-subtitle mt-2">Enterprise monitoring with advanced filters and investigation vectors.</p>
           </div>
-          <button className="glass-btn" onClick={() => query.refetch()}>
-            <RefreshCw size={14} />
-            Refresh Feed
+          <button className="glass-btn border-blue-500/30 text-blue-400" onClick={() => query.refetch()}>
+            <RefreshCw size={14} className="animate-spin-slow" />
+            Refresh Intelligence
           </button>
         </div>
-      </motion.section>
+      </HUDPanel>
 
       <section>
-        <h2 className="mb-3 section-title">Create Transaction</h2>
-        <CreateTransactionForm />
+        <HUDPanel title="Entry Vector Console">
+          <CreateTransactionForm />
+        </HUDPanel>
       </section>
 
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }} className="panel">
-        <div className="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+      <HUDPanel title="Filtering Matrix">
+        <div className="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-blue-400">
           <SlidersHorizontal size={14} />
-          Filter Controls
+          Filter Parameter Injection
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
           <label className="relative md:col-span-2 xl:col-span-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-            <input className="input pl-9" placeholder="Search transaction, user, device, location..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
+            <input className="input pl-9 bg-blue-500/5" placeholder="Search user, device, hash..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </label>
-          <select className="input" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)}>
+          <select className="input bg-blue-500/5" value={riskLevel} onChange={(e) => setRiskLevel(e.target.value)}>
             <option value="">All Risk Levels</option>
             <option value="Low">Low</option>
             <option value="Medium">Medium</option>
             <option value="High">High</option>
           </select>
-          <input className="input" placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
-          <input className="input" placeholder="Device ID" value={deviceId} onChange={(e) => setDeviceId(e.target.value)} />
-          <input className="input" type="number" placeholder="Min Amount" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} />
-          <input className="input" type="number" placeholder="Max Amount" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} />
-          <input className="input" type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <input className="input" type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          <select className="input" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+          <input className="input bg-blue-500/5" placeholder="User ID" value={userId} onChange={(e) => setUserId(e.target.value)} />
+          <input className="input bg-blue-500/5" placeholder="Device ID" value={deviceId} onChange={(e) => setDeviceId(e.target.value)} />
+          <input className="input bg-blue-500/5" type="number" placeholder="Min Amount" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} />
+          <input className="input bg-blue-500/5" type="number" placeholder="Max Amount" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} />
+          <input className="input bg-blue-500/5" type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <input className="input bg-blue-500/5" type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          <select className="input bg-blue-500/5" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
             <option value="timestamp">Sort: Timestamp</option>
             <option value="amount">Sort: Amount</option>
             <option value="fraudScore">Sort: Fraud Score</option>
             <option value="riskLevel">Sort: Risk Level</option>
             <option value="createdAt">Sort: Created At</option>
           </select>
-          <select className="input" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}>
+          <select className="input bg-blue-500/5" value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}>
             <option value="desc">Desc</option>
             <option value="asc">Asc</option>
           </select>
         </div>
-      </motion.section>
+      </HUDPanel>
 
-      {query.isError ? (
-        <ErrorState
-          message="Failed to load transaction feed."
-          onRetry={() => {
-            void query.refetch();
-          }}
-        />
-      ) : null}
+      {
+        query.isError ? (
+          <ErrorState
+            message="Failed to load transaction feed."
+            onRetry={() => {
+              void query.refetch();
+            }}
+          />
+        ) : null
+      }
 
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="panel">
+      <HUDPanel title="Transactional Stream Processor">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="panel-title mb-0">Realtime Transaction Table</h3>
-          <span className="chip">{query.data?.total ?? 0} records</span>
+          <div className="flex gap-4">
+            <HUDDataReadout label="Buffer" value={`${query.data?.total ?? 0} blocks`} />
+            <HUDDataReadout label="Latency" value="< 50ms" />
+          </div>
         </div>
 
         <div className="table-shell">
@@ -197,59 +209,62 @@ export const Transactions = () => {
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
+        <div className="mt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
           <p>
-            Page {query.data?.page ?? page} of {query.data?.pages ?? 1}
+            Sector {query.data?.page ?? page} / {query.data?.pages ?? 1}
           </p>
           <div className="flex gap-2">
-            <button className="glass-btn" disabled={page <= 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
-              Previous
+            <button className="glass-btn text-[10px]" disabled={page <= 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
+              PREV BLOCK
             </button>
             <button
-              className="glass-btn"
+              className="glass-btn text-[10px]"
               disabled={page >= (query.data?.pages ?? 1)}
               onClick={() => setPage((prev) => prev + 1)}
             >
-              Next
+              NEXT BLOCK
             </button>
           </div>
         </div>
-      </motion.section>
+      </HUDPanel>
 
-      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }} className="panel">
-        <h3 className="panel-title">Transaction Investigation Panel</h3>
+      <HUDPanel title="Deep Forensic Triage">
         {!selected ? (
-          <div className="app-empty">
-            <Search className="text-slate-400" size={20} />
-            <p className="text-sm text-slate-500 dark:text-slate-400">Select a transaction for detailed investigation.</p>
+          <div className="app-empty border-white/5">
+            <Search className="text-blue-500/40" size={32} />
+            <p className="hud-readout mt-2">Initialize sector scan to select entity</p>
           </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <p className="text-sm text-slate-700 dark:text-slate-200">Transaction ID: <span className="font-semibold">{selected.transactionId}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">User: <span className="font-semibold">{selected.userId}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">Device: <span className="font-semibold">{selected.deviceId}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">Action: <span className="font-semibold">{selected.action ?? 'N/A'}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">Rule Score: <span className="font-semibold">{selected.ruleScore ?? 'N/A'}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">ML Score: <span className="font-semibold">{selected.mlScore ?? 'N/A'}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">ML Status: <span className="font-semibold">{selected.mlStatus ?? 'N/A'}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">Model: <span className="font-semibold">{selected.modelName ?? 'N/A'} {selected.modelVersion ?? ''}</span></p>
-            <p className="text-sm text-slate-700 dark:text-slate-200">Geo Velocity Flag: <span className="font-semibold">{selected.geoVelocityFlag ? 'Yes' : 'No'}</span></p>
-            <div className="md:col-span-2 xl:col-span-3 pt-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <HUDDataReadout label="IDENTIFIER" value={selected.transactionId} />
+            <HUDDataReadout label="ENTITY_ID" value={selected.userId} />
+            <HUDDataReadout label="HARDWARE_ID" value={selected.deviceId} />
+            <HUDDataReadout label="RESPONSE_ACTION" value={selected.action ?? 'N/A'} />
+            <HUDDataReadout label="HEURISTIC_SCORE" value={selected.ruleScore ?? 'N/A'} />
+            <HUDDataReadout label="NEURAL_SCORE" value={selected.mlScore ?? 'N/A'} />
+            <HUDDataReadout label="MODEL_VECTOR" value={`${selected.modelName ?? 'N/A'} ${selected.modelVersion ?? ''}`} />
+            <HUDDataReadout label="GEO_ANOMALY" value={selected.geoVelocityFlag ? 'TRIPPED' : 'CLEAR'} />
+
+            <div className="md:col-span-2 lg:col-span-4 pt-4 border-t border-white/5">
               <button
                 onClick={() => setShowForensicModal(true)}
-                className="glass-btn border-blue-500/40 text-blue-500 hover:bg-blue-500 hover:text-white font-black text-xs uppercase tracking-widest px-6 py-2.5"
+                className="w-full glass-btn border-blue-500/40 text-blue-500 hover:bg-blue-500 hover:text-white font-black text-xs uppercase tracking-[0.2em] py-3 transition-all group"
               >
-                Deep Forensic Investigation
+                <span className="group-hover:scale-110 transition-transform inline-block">Execute Deep Forensic Probe</span>
               </button>
             </div>
           </div>
         )}
-      </motion.section>
+      </HUDPanel>
 
-      <ForensicDetailModal
-        transaction={selected}
-        onClose={() => setShowForensicModal(false)}
-      />
-    </div>
+      <AnimatePresence>
+        {showForensicModal && selected && (
+          <ForensicDetailModal
+            transaction={selected}
+            onClose={() => setShowForensicModal(false)}
+          />
+        )}
+      </AnimatePresence>
+    </div >
   );
 };

@@ -11,6 +11,7 @@ export interface SystemSettingDocument extends Document {
   scoreGraphWeight: number;
   autonomousAlertThreshold: number;
   simulationMode: boolean;
+  safeMode: boolean;
   updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +29,7 @@ const systemSettingSchema = new Schema<SystemSettingDocument>(
     scoreGraphWeight: { type: Number, required: true, default: 0.15 },
     autonomousAlertThreshold: { type: Number, required: true },
     simulationMode: { type: Boolean, required: true, default: true },
+    safeMode: { type: Boolean, required: true, default: false },
     updatedBy: { type: String, required: false }
   },
   { timestamps: true, collection: 'system_settings' }

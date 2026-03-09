@@ -3,7 +3,7 @@ import { MlStatus } from '../types';
 import { safeDate } from '../utils/date';
 import { getSocket } from '../services/socket';
 
-export type ThreatLevel = 'NORMAL' | 'ELEVATED' | 'HIGH' | 'CRITICAL';
+export type ThreatLevel = 'NORMAL' | 'SUSPICIOUS' | 'HIGH' | 'CRITICAL';
 
 const HIGH_RISK_WINDOW_MS = 5 * 60 * 1000;
 const HIGH_RISK_BURST_THRESHOLD = 4;
@@ -31,11 +31,13 @@ interface ThreatStoreState {
   simulationActive: boolean;
   reason: string;
   highRiskAlertTimestamps: number[];
+  safeMode: boolean;
   listenersAttached?: boolean;
   setThreatIndex: (value: number) => void;
   setFraudRate: (rate: number) => void;
   setMlStatus: (status: MlStatus) => void;
   setSimulationActive: (active: boolean) => void;
+  setSafeMode: (active: boolean) => void;
   ingestAlert: (alert: AlertLike) => void;
   syncRecentHighRiskFromAlerts: (alerts: AlertLike[]) => void;
   recomputeThreat: () => void;
@@ -67,29 +69,29 @@ const evaluateThreat = (state: Pick<ThreatStoreState, 'fraudRate' | 'recentHighR
 
   if (state.mlStatus === 'OFFLINE') {
     return {
-      threatLevel: 'ELEVATED',
+      threatLevel: 'SUSPICIOUS',
       reason: 'ML service is offline. Platform is running in fallback mode.'
     };
   }
 
   if (state.simulationActive) {
     return {
-      threatLevel: 'ELEVATED',
+      threatLevel: 'SUSPICIOUS',
       reason: 'Fraud simulation is active.'
     };
   }
 
   if (state.mlStatus === 'DEGRADED') {
     return {
-      threatLevel: 'ELEVATED',
+      threatLevel: 'SUSPICIOUS',
       reason: 'ML service is degraded.'
     };
   }
 
   if (state.fraudRate >= ELEVATED_FRAUD_RATE) {
     return {
-      threatLevel: 'ELEVATED',
-      reason: `Fraud rate is elevated (${state.fraudRate.toFixed(1)}%).`
+      threatLevel: 'SUSPICIOUS',
+      reason: `Fraud rate is suspiciously high (${state.fraudRate.toFixed(1)}%).`
     };
   }
 
@@ -106,16 +108,16 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
   fraudRate: 0,
   mlStatus: 'HEALTHY',
   simulationActive: false,
+  safeMode: false,
   reason: 'Threat indicators are within baseline levels.',
   highRiskAlertTimestamps: [],
 
   setThreatIndex: (value: number) => {
     const clamped = Math.max(0, Math.min(100, value));
-    // Derive threat level from numeric index (Part 8 of master prompt)
     const level: ThreatLevel =
-      clamped >= 86 ? 'CRITICAL' :
-        clamped >= 66 ? 'HIGH' :
-          clamped >= 41 ? 'ELEVATED' : 'NORMAL';
+      clamped >= 90 ? 'CRITICAL' :
+        clamped >= 70 ? 'HIGH' :
+          clamped >= 40 ? 'SUSPICIOUS' : 'NORMAL';
     set({ threatIndex: clamped, threatLevel: level });
   },
 
@@ -134,6 +136,10 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
   setSimulationActive: (active) => {
     set({ simulationActive: active });
     get().recomputeThreat();
+  },
+
+  setSafeMode: (active) => {
+    set({ safeMode: active });
   },
 
   ingestAlert: (alert) => {
@@ -180,18 +186,11 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
         simulationActive: state.simulationActive
       });
 
-      // Derive numeric threat index from fraud rate and high-risk burst count
-      const fromFraud = Math.min(100, state.fraudRate * 2);
-      const fromBurst = Math.min(50, nextWindow.length * 12);
-      const levelBonus = evaluation.threatLevel === 'CRITICAL' ? 20 : evaluation.threatLevel === 'ELEVATED' ? 10 : 0;
-      const computedIndex = Math.min(100, Math.round(fromFraud * 0.6 + fromBurst * 0.3 + levelBonus));
-
       return {
         highRiskAlertTimestamps: nextWindow,
         recentHighRiskCount: nextWindow.length,
         threatLevel: evaluation.threatLevel,
-        reason: evaluation.reason,
-        threatIndex: computedIndex
+        reason: evaluation.reason
       };
     });
   },
@@ -204,6 +203,7 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
       fraudRate: 0,
       mlStatus: 'HEALTHY',
       simulationActive: false,
+      safeMode: false,
       reason: 'Threat indicators are within baseline levels.',
       highRiskAlertTimestamps: []
     });
@@ -226,6 +226,9 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
       if (payload.mlStatus) {
         get().setMlStatus(payload.mlStatus);
       }
+    });
+    socket.on('system.safemode', (payload: { active: boolean }) => {
+      get().setSafeMode(payload.active);
     });
   }
 }));

@@ -17,7 +17,12 @@ import { ModelController } from '../controllers/ModelController';
 import { SettingsController } from '../controllers/SettingsController';
 import { SearchController } from '../controllers/SearchController';
 import { GraphController } from '../controllers/GraphController';
+import { EntityController } from '../controllers/EntityController';
+import { AutonomousAgentController } from '../controllers/AutonomousAgentController';
+import { AdminController } from '../controllers/AdminController';
 import { UserRepository } from '../repositories/UserRepository';
+import { FraudAIAgentService } from '../services/FraudAIAgentService';
+import { realtimeEventBus } from '../services/RealtimeEventBus';
 import { FraudAlertRepository } from '../repositories/FraudAlertRepository';
 import { UserDeviceRepository } from '../repositories/UserDeviceRepository';
 import { FraudExplanationRepository } from '../repositories/FraudExplanationRepository';
@@ -128,6 +133,32 @@ const userRepository = new UserRepository();
 const authService = new AuthService(userRepository, auditService, otpRepository);
 const authController = new AuthController(authService);
 
+const entityController = new EntityController(
+  transactionRepository,
+  userDeviceRepository,
+  fraudAlertRepository,
+  userRepository
+);
+
+const adminController = new AdminController(auditService);
+
+const aiAgentService = new FraudAIAgentService(
+  fraudAlertRepository,
+  caseRepository,
+  new FraudScoringService(
+    ruleEngineService,
+    mlServiceClient,
+    settingsService,
+    userBehaviorService,
+    new FraudGraphService()
+  ),
+  realtimeEventBus
+);
+
+aiAgentService.start();
+
+const agentController = new AutonomousAgentController(aiAgentService);
+
 const graphController = new GraphController();
 
 import { dashboardRoutes } from './dashboard.routes';
@@ -141,6 +172,7 @@ router.post('/api/v1/auth/register', validate(registerSchema), asyncHandler(auth
 router.post('/api/v1/auth/login', validate(loginSchema), asyncHandler(authController.login));
 router.post('/api/v1/auth/request-otp', asyncHandler(authController.requestOtp));
 router.post('/api/v1/auth/verify-otp', asyncHandler(authController.verifyOtp));
+router.get('/api/v1/auth/me', authMiddleware, asyncHandler(authController.me));
 
 router.post(
   '/api/v1/transactions',
@@ -173,11 +205,23 @@ router.patch('/api/v1/cases/:id', authMiddleware, validate(updateCaseSchema), as
 router.get('/api/v1/audit', authMiddleware, roleMiddleware(['admin', 'analyst']), asyncHandler(auditController.list));
 router.get('/api/v1/search', authMiddleware, asyncHandler(searchController.query));
 
+router.get('/api/v1/entities/:id', authMiddleware, asyncHandler(entityController.getEntityById));
+router.get('/api/v1/timeline/:id', authMiddleware, asyncHandler(entityController.getTimeline));
+
+router.get('/api/v1/agent/status', authMiddleware, asyncHandler(agentController.getStatus));
+router.post('/api/v1/agent/toggle', authMiddleware, roleMiddleware(['admin']), asyncHandler(agentController.toggle));
+
+router.post('/api/v1/admin/unfreeze-user', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeUser));
+router.post('/api/v1/admin/unfreeze-device', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeDevice));
+router.post('/api/v1/admin/release-transaction', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.releaseTransaction));
+
 router.get('/api/v1/model/info', authMiddleware, asyncHandler(modelController.info));
 router.get('/api/v1/model/health', authMiddleware, asyncHandler(modelController.health));
+router.patch('/api/v1/model/config', authMiddleware, roleMiddleware(['admin']), asyncHandler(modelController.updateConfig));
 
 router.get('/api/v1/system/ml-status', authMiddleware, asyncHandler(systemController.mlStatus));
 router.get('/api/v1/system/health', authMiddleware, asyncHandler(systemController.health));
+router.get('/api/v1/system/updates', authMiddleware, asyncHandler(systemController.updates));
 
 router.get('/api/v1/settings', authMiddleware, asyncHandler(settingsController.get));
 router.patch(

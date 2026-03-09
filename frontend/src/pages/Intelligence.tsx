@@ -1,28 +1,61 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useIntelligenceSlice } from '../store/slices/intelligenceSlice';
 import { BrainCircuit, LineChart, Target, AlertOctagon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { monitoringApi } from '../api/client';
+import { ModelConfidenceChart } from '../components/intelligence/ModelConfidenceChart';
+import { ModelDriftChart } from '../components/intelligence/ModelDriftChart';
+
+import { ModelConfidenceRing } from '../components/visual/ModelConfidenceRing';
 
 export const Intelligence = () => {
     const { connectLive, disconnectLive } = useIntelligenceSlice();
 
-    // Dummy state until socket events are fully flowing
-    const [confidence, setConfidence] = useState(94.2);
-    const [klDivergence, setKlDivergence] = useState(0.04);
+    // Query historical baseline to bootstrap charts before socket takes over
+    const confidenceQuery = useQuery({
+        queryKey: ['model-confidence-historical'],
+        queryFn: () => monitoringApi.getDashboardModelConfidence(),
+        staleTime: Infinity
+    });
+
+    const driftQuery = useQuery({
+        queryKey: ['model-drift-historical'],
+        queryFn: () => monitoringApi.getDashboardDrift(),
+        staleTime: Infinity
+    });
+
+    // Initial state updated from historical queries or socket
+    const [confidence, setConfidence] = useState(0);
+    const [klDivergence, setKlDivergence] = useState(0);
 
     useEffect(() => {
         connectLive();
 
-        const sim = setInterval(() => {
-            setConfidence(prev => Math.min(100, Math.max(80, prev + (Math.random() * 2 - 1))));
-            setKlDivergence(prev => Math.max(0, prev + (Math.random() * 0.02 - 0.01)));
-        }, 3000);
+        const handleConf = (e: any) => setConfidence(e.detail.confidence);
+        const handleDrift = (e: any) => setKlDivergence(e.detail.klDivergence);
+
+        window.addEventListener('intelligence:confidence', handleConf);
+        window.addEventListener('intelligence:drift', handleDrift);
 
         return () => {
-            clearInterval(sim);
+            window.removeEventListener('intelligence:confidence', handleConf);
+            window.removeEventListener('intelligence:drift', handleDrift);
             disconnectLive();
         };
     }, [connectLive, disconnectLive]);
+
+    useEffect(() => {
+        if (confidenceQuery.data && confidenceQuery.data.length > 0) {
+            setConfidence(confidenceQuery.data[confidenceQuery.data.length - 1].value);
+        }
+    }, [confidenceQuery.data]);
+
+    useEffect(() => {
+        if (driftQuery.data && driftQuery.data.length > 0) {
+            setKlDivergence(driftQuery.data[driftQuery.data.length - 1].value);
+        }
+    }, [driftQuery.data]);
 
     return (
         <div className="space-y-6">
@@ -41,15 +74,8 @@ export const Intelligence = () => {
                             <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Ensemble Confidence</h3>
                         </div>
                     </div>
-                    <div className="flex items-end gap-3">
-                        <span className="text-4xl font-black text-white">{confidence.toFixed(1)}%</span>
-                        <span className="text-sm font-bold text-emerald-400 mb-1">Optimal</span>
-                    </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
-                        <motion.div
-                            className="h-full bg-indigo-500"
-                            animate={{ width: `${confidence}%` }}
-                        />
+                    <div className="flex flex-col items-center justify-center py-4">
+                        <ModelConfidenceRing confidence={confidence} size={140} />
                     </div>
                 </div>
 
@@ -81,18 +107,26 @@ export const Intelligence = () => {
                         <LineChart className="text-blue-400" size={20} />
                         <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Risk Forecast Projection</h3>
                     </div>
-                    <div className="flex-1 flex items-center justify-center">
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Chart Rendering...</span>
+                    <div className="flex-1 min-h-0 w-full overflow-hidden relative">
+                        {confidenceQuery.isLoading ? (
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest absolute inset-0 flex items-center justify-center">Loading Data...</span>
+                        ) : confidenceQuery.data ? (
+                            <ModelConfidenceChart initialData={confidenceQuery.data} />
+                        ) : null}
                     </div>
                 </div>
 
                 <div className="h-96 rounded-2xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col">
                     <div className="flex items-center gap-3 mb-6">
-                        <AlertOctagon className="text-emerald-400" size={20} />
-                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">False Positive Monitor</h3>
+                        <Target className="text-orange-400" size={20} />
+                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Model Drift (KL Divergence) Tracker</h3>
                     </div>
-                    <div className="flex-1 flex items-center justify-center">
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Analytics Rendering...</span>
+                    <div className="flex-1 min-h-0 w-full overflow-hidden relative">
+                        {driftQuery.isLoading ? (
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest absolute inset-0 flex items-center justify-center">Loading Analytics...</span>
+                        ) : driftQuery.data ? (
+                            <ModelDriftChart initialData={driftQuery.data} />
+                        ) : null}
                     </div>
                 </div>
             </div>

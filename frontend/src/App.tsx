@@ -4,8 +4,9 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { CommandCenterLayout } from './layouts/CommandCenterLayout';
 import { Login } from './pages/Login';
 import { AppLayout } from './components/layout/AppLayout';
+import { useAuthStore } from './store/auth';
 
-// Legacy pages that might not be fully migrated yet
+// Legacy pages
 import { Settings } from './pages/Settings';
 import { Cases } from './pages/Cases';
 import { Radar } from './pages/Radar';
@@ -26,6 +27,10 @@ const AlertsPage = lazy(() => import('./pages/AlertsPage').then(m => ({ default:
 const AutonomousActions = lazy(() => import('./pages/AutonomousActions').then(m => ({ default: m.AutonomousActions })));
 const Simulation = lazy(() => import('./pages/Simulation').then(m => ({ default: m.Simulation })));
 const SystemHealth = lazy(() => import('./pages/SystemHealth').then(m => ({ default: m.SystemHealth })));
+const UpdatesDashboard = lazy(() => import('./pages/Updates').then(m => ({ default: m.Updates })));
+const EntityProfile = lazy(() => import('./pages/entities/EntityProfile').then(m => ({ default: m.EntityProfile })));
+const InvestigationWorkspace = lazy(() => import('./pages/investigation/InvestigationWorkspace').then(m => ({ default: m.InvestigationWorkspace })));
+const UserDashboard = lazy(() => import('./pages/user/UserDashboard').then(m => ({ default: m.UserDashboard })));
 
 const LoadingFallback = () => (
   <div className="flex h-full w-full items-center justify-center bg-[#0b1629]">
@@ -33,12 +38,27 @@ const LoadingFallback = () => (
   </div>
 );
 
+const HomeLoader = () => {
+  const { user, isAuthenticated } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  // Role-based redirection from root
+  if (user?.role === 'user') return <Navigate to="/portal" replace />;
+  return <Navigate to="/dashboard/overview" replace />;
+};
+
 export const App = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* HomeLoader handles intelligent role-based entry point */}
+      <Route path="/" element={<HomeLoader />} />
+
       <Route element={<ProtectedRoute />}>
-        {/* New Command Center Layout for Dashboard Modules */}
+        {/* Personal Fraud Portal route - Accessible to all roles but user-facing */}
+        <Route path="/portal" element={<Suspense fallback={<LoadingFallback />}><UserDashboard /></Suspense>} />
+
+        {/* Command Center Layout - For Admin/Analyst modules */}
         <Route path="/dashboard" element={<CommandCenterLayout />}>
           <Route index element={<Navigate to="/dashboard/overview" replace />} />
           <Route path="overview" element={<Suspense fallback={<LoadingFallback />}><Overview /></Suspense>} />
@@ -51,9 +71,12 @@ export const App = () => (
           <Route path="actions" element={<Suspense fallback={<LoadingFallback />}><AutonomousActions /></Suspense>} />
           <Route path="simulation" element={<Suspense fallback={<LoadingFallback />}><Simulation /></Suspense>} />
           <Route path="system" element={<Suspense fallback={<LoadingFallback />}><SystemHealth /></Suspense>} />
+          <Route path="updates" element={<Suspense fallback={<LoadingFallback />}><UpdatesDashboard /></Suspense>} />
+          <Route path="entities/:id" element={<Suspense fallback={<LoadingFallback />}><EntityProfile /></Suspense>} />
+          <Route path="investigation" element={<Suspense fallback={<LoadingFallback />}><InvestigationWorkspace /></Suspense>} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
-        {/* Legacy Layout for unmigrated auxiliary pages */}
         <Route element={<AppLayout />}>
           <Route path="/cases" element={<Cases />} />
           <Route path="/radar" element={<Radar />} />
@@ -65,8 +88,8 @@ export const App = () => (
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
-      <Route path="/" element={<Navigate to="/dashboard/overview" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard/overview" replace />} />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </BrowserRouter>
 );

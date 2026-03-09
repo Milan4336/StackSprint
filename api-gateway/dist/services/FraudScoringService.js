@@ -6,10 +6,14 @@ class FraudScoringService {
     ruleEngineService;
     mlServiceClient;
     settingsService;
-    constructor(ruleEngineService, mlServiceClient, settingsService) {
+    userBehaviorService;
+    fraudGraphService;
+    constructor(ruleEngineService, mlServiceClient, settingsService, userBehaviorService, fraudGraphService) {
         this.ruleEngineService = ruleEngineService;
         this.mlServiceClient = mlServiceClient;
         this.settingsService = settingsService;
+        this.userBehaviorService = userBehaviorService;
+        this.fraudGraphService = fraudGraphService;
     }
     classify(score) {
         if (score <= 30)
@@ -30,9 +34,11 @@ class FraudScoringService {
         const runtimeConfig = await this.settingsService.getRuntimeConfig();
         const ruleScore = ruleEvaluation.score;
         let mlScore = 0;
+        let mlConfidence = 0;
+        let mlModelScores = {};
+        let mlWeights = {};
         let explanations = [];
         let mlStatus = this.mlServiceClient.getStatus().status;
-        let useRuleFallbackOnly = false;
         try {
             const mlResult = await this.mlServiceClient.score({
                 userId: input.userId,
@@ -42,37 +48,77 @@ class FraudScoringService {
                 timestamp: input.timestamp.toISOString()
             });
             mlScore = mlResult.fraudScore;
+            mlConfidence = mlResult.confidence ?? 0;
+            mlModelScores = mlResult.modelScores ?? {};
+            mlWeights = mlResult.modelWeights ?? {};
             explanations = mlResult.explanations ?? [];
             mlStatus = this.mlServiceClient.getStatus().status;
+            const [behaviorScore, graphScore] = await Promise.all([
+                this.userBehaviorService.updateProfileAndGetDeviation(input).catch(() => 0),
+                this.fraudGraphService.updateGraphAndGetAnomaly(input).catch(() => 0)
+            ]);
+            // BANK-GRADE WEIGHTED FUSION (Using Configurable Weights)
+            const combinedScore = ((ruleScore * runtimeConfig.scoreRuleWeight) +
+                (mlScore * 100 * runtimeConfig.scoreMlWeight) +
+                (behaviorScore * 100 * runtimeConfig.scoreBehaviorWeight) +
+                (graphScore * 100 * runtimeConfig.scoreGraphWeight));
+            const finalFraudScore = Math.round(combinedScore);
+            return {
+                fraudScore: finalFraudScore,
+                riskLevel: this.classify(finalFraudScore),
+                isFraud: finalFraudScore >= 70,
+                action: this.responseAction(finalFraudScore),
+                ruleScore,
+                mlScore,
+                behaviorScore,
+                graphScore,
+                mlStatus,
+                modelVersion: env_1.env.MODEL_VERSION,
+                modelName: env_1.env.MODEL_NAME,
+                modelConfidence: mlConfidence,
+                modelScores: mlModelScores,
+                modelWeights: mlWeights,
+                explanations,
+                ruleReasons: ruleEvaluation.reasons,
+                geoVelocityFlag: ruleEvaluation.geoVelocityFlag
+            };
         }
-        catch {
-            mlScore = 0;
-            explanations = [];
-            useRuleFallbackOnly = true;
+        catch (error) {
             mlStatus = this.mlServiceClient.getStatus().status;
+            const [behaviorScore, graphScore] = await Promise.all([
+                this.userBehaviorService.updateProfileAndGetDeviation(input).catch(() => 0),
+                this.fraudGraphService.updateGraphAndGetAnomaly(input).catch(() => 0)
+            ]);
+            // Fallback Strategy: Distribute missing ML weight proportionally to Rules, Behavior, and Graph
+            // Original: 20/40/25/15. If ML (40) is out, ratio is 20:25:15
+            // Sum = 60. New Weights: R: 20/60=0.33, B: 25/60=0.42, G: 15/60=0.25
+            const sumOthers = runtimeConfig.scoreRuleWeight + runtimeConfig.scoreBehaviorWeight + runtimeConfig.scoreGraphWeight;
+            const fallbackRuleWeight = runtimeConfig.scoreRuleWeight / sumOthers;
+            const fallbackBehaviorWeight = runtimeConfig.scoreBehaviorWeight / sumOthers;
+            const fallbackGraphWeight = runtimeConfig.scoreGraphWeight / sumOthers;
+            const fallbackScore = Math.round((ruleScore * fallbackRuleWeight) +
+                (behaviorScore * 100 * fallbackBehaviorWeight) +
+                (graphScore * 100 * fallbackGraphWeight));
+            return {
+                fraudScore: fallbackScore,
+                riskLevel: this.classify(fallbackScore),
+                isFraud: fallbackScore >= 70,
+                action: this.responseAction(fallbackScore),
+                ruleScore,
+                mlScore: 0,
+                behaviorScore,
+                graphScore,
+                mlStatus,
+                modelVersion: env_1.env.MODEL_VERSION,
+                modelName: env_1.env.MODEL_NAME,
+                modelConfidence: 0,
+                modelScores: {},
+                modelWeights: {},
+                explanations: [],
+                ruleReasons: ruleEvaluation.reasons,
+                geoVelocityFlag: ruleEvaluation.geoVelocityFlag
+            };
         }
-        const weighted = useRuleFallbackOnly
-            ? ruleScore
-            : ruleScore * runtimeConfig.scoreRuleWeight + mlScore * 100 * runtimeConfig.scoreMlWeight;
-        const fraudScore = Math.max(0, Math.min(100, Math.round(weighted)));
-        const riskLevel = this.classify(fraudScore);
-        const action = this.responseAction(fraudScore);
-        const modelConfidence = Math.max(0, Math.min(1, useRuleFallbackOnly ? ruleScore / 100 : mlScore));
-        return {
-            fraudScore,
-            riskLevel,
-            isFraud: riskLevel === 'High',
-            action,
-            ruleScore,
-            mlScore,
-            mlStatus,
-            modelVersion: env_1.env.MODEL_VERSION,
-            modelName: env_1.env.MODEL_NAME,
-            modelConfidence,
-            explanations,
-            ruleReasons: ruleEvaluation.reasons,
-            geoVelocityFlag: ruleEvaluation.geoVelocityFlag
-        };
     }
 }
 exports.FraudScoringService = FraudScoringService;

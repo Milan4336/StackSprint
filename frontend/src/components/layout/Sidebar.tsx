@@ -43,66 +43,71 @@ export const Sidebar = ({ onLogout }: SidebarProps) => {
 
   return (
     <motion.aside
-      animate={{ width: collapsed ? 68 : 280 }}
+      animate={{ width: collapsed ? 80 : 300 }}
       transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-      className="hidden shrink-0 border-r border-slate-200/80 bg-white/45 backdrop-blur-xl dark:border-slate-800/70 dark:bg-[#061123]/65 lg:flex lg:flex-col"
+      className="hidden shrink-0 border-r border-blue-500/10 bg-[#020617]/80 backdrop-blur-3xl lg:flex lg:flex-col relative overflow-hidden"
     >
+      {/* Sidebar Atmospheric Power Rail */}
+      <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-blue-500/20 to-transparent" />
       {/* ── Header ──────────────────────────────────────────── */}
-      <div className="glass-panel m-3 mb-4 overflow-hidden rounded-2xl p-3">
-        {/* Toggle button always visible, full-width when collapsed */}
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} mb-2`}>
+      <div className="hud-panel p-4 m-4 mb-6">
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} mb-3`}>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-blue-700 dark:text-blue-200">FraudOS</p>
-              <p className="mt-0.5 text-sm font-semibold text-slate-700 dark:text-slate-200">Command Center</p>
+              <span className="hud-readout text-blue-400">COMMAND_OS</span>
+              <p className="text-lg font-black tracking-tighter text-white italic -mt-1">ULTRA<span className="text-blue-500">HUD</span></p>
             </div>
           )}
           <button
             type="button"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-slate-300 bg-white/70 text-slate-700 transition hover:border-blue-400/60 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:hover:border-blue-400/60"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-sm border border-blue-500/20 bg-blue-500/5 text-blue-400 transition hover:border-blue-500/50 hover:bg-blue-500/10"
             onClick={() => setCollapsed((prev) => !prev)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
 
         {!collapsed && (
-          <div className="rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-500/15 to-emerald-500/10 px-2.5 py-2 text-xs text-slate-700 dark:text-slate-200">
-            Live Fraud Monitoring and Investigation Workspace
+          <div className="text-[9px] font-mono uppercase tracking-widest text-blue-400/40 border-t border-blue-500/10 pt-2">
+            Status: Nominal / v3.7
           </div>
         )}
       </div>
 
       {/* ── Navigation ──────────────────────────────────────── */}
-      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-4">
         {menu.map((item) => (
           <NavLink
             key={item.label}
             to={item.to}
             className={({ isActive }) =>
               [
-                'nav-item',
+                'group relative flex items-center gap-3 rounded-sm py-2.5 px-3 transition-all duration-300',
                 collapsed ? 'justify-center px-0' : '',
                 isActive
-                  ? 'bg-blue-500/15 text-blue-700 ring-1 ring-blue-400/35 shadow-[0_0_0_1px_rgba(59,130,246,0.2)] dark:bg-blue-600/20 dark:text-blue-100'
-                  : 'text-slate-700 hover:bg-slate-100/85 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-white'
+                  ? 'bg-blue-500/10 text-white ring-l-2 ring-blue-500 shadow-[inset_10px_0_20px_-10px_rgba(59,130,246,0.2)]'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-blue-100'
               ].join(' ')
             }
             title={collapsed ? item.label : undefined}
           >
             {({ isActive }) => (
               <>
-                {isActive ? (
-                  <motion.span
-                    layoutId="active-sidebar-pill"
-                    className="absolute inset-y-1 left-1 w-1 rounded-full bg-blue-500 shadow-[0_0_14px_rgba(59,130,246,0.7)]"
-                  />
-                ) : null}
-                <span className="inline-grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300">
-                  <item.icon size={15} />
+                <span className={`inline-grid h-8 w-8 shrink-0 place-items-center rounded-sm transition-colors duration-300 ${isActive ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-slate-500 group-hover:text-blue-400'}`}>
+                  <item.icon size={16} />
                 </span>
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && (
+                  <span className={`text-xs font-black uppercase tracking-widest transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
+                    {item.label}
+                  </span>
+                )}
+                {isActive && !collapsed && (
+                  <motion.div
+                    layoutId="active-glow"
+                    className="absolute right-2 h-1 w-1 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,1)]"
+                  />
+                )}
               </>
             )}
           </NavLink>
@@ -110,14 +115,15 @@ export const Sidebar = ({ onLogout }: SidebarProps) => {
       </nav>
 
       {/* ── Sign Out ────────────────────────────────────────── */}
-      <div className="p-3 pt-2">
+      <div className="p-4 pt-4 border-t border-blue-500/10">
         <button
           type="button"
           onClick={onLogout}
           title={collapsed ? 'Sign Out' : undefined}
-          className={`w-full rounded-xl border border-red-500/35 bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-300 transition hover:-translate-y-0.5 hover:bg-red-500/30 ${collapsed ? 'justify-center text-lg' : ''}`}
+          className={`w-full hud-readout flex items-center gap-3 py-3 px-4 rounded-sm border border-red-500/20 bg-red-500/5 text-red-400 transition hover:bg-red-500/10 hover:border-red-500/40 ${collapsed ? 'justify-center' : ''}`}
         >
-          {collapsed ? '⏻' : 'Sign Out'}
+          <span className="text-sm">⏼</span>
+          {!collapsed && <span>System Deauth</span>}
         </button>
       </div>
     </motion.aside>

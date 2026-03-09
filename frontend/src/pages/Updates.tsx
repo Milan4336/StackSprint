@@ -1,11 +1,13 @@
-import { motion } from 'framer-motion';
-import { Rocket, Shield, Zap, Database, Cpu, Layout, Activity, Code } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Rocket, Shield, Zap, Database, Cpu, Layout, Activity, Code, ChevronDown } from 'lucide-react';
 
 interface UpdateItem {
     version: string;
     date: string;
     title: string;
     description: string;
+    details?: string;
     type: 'major' | 'feature' | 'fix' | 'performance';
     icon: any;
     color: string;
@@ -24,6 +26,8 @@ import { useQuery } from '@tanstack/react-query';
 import { monitoringApi } from '../api/client';
 
 export const Updates = () => {
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
     const query = useQuery({
         queryKey: ['system-updates'],
         queryFn: () => monitoringApi.getSystemUpdates(),
@@ -73,7 +77,10 @@ export const Updates = () => {
                             </div>
 
                             {/* Content Card */}
-                            <div className="panel border-l-2 border-blue-500/30 group hover:border-blue-500 transition-colors">
+                            <div
+                                className="panel border-l-2 border-blue-500/30 group hover:border-blue-500 transition-colors cursor-pointer"
+                                onClick={() => setExpandedId(expandedId === update.version ? null : update.version)}
+                            >
                                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                                     <div className="flex items-center gap-3">
                                         <span className={`rounded-lg bg-${update.color}-500/10 px-2 py-1 text-[10px] font-bold text-${update.color}-500 uppercase tracking-widest ring-1 ring-${update.color}-500/30`}>
@@ -83,8 +90,14 @@ export const Updates = () => {
                                             {update.date}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase italic">
-                                        <Activity size={12} /> Live in Control Center
+                                    <div className="flex items-center gap-4">
+                                        <div className="hidden sm:flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase italic">
+                                            <Activity size={12} /> Live in Control Center
+                                        </div>
+                                        <ChevronDown
+                                            size={16}
+                                            className={`text-slate-500 transition-transform ${expandedId === update.version ? 'rotate-180 text-blue-400' : ''}`}
+                                        />
                                     </div>
                                 </div>
 
@@ -94,6 +107,44 @@ export const Updates = () => {
                                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                                     {update.description}
                                 </p>
+
+                                <AnimatePresence>
+                                    {expandedId === update.version && update.details && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3 pb-2 text-sm text-slate-600 dark:text-slate-300">
+                                                {update.details.split('\\n').map((line, i) => {
+                                                    const trimmed = line.trim();
+                                                    if (!trimmed) return null;
+
+                                                    if (trimmed.startsWith('- ')) {
+                                                        const text = trimmed.substring(2);
+                                                        const boldMatch = text.match(/\\*\\*(.*?)\\*\\*\\s*(.*)/);
+                                                        if (boldMatch) {
+                                                            return (
+                                                                <div key={i} className="flex gap-2 items-start">
+                                                                    <span className="text-blue-500 mt-1">•</span>
+                                                                    <p><strong className="text-slate-900 dark:text-white">{boldMatch[1]}</strong> {boldMatch[2]}</p>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <div key={i} className="flex gap-2 items-start">
+                                                                <span className="text-blue-500 mt-1">•</span>
+                                                                <p>{text}</p>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return <p key={i}>{trimmed}</p>;
+                                                })}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
                                 {/* Decorative detail */}
                                 <div className="mt-6 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">

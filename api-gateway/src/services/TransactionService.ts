@@ -66,6 +66,8 @@ export class TransactionService {
       transactionId: transaction.transactionId,
       userId: transaction.userId,
       fraudScore: transaction.fraudScore,
+      deviceId: transaction.deviceId,
+      ipAddress: transaction.ipAddress,
       location: transaction.location,
       ruleReasons: scoring.ruleReasons ?? [],
       explanations: scoring.explanations ?? []
