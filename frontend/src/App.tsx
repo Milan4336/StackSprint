@@ -8,8 +8,8 @@ import { useAuthStore } from './store/auth';
 
 // Legacy pages
 import { Settings } from './pages/Settings';
-import { Cases as CaseManagement } from './pages/Cases';
-import { GlobalFraudMap } from './pages/GlobalFraudMap';
+import { Cases } from './pages/Cases';
+import { Radar } from './pages/Radar';
 import { Audit } from './pages/Audit';
 import { ModelHealth } from './pages/ModelHealth';
 import { Updates } from './pages/Updates';
@@ -31,7 +31,6 @@ const UpdatesDashboard = lazy(() => import('./pages/Updates').then(m => ({ defau
 const EntityProfile = lazy(() => import('./pages/entities/EntityProfile').then(m => ({ default: m.EntityProfile })));
 const InvestigationWorkspace = lazy(() => import('./pages/investigation/InvestigationWorkspace').then(m => ({ default: m.InvestigationWorkspace })));
 const UserDashboard = lazy(() => import('./pages/user/UserDashboard').then(m => ({ default: m.UserDashboard })));
-const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.Register })));
 
 const LoadingFallback = () => (
   <div className="flex h-full w-full items-center justify-center bg-[#0b1629]">
@@ -47,8 +46,6 @@ const HomeLoader = () => {
   return <Navigate to="/dashboard/overview" replace />;
 };
 
-import { CyberEnvironment } from './components/layout/CyberEnvironment';
-
 export const App = () => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -61,53 +58,49 @@ export const App = () => {
 
   return (
     <BrowserRouter>
-      <CyberEnvironment>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Suspense fallback={<LoadingFallback />}><Register /></Suspense>} />
+      <Routes>
+        <Route path="/login" element={<Login />} />
 
-          {/* HomeLoader handles intelligent role-based entry point */}
-          <Route path="/" element={<HomeLoader />} />
+        {/* HomeLoader handles intelligent role-based entry point */}
+        <Route path="/" element={<HomeLoader />} />
 
-          <Route element={<ProtectedRoute />}>
-            {/* Personal Fraud Portal route - Accessible to all roles but user-facing */}
-            <Route path="/portal" element={<Suspense fallback={<LoadingFallback />}><UserDashboard /></Suspense>} />
+        <Route element={<ProtectedRoute />}>
+          {/* Personal Fraud Portal route - Accessible to all roles but user-facing */}
+          <Route path="/portal" element={<Suspense fallback={<LoadingFallback />}><UserDashboard /></Suspense>} />
 
-            {/* Command Center Layout - For Admin/Analyst modules */}
-            <Route path="/dashboard" element={<CommandCenterLayout />}>
-              <Route index element={<Navigate to="/dashboard/overview" replace />} />
-              <Route path="overview" element={<Suspense fallback={<LoadingFallback />}><Overview /></Suspense>} />
-              <Route path="transactions" element={<Suspense fallback={<LoadingFallback />}><Transactions /></Suspense>} />
-              <Route path="intelligence" element={<Suspense fallback={<LoadingFallback />}><Intelligence /></Suspense>} />
-              <Route path="network" element={<Suspense fallback={<LoadingFallback />}><NetworkGraph /></Suspense>} />
-              <Route path="geo" element={<Suspense fallback={<LoadingFallback />}><GeoAnalytics /></Suspense>} />
-              <Route path="devices" element={<Suspense fallback={<LoadingFallback />}><Devices /></Suspense>} />
-              <Route path="alerts" element={<Suspense fallback={<LoadingFallback />}><AlertsPage /></Suspense>} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="actions" element={<Suspense fallback={<LoadingFallback />}><AutonomousActions /></Suspense>} />
-              <Route path="simulation" element={<Suspense fallback={<LoadingFallback />}><Simulation /></Suspense>} />
-              <Route path="system" element={<Suspense fallback={<LoadingFallback />}><SystemHealth /></Suspense>} />
-              <Route path="updates" element={<Suspense fallback={<LoadingFallback />}><UpdatesDashboard /></Suspense>} />
-              <Route path="entities/:id" element={<Suspense fallback={<LoadingFallback />}><EntityProfile /></Suspense>} />
-              <Route path="investigation" element={<Suspense fallback={<LoadingFallback />}><InvestigationWorkspace /></Suspense>} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-
-            <Route element={<AppLayout />}>
-              <Route path="/cases" element={<CaseManagement />} />
-              <Route path="/global-fraud-map" element={<GlobalFraudMap />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/audit" element={<Audit />} />
-              <Route path="/model-health" element={<ModelHealth />} />
-              <Route path="/updates" element={<Updates />} />
-              <Route path="/behavior-profiles" element={<BehaviorProfiles />} />
-              <Route path="/settings" element={<Settings />} />
-            </Route>
+          {/* Command Center Layout - For Admin/Analyst modules */}
+          <Route path="/dashboard" element={<CommandCenterLayout />}>
+            <Route index element={<Navigate to="/dashboard/overview" replace />} />
+            <Route path="overview" element={<Suspense fallback={<LoadingFallback />}><Overview /></Suspense>} />
+            <Route path="transactions" element={<Suspense fallback={<LoadingFallback />}><Transactions /></Suspense>} />
+            <Route path="intelligence" element={<Suspense fallback={<LoadingFallback />}><Intelligence /></Suspense>} />
+            <Route path="network" element={<Suspense fallback={<LoadingFallback />}><NetworkGraph /></Suspense>} />
+            <Route path="geo" element={<Suspense fallback={<LoadingFallback />}><GeoAnalytics /></Suspense>} />
+            <Route path="devices" element={<Suspense fallback={<LoadingFallback />}><Devices /></Suspense>} />
+            <Route path="alerts" element={<Suspense fallback={<LoadingFallback />}><AlertsPage /></Suspense>} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="actions" element={<Suspense fallback={<LoadingFallback />}><AutonomousActions /></Suspense>} />
+            <Route path="simulation" element={<Suspense fallback={<LoadingFallback />}><Simulation /></Suspense>} />
+            <Route path="system" element={<Suspense fallback={<LoadingFallback />}><SystemHealth /></Suspense>} />
+            <Route path="updates" element={<Suspense fallback={<LoadingFallback />}><UpdatesDashboard /></Suspense>} />
+            <Route path="entities/:id" element={<Suspense fallback={<LoadingFallback />}><EntityProfile /></Suspense>} />
+            <Route path="investigation" element={<Suspense fallback={<LoadingFallback />}><InvestigationWorkspace /></Suspense>} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </CyberEnvironment>
+          <Route element={<AppLayout />}>
+            <Route path="/cases" element={<Cases />} />
+            <Route path="/radar" element={<Radar />} />
+            <Route path="/audit" element={<Audit />} />
+            <Route path="/model-health" element={<ModelHealth />} />
+            <Route path="/updates" element={<Updates />} />
+            <Route path="/behavior-profiles" element={<BehaviorProfiles />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 };

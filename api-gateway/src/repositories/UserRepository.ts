@@ -11,9 +11,6 @@ export class UserRepository {
     email: string,
     password: string,
     role: 'admin' | 'analyst' | 'user',
-    fullName: string,
-    phone?: string,
-    mfaEnabled?: boolean,
     userId?: string
   ): Promise<UserDocument> {
 
@@ -31,13 +28,9 @@ export class UserRepository {
         userId: userId || email,
         email,
         password,
-        fullName,
-        phone,
-        mfaEnabled: mfaEnabled || false,
         role,
         status: 'ACTIVE',
         riskScore: 0,
-        identitySafetyScore: 70,
         lastLogin: new Date()
       });
 

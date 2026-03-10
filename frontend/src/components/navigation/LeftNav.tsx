@@ -14,73 +14,57 @@ import {
     PanelRightClose,
     Newspaper,
     BarChart3,
-    Settings,
-    Activity
+    Settings
 } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { useUiStore } from '../../store/ui';
-import { useUISound } from '../../hooks/useUISound';
-import { useThemeStore } from '../../store/themeStore';
-import { HUDCorner, HUDScanline } from '../visual/HUDDecorations';
 
 export const LeftNav = () => {
     const { isSidebarCollapsed, toggleSidebar, isExecutiveMode } = useUiStore();
-    const { playSound } = useUISound();
-    const { theme } = useThemeStore();
-
-    const color = theme === 'neon' ? 'text-purple-400' : theme === 'tactical' ? 'text-emerald-400' : 'text-blue-400';
-    const bgColor = theme === 'neon' ? 'bg-purple-500' : theme === 'tactical' ? 'bg-emerald-500' : 'bg-blue-500';
-    const fromColor = theme === 'neon' ? 'from-purple-400' : theme === 'tactical' ? 'from-emerald-400' : 'from-blue-400';
-    const viaColor = theme === 'neon' ? 'via-purple-200' : theme === 'tactical' ? 'via-emerald-200' : 'via-blue-200';
 
     const items = [
-        { to: '/dashboard/overview', icon: LayoutDashboard, label: 'Tactical Overview' },
-        { to: '/dashboard/transactions', icon: ListRestart, label: 'Live Stream', hideExecutive: true },
-        { to: '/dashboard/investigation', icon: Network, label: 'Neural Workspace', hideExecutive: true },
-        { to: '/dashboard/geo', icon: Map, label: 'Geo-Threat Matrix' },
-        { to: '/dashboard/alerts', icon: ShieldAlert, label: 'Defense Center', hideExecutive: false },
-        { to: '/dashboard/analytics', icon: BarChart3, label: 'Predictive Analytics' },
-        { to: '/dashboard/simulation', icon: PlayCircle, label: 'War Room' },
-        { to: '/dashboard/system', icon: ActivitySquare, label: 'System Vitals', hideExecutive: true },
-        { to: '/dashboard/settings', icon: Settings, label: 'Global Config' },
+        { to: '/dashboard/overview', icon: LayoutDashboard, label: 'Overview' },
+        { to: '/dashboard/transactions', icon: ListRestart, label: 'Transactions', hideExecutive: true },
+        { to: '/dashboard/intelligence', icon: BrainCircuit, label: 'Intelligence', hideExecutive: true },
+        { to: '/dashboard/investigation', icon: Network, label: 'Investigation Workspace', hideExecutive: true },
+        { to: '/dashboard/network', icon: Network, label: 'Global Graph', hideExecutive: true },
+        { to: '/dashboard/geo', icon: Map, label: 'Geo Analytics' },
+        { to: '/dashboard/devices', icon: MonitorSmartphone, label: 'Devices' },
+        { to: '/dashboard/alerts', icon: ShieldAlert, label: 'Alert Center', hideExecutive: false },
+        { to: '/dashboard/actions', icon: ShieldAlert, label: 'Global Threat Globe' },
+        { to: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
+        { to: '/dashboard/simulation', icon: PlayCircle, label: 'Simulation' },
+        { to: '/dashboard/system', icon: ActivitySquare, label: 'System Health', hideExecutive: true },
+        { to: '/dashboard/updates', icon: Newspaper, label: 'Patch Notes' },
+        { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
-
-    const handleToggle = () => {
-        playSound('CLICK');
-        toggleSidebar();
-    };
 
     const visibleItems = items.filter(item => !(isExecutiveMode && item.hideExecutive));
 
     return (
         <motion.aside
             initial={false}
-            animate={{ width: isSidebarCollapsed ? 80 : 280 }}
-            className="flex flex-col h-full cyber-panel border-r border-white/5 shrink-0 relative z-30 overflow-hidden"
+            animate={{ width: isSidebarCollapsed ? 80 : 256 }}
+            className="flex flex-col h-full bg-slate-900 border-r border-slate-800 shrink-0 relative z-20"
         >
-            <HUDScanline />
-            {/* Nav Header */}
-            <div className="flex h-16 items-center px-6 shrink-0 border-b border-white/5 justify-between">
+            <div className="flex h-16 items-center px-4 shrink-0 border-b border-slate-800/50 font-black italic tracking-tighter text-white uppercase justify-between">
                 {!isSidebarCollapsed && (
-                    <div className="flex flex-col">
-                        <span className={`text-xs font-black uppercase tracking-[0.4em] bg-gradient-to-r ${fromColor} ${viaColor} bg-clip-text text-transparent`}>
-                            FRAUD.CMD
-                        </span>
-                        <span className={`text-[8px] font-mono ${color} opacity-40 uppercase tracking-[0.2em] -mt-1 font-black`}>
-                            Intel Core v4.0.5
-                        </span>
-                    </div>
+                    <span className="truncate bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                        Intel Console
+                    </span>
+                )}
+                {isSidebarCollapsed && (
+                    <span className="mx-auto text-blue-400">IC</span>
                 )}
                 <button
-                    onClick={handleToggle}
-                    className="p-1 text-slate-500 hover:text-blue-400 transition-colors"
+                    onClick={toggleSidebar}
+                    className="text-slate-400 hover:text-white transition-colors"
                 >
                     {isSidebarCollapsed ? <PanelRightClose size={18} /> : <PanelLeftClose size={18} />}
                 </button>
             </div>
 
-            {/* Nav Items */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2 modern-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 modern-scrollbar">
                 {visibleItems.map(item => (
                     <NavItem
                         key={item.to}
@@ -92,23 +76,18 @@ export const LeftNav = () => {
                 ))}
             </div>
 
-            {/* Status Indicator Footnote */}
-            <div className="p-4 border-t border-white/5 bg-black/20">
-                <div className={`relative overflow-hidden rounded-lg border border-white/5 p-3 transition-all duration-500
+            <div className="p-4 border-t border-slate-800/50">
+                <div className={`rounded-xl border border-slate-800 bg-slate-800/30 p-3 
                     ${isSidebarCollapsed ? 'flex justify-center' : ''}`}
                 >
-                    <div className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
                     {isSidebarCollapsed ? (
-                        <Activity className={`${theme === 'tactical' ? 'text-blue-400' : 'text-emerald-500'}`} size={18} />
+                        <ShieldAlert className="text-emerald-500" size={20} />
                     ) : (
-                        <div className="relative z-10 flex items-center gap-3">
-                            <div className="relative">
-                                <Activity className={`${theme === 'tactical' ? 'text-blue-400' : 'text-emerald-500'}`} size={18} />
-                                <div className={`absolute -top-1 -right-1 h-2 w-2 rounded-full ${theme === 'tactical' ? 'bg-blue-400' : 'bg-emerald-500'} animate-ping opacity-75`} />
-                            </div>
+                        <div className="flex items-center gap-3">
+                            <ShieldAlert className="text-emerald-500 shrink-0" size={20} />
                             <div>
-                                <p className="text-[9px] uppercase tracking-[0.3em] font-black text-slate-500 leading-none">Security_Core</p>
-                                <p className={`text-[11px] font-black ${theme === 'tactical' ? 'text-blue-400' : 'text-emerald-400'} mt-1 uppercase tracking-wider`}>NOMINAL_LOAD</p>
+                                <p className="text-[10px] uppercase tracking-widest font-black text-slate-400 leading-none">Status</p>
+                                <p className="text-xs font-bold text-emerald-500 mt-1">Operational</p>
                             </div>
                         </div>
                     )}

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import numpy as np
 import xgboost as xgb
-import shap
 
 
 class XGBoostModel:
@@ -17,11 +16,9 @@ class XGBoostModel:
 
     def __init__(self) -> None:
         self._clf: xgb.XGBClassifier | None = None
-        self._explainer: shap.TreeExplainer | None = None
         self.is_fitted = False
-        self.version = "1.1.0"
+        self.version = "1.0.0"
         self.name = "xgboost"
-        self.feature_names = ["amount", "amount_z", "tx_freq", "geo_delta", "device_entropy"]
 
     # ------------------------------------------------------------------
     @staticmethod
@@ -64,7 +61,6 @@ class XGBoostModel:
             verbosity=0,
         )
         self._clf.fit(X, y)
-        self._explainer = shap.TreeExplainer(self._clf)
         self.is_fitted = True
 
     def train(self, X: np.ndarray, y: np.ndarray) -> None:
@@ -80,7 +76,6 @@ class XGBoostModel:
             verbosity=0,
         )
         self._clf.fit(X, y)
-        self._explainer = shap.TreeExplainer(self._clf)
         self.is_fitted = True
 
     # ------------------------------------------------------------------
@@ -91,22 +86,3 @@ class XGBoostModel:
         vec = np.array([features])
         prob = float(self._clf.predict_proba(vec)[0][1])
         return float(np.clip(prob, 0.0, 1.0))
-
-    def get_feature_contributions(self, features: list[float]) -> list[dict]:
-        """Compute SHAP values for the given features."""
-        if not self.is_fitted:
-            self.train_on_synthetic()
-        
-        vec = np.array([features])
-        shap_values = self._explainer.shap_values(vec)
-        
-        # shap_values[0] for binary classifier corresponds to class 1
-        contributions = []
-        for i, name in enumerate(self.feature_names):
-            val = float(shap_values[0][i])
-            contributions.append({
-                "feature": name,
-                "weight": round(val, 4)
-            })
-            
-        return sorted(contributions, key=lambda x: abs(x["weight"]), reverse=True)

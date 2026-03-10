@@ -21,13 +21,6 @@ import { EntityController } from '../controllers/EntityController';
 import { AutonomousAgentController } from '../controllers/AutonomousAgentController';
 import { AdminController } from '../controllers/AdminController';
 import { AlertController } from '../controllers/AlertController';
-import { PortalController } from '../controllers/PortalController';
-import { CopilotController } from '../controllers/CopilotController';
-import { CopilotService } from '../services/CopilotService';
-import { CopilotContextService } from '../services/CopilotContextService';
-import { InvestigationEngine } from '../services/InvestigationEngine';
-import { CopilotReportService } from '../services/CopilotReportService';
-import { GeoFraudService } from '../services/GeoFraudService';
 import { UserRepository } from '../repositories/UserRepository';
 import { FraudAIAgentService } from '../services/FraudAIAgentService';
 import { realtimeEventBus } from '../services/RealtimeEventBus';
@@ -91,14 +84,12 @@ const modelMetricsService = new ModelMetricsService(modelMetricRepository, trans
 const settingsService = new SettingsService(systemSettingRepository, auditService);
 const userRiskProfileService = new UserRiskProfileService(transactionRepository, userRiskProfileRepository);
 const ruleEngineService = new RuleEngineService(transactionRepository, userRiskProfileService, settingsService);
-const geoFraudService = new GeoFraudService();
 const fraudScoringService = new FraudScoringService(
   ruleEngineService,
   mlServiceClient,
   settingsService,
   userBehaviorService,
-  fraudGraphService,
-  geoFraudService
+  fraudGraphService
 );
 
 const fraudResponseService = new FraudResponseService(
@@ -159,18 +150,16 @@ const entityController = new EntityController(
 
 const adminController = new AdminController(auditService);
 
-const graphController = new GraphController(fraudGraphService);
-const portalController = new PortalController();
-const copilotContextService = new CopilotContextService(fraudGraphService);
-const investigationEngine = new InvestigationEngine(fraudGraphService);
-const copilotReportService = new CopilotReportService();
-
 const aiAgentService = new FraudAIAgentService(
   fraudAlertRepository,
   caseRepository,
-  fraudScoringService,
-  investigationEngine,
-  copilotReportService,
+  new FraudScoringService(
+    ruleEngineService,
+    mlServiceClient,
+    settingsService,
+    userBehaviorService,
+    new FraudGraphService(mlServiceClient)
+  ),
   realtimeEventBus
 );
 
@@ -178,8 +167,7 @@ aiAgentService.start();
 
 const agentController = new AutonomousAgentController(aiAgentService);
 
-const copilotService = new CopilotService(copilotContextService, investigationEngine, copilotReportService);
-const copilotController = new CopilotController(copilotService);
+const graphController = new GraphController(fraudGraphService);
 
 import { dashboardRoutes } from './dashboard.routes';
 
@@ -269,17 +257,3 @@ router.patch(
   validate(updateSettingsSchema),
   asyncHandler(settingsController.update)
 );
-
-// --- Normal User Portal Routes ---
-router.get('/api/v1/portal/dashboard', authMiddleware, roleMiddleware(['user']), asyncHandler(portalController.getDashboard));
-router.get('/api/v1/portal/transactions', authMiddleware, roleMiddleware(['user']), asyncHandler(portalController.getTransactions));
-router.get('/api/v1/portal/devices', authMiddleware, roleMiddleware(['user']), asyncHandler(portalController.getDevices));
-router.get('/api/v1/portal/logins', authMiddleware, roleMiddleware(['user']), asyncHandler(portalController.getLoginHistory));
-router.get('/api/v1/portal/alerts', authMiddleware, roleMiddleware(['user']), asyncHandler(portalController.getAlerts));
-router.post('/portal/report-fraud', authMiddleware, roleMiddleware(['user']), portalController.reportFraud);
-
-// --- Copilot Intelligence Routes ---
-router.post('/api/v1/copilot/query', authMiddleware, roleMiddleware(['admin', 'analyst']), asyncHandler(copilotController.query));
-router.get('/api/v1/copilot/report/:id', authMiddleware, roleMiddleware(['admin', 'analyst']), asyncHandler(copilotController.getReport));
-
-export default router;

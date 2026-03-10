@@ -2,7 +2,6 @@ import { useRef, useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { motion } from 'framer-motion';
-import { useThemeStore } from '../../store/themeStore';
 
 interface Trajectory {
     from: [number, number];
@@ -13,10 +12,6 @@ interface Trajectory {
 export const GeoTrajectoryOverlay = ({ trajectories }: { trajectories: Trajectory[] }) => {
     const map = useMap();
     const containerRef = useRef<SVGSVGElement>(null);
-    const { theme } = useThemeStore();
-
-    const color = theme === 'neon' ? '#a855f7' : theme === 'tactical' ? '#10b981' : '#3b82f6';
-    const criticalColor = theme === 'tactical' ? '#3b82f6' : '#ef4444';
 
     useEffect(() => {
         const update = () => {
@@ -48,43 +43,32 @@ export const GeoTrajectoryOverlay = ({ trajectories }: { trajectories: Trajector
 
         // Calculate quadratic curve control point
         const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 - 40;
+        const midY = (p1.y + p2.y) / 2 - 50; // Curve upwards
 
         const d = `M ${p1.x} ${p1.y} Q ${midX} ${midY} ${p2.x} ${p2.y}`;
-        const strokeColor = traj.risk > 0.7 ? criticalColor : color;
 
         return (
             <g key={idx}>
-                {/* Glow Effect */}
                 <motion.path
                     d={d}
                     fill="none"
-                    stroke={strokeColor}
-                    strokeWidth="4"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.1 }}
-                    transition={{ duration: 2 }}
-                    className="blur-[2px]"
-                />
-                <motion.path
-                    d={d}
-                    fill="none"
-                    stroke={strokeColor}
+                    stroke={traj.risk > 0.7 ? '#ef4444' : '#3b82f6'}
                     strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1.5 }}
+                    strokeDasharray="1000"
+                    initial={{ strokeDashoffset: 1000 }}
+                    animate={{ strokeDashoffset: 0 }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                    opacity={0.6}
                 />
-
-                {/* Pulsing Dot */}
-                <motion.circle r="3" fill={strokeColor} className="shadow-[0_0_10px_rgba(59,130,246,0.8)]">
-                    <animateMotion dur="2s" repeatCount="indefinite" path={d} />
-                </motion.circle>
-
-                {/* Trail Effect */}
-                <motion.circle r="1.5" fill={strokeColor} opacity="0.4">
-                    <animateMotion dur="2s" begin="0.2s" repeatCount="indefinite" path={d} />
+                <motion.circle
+                    r="3"
+                    fill={traj.risk > 0.7 ? '#ef4444' : '#3b82f6'}
+                >
+                    <animateMotion
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                        path={d}
+                    />
                 </motion.circle>
             </g>
         );
@@ -95,7 +79,7 @@ export const GeoTrajectoryOverlay = ({ trajectories }: { trajectories: Trajector
             <svg
                 ref={containerRef}
                 style={{ position: 'absolute' }}
-                className="w-full h-full pointer-events-none"
+                className="w-full h-full"
             >
                 {trajectories.map((t, i) => renderPath(t, i))}
             </svg>

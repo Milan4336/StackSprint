@@ -1,29 +1,14 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { monitoringApi } from '../api/client';
 import { AlertRecord } from '../types';
 import { AlertCard } from '../components/alerts/AlertCard';
-import { Bell, ShieldAlert, Filter, CheckCircle2, RefreshCw, Activity, Terminal } from 'lucide-react';
+import { Bell, ShieldAlert, Filter, CheckCircle2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HUDCard } from '../components/layout/HUDCard';
-import { HUDPanel, HUDDataReadout, HUDCorner, HUDScanline } from '../components/visual/HUDDecorations';
-import { useUISound } from '../hooks/useUISound';
-import { useThemeStore } from '../store/themeStore';
-import { useMemo } from 'react';
 
 export const Alerts = () => {
   const [alerts, setAlerts] = useState<AlertRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'CRITICAL'>('ALL');
-  const { playSound } = useUISound();
-  const { theme } = useThemeStore();
-
-  const themeColors = useMemo(() => {
-    return {
-      cyber: { primary: 'text-blue-400', accent: 'text-red-500', bgAccent: 'bg-red-500', borderHighlight: 'border-red-500', filterActive: 'bg-red-600', filterShadow: 'rgba(239,68,68,0.4)', iconColor: 'text-blue-400' },
-      neon: { primary: 'text-purple-400', accent: 'text-pink-500', bgAccent: 'bg-pink-500', borderHighlight: 'border-pink-500', filterActive: 'bg-purple-600', filterShadow: 'rgba(168,85,247,0.4)', iconColor: 'text-purple-400' },
-      tactical: { primary: 'text-emerald-400', accent: 'text-blue-500', bgAccent: 'bg-blue-500', borderHighlight: 'border-blue-500', filterActive: 'bg-emerald-600', filterShadow: 'rgba(16,185,129,0.4)', iconColor: 'text-emerald-400' }
-    }[theme] || { primary: 'text-blue-400', accent: 'text-red-500', bgAccent: 'bg-red-500', borderHighlight: 'border-red-500', filterActive: 'bg-red-600', filterShadow: 'rgba(239,68,68,0.4)', iconColor: 'text-blue-400' };
-  }, [theme]);
 
   const fetchAlerts = async () => {
     try {
@@ -65,106 +50,85 @@ export const Alerts = () => {
   const criticalCount = alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'OPEN').length;
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Cinematic Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className={`h-4 w-1 ${themeColors.bgAccent}`} />
-            <span className={`text-[10px] font-black uppercase tracking-[0.5em] ${themeColors.accent} opacity-60`}>Intercept Protocol</span>
-          </div>
-          <h1 className="text-5xl font-black uppercase tracking-tighter text-white italic">
-            ALERT <span className={`${themeColors.accent} bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent`}>CENTER</span>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black uppercase tracking-widest text-slate-100 flex items-center gap-3">
+            Alert Center
+            {criticalCount > 0 && (
+              <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-black rounded-lg animate-pulse">
+                {criticalCount} Critical
+              </span>
+            )}
           </h1>
+          <p className="text-sm font-bold text-slate-400 mt-1">Real-time fraud alert orchestration and threat acknowledgement</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-lg border border-white/10">
-            {(['ALL', 'OPEN', 'CRITICAL'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => { playSound('CLICK'); setFilter(f); }}
-                className={`px-6 py-2 rounded-sm text-[10px] font-black uppercase tracking-[0.2em] transition-all ${filter === f
-                  ? `${themeColors.filterActive} text-white shadow-[0_0_15px_${themeColors.filterShadow}]`
+        <div className="flex items-center gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+          {(['ALL', 'OPEN', 'CRITICAL'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filter === f
+                  ? 'bg-indigo-600 text-white shadow-lg'
                   : 'text-slate-500 hover:text-slate-300'
-                  }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => { playSound('SCAN'); fetchAlerts(); }}
-            className={`h-12 w-12 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all ${themeColors.iconColor} relative overflow-hidden`}
-          >
-            <HUDCorner position="top-right" />
-            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-          </button>
+                }`}
+            >
+              {f}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left Column: Intelligence Snapshot */}
-        <div className="lg:col-span-1 space-y-8">
-          <HUDCard title="Resolution Logic" icon={<CheckCircle2 size={16} />}>
-            <div className="space-y-6">
-              <div className="flex flex-col items-center justify-center py-6 bg-emerald-500/5 border border-emerald-500/10 rounded-sm">
-                <span className="text-4xl font-black italic tracking-tighter text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]">
-                  {alerts.length > 0
-                    ? Math.round((alerts.filter(a => a.status === 'ACKNOWLEDGED').length / alerts.length) * 100)
-                    : 0}%
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/60 mt-2">Protocol_Clear_Rate</span>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Stats Sidebar */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <CheckCircle2 className="text-emerald-400" size={20} />
               </div>
-
-              <div className="space-y-4">
-                <HUDDataReadout label="Total Entities" value={`${alerts.length} TARGETS`} />
-                <HUDDataReadout label="Critical Buffer" value={`${criticalCount} ACTIVE`} />
-              </div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Resolution Rate</h3>
             </div>
-          </HUDCard>
-
-          <HUDCard title="Active Infiltrators" icon={<ShieldAlert size={16} />}>
-            <div className="flex flex-col items-center justify-center py-8 bg-red-500/5 border border-red-500/10 rounded-sm">
-              <span className="text-6xl font-black italic tracking-tighter text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]">
-                {criticalCount}
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500/60 mt-4">High_Risk_Pool</span>
+            <div className="text-3xl font-black text-white">
+              {alerts.length > 0
+                ? Math.round((alerts.filter(a => a.status === 'ACKNOWLEDGED').length / alerts.length) * 100)
+                : 0}%
             </div>
-          </HUDCard>
-        </div>
-
-        {/* Right Column: Intercept Feed */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="flex items-center justify-between px-6 py-3 bg-white/5 border border-white/5 rounded-lg mb-2">
-            <div className="flex items-center gap-3">
-              <Activity size={14} className="text-blue-500" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Live_Intercept_Stream</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Engine_Sync_Active</span>
-            </div>
+            <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase">of last 50 threats cleared</p>
           </div>
 
-          <AnimatePresence mode="popLayout">
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-48 bg-white/5 animate-pulse rounded-lg border border-white/5" />
-                ))}
+          <div className="p-6 rounded-2xl border border-red-500/20 bg-slate-900/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-red-500/10 rounded-lg">
+                <ShieldAlert className="text-red-400" size={20} />
               </div>
-            ) : filteredAlerts.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center justify-center py-32 bg-white/5 border border-dashed border-white/10 rounded-lg text-slate-500"
-              >
-                <Bell size={48} className="mb-6 opacity-20" />
-                <span className="text-xs font-black uppercase tracking-[0.4em]">Zero Active Threats in Buffer</span>
-              </motion.div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">High Risk Pool</h3>
+            </div>
+            <div className="text-3xl font-black text-white">
+              {alerts.filter(a => a.fraudScore > 0.85).length}
+            </div>
+            <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase">Pending investigation</p>
+          </div>
+        </div>
+
+        {/* Alerts Stream */}
+        <div className="lg:col-span-3 space-y-4">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-64 border border-dashed border-slate-800 rounded-2xl">
+              <RefreshCw className="text-slate-700 animate-spin mb-4" size={32} />
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Syncing with threat engine...</span>
+            </div>
+          ) : filteredAlerts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 border border-dashed border-slate-800 rounded-2xl">
+              <Bell className="text-slate-800 mb-4" size={48} />
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest text-center">
+                All clear. No {filter.toLowerCase()} alerts active.
+              </span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AnimatePresence mode="popLayout">
                 {filteredAlerts.map(alert => (
                   <AlertCard
                     key={alert.alertId}
@@ -172,9 +136,9 @@ export const Alerts = () => {
                     onAcknowledge={handleAcknowledge}
                   />
                 ))}
-              </div>
-            )}
-          </AnimatePresence>
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </div>
     </div>

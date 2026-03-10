@@ -1,8 +1,6 @@
 import { FraudAlertRepository } from '../repositories/FraudAlertRepository';
 import { CaseRepository } from '../repositories/CaseRepository';
 import { FraudScoringService } from './FraudScoringService';
-import { InvestigationEngine } from './InvestigationEngine';
-import { CopilotReportService } from './CopilotReportService';
 import { logger } from '../config/logger';
 import { realtimeEventBus } from './RealtimeEventBus';
 
@@ -14,8 +12,6 @@ export class FraudAIAgentService {
         private readonly alertRepository: FraudAlertRepository,
         private readonly caseRepository: CaseRepository,
         private readonly scoringService: FraudScoringService,
-        private readonly investigationEngine: InvestigationEngine,
-        private readonly reportService: CopilotReportService,
         private readonly eventBus: any
     ) { }
 
@@ -68,10 +64,6 @@ export class FraudAIAgentService {
         // Check if case already exists
         const cases = await this.caseRepository.list({ transactionId: alert.transactionId, page: 1, limit: 1 });
         if (cases.data.length === 0) {
-            // Autonomous Investigation
-            const investigation = await this.investigationEngine.investigateTransaction(alert.transactionId);
-            const report = await this.reportService.generateMarkdownReport(alert.transactionId, 'TRANSACTION');
-
             await this.caseRepository.create({
                 caseId: `CASE-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                 transactionId: alert.transactionId,
@@ -79,11 +71,7 @@ export class FraudAIAgentService {
                 caseStatus: 'UNDER_INVESTIGATION',
                 priority: 'CRITICAL',
                 investigatorId: 'AI_AGENT',
-                caseNotes: [
-                    `[AI Agent Escalation] ${reason}`,
-                    `[AI Evidence] Fraud Score: ${investigation.fraudScore}. Risk Factors: ${investigation.riskFactors.join(', ')}`,
-                    `[AI Report Summary] Generated forensic briefing. Conclusion: ${investigation.conclusion}`
-                ]
+                caseNotes: [`[AI Agent Escalation] ${reason}`]
             });
 
             alert.status = 'investigating';

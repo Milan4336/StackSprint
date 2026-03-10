@@ -22,33 +22,22 @@ import { MLActivityIndicator } from '../components/visual/MLActivityIndicator';
 import { AttackModeOverlay } from '../components/visual/AttackModeOverlay';
 import { FraudCopilot } from '../components/intelligence/FraudCopilot';
 import { ThreatLevelIndicator } from '../components/threat/ThreatLevelIndicator';
-import { useUISound } from '../hooks/useUISound';
-import { motion } from 'framer-motion';
-import { useThemeStore, ThemeType } from '../store/themeStore';
-import { Palette, Layers, Zap } from 'lucide-react';
 
 export const CommandCenterLayout = () => {
-    const { isExecutiveMode, toggleExecutiveMode, toggleSidebar } = useUiStore();
+    const { isExecutiveMode, toggleExecutiveMode } = useUiStore();
     const logout = useAuthStore((state) => state.logout);
     const connectThreatSocket = useThreatStore((state) => state.connectThreatSocket);
-    const { playSound } = useUISound();
-    const { theme, setTheme } = useThemeStore();
 
-    // Mock user for the dashboard UI
-    const user = { email: 'admin@intel.core', role: 'admin' };
+    // Mock user for the dashboard UI since auth store only manages the JWT token
+    const user = { email: 'admin@fraud.cmd', role: 'admin' };
 
+    // Connect threat socket on mount
     useEffect(() => {
         connectThreatSocket();
     }, [connectThreatSocket]);
 
-    const handleExecToggle = () => {
-        playSound('CLICK');
-        toggleSidebar(); // Assuming this is what we want, or keep toggleExecutiveMode
-        toggleExecutiveMode();
-    };
-
     return (
-        <div className="flex h-screen w-full overflow-hidden text-slate-200 relative bg-[#02040a]">
+        <div className="flex h-screen w-full overflow-hidden text-slate-200 relative">
             {/* ---- Visual Intelligence Layer (z-indexed overlays) ---- */}
             <ThreatAtmosphere />
             <SOCGrid />
@@ -62,119 +51,91 @@ export const CommandCenterLayout = () => {
             <FraudCopilot />
             <ThreatAudioEngine />
 
-            {/* Moving Scanning lines for the whole background */}
-            <div className="absolute inset-0 pointer-events-none z-[2]">
-                <div className="neon-line-x top-1/4 opacity-10" />
-                <div className="neon-line-x top-3/4 opacity-10" />
-            </div>
-
             {/* Sidebar */}
             <LeftNav />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 relative z-10">
-                {/* Topbar HUD */}
-                <header className="shrink-0 z-20 px-8 py-4">
-                    <div className="cyber-panel hud-clipped px-8 h-16 flex items-center justify-between border-white/10">
-                        {/* Title Section */}
-                        <div className="flex items-center gap-6">
-                            <div className="flex flex-col">
-                                <h1 className="text-xl font-black uppercase tracking-[0.3em] bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent">
-                                    CORE.DASHBOARD
-                                </h1>
-                                <div className="flex items-center gap-2">
-                                    <span className="h-1 w-1 bg-blue-500 rounded-full animate-pulse" />
-                                    <span className="text-[9px] font-mono text-blue-500/50 uppercase tracking-[0.2em]">
-                                        Node: Signal-Zulu-9
-                                    </span>
-                                </div>
-                            </div>
+                {/* Topbar */}
+                <header className="shrink-0 bg-[#0b1629]/80 backdrop-blur-md border-b border-slate-800/50 z-10">
+                    {/* Threat Level bar (2px progress) */}
+                    <ThreatLevelBar />
 
-                            {/* Threat Level bar integrated into header */}
-                            <div className="hidden lg:block w-48 h-12 border-l border-white/5 pl-6">
-                                <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest mb-1">Global Load</p>
-                                <ThreatLevelBar />
-                            </div>
+                    <div className="h-16 flex items-center justify-between px-6">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-lg font-black uppercase tracking-widest text-slate-100">
+                                Fraud Command Center <span className="text-blue-500 ml-2">V3</span>
+                            </h1>
                         </div>
 
-                        <div className="flex items-center gap-8">
-                            {/* Theme Switcher */}
-                            <div className="flex items-center gap-2 border-l border-white/10 pl-8">
-                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mr-2">Spectral</p>
-                                <div className="flex bg-black/40 rounded-lg p-1 border border-white/5">
-                                    {(['cyber', 'neon', 'tactical'] as ThemeType[]).map((t) => (
-                                        <button
-                                            key={t}
-                                            onClick={() => { setTheme(t); playSound('SCAN'); }}
-                                            className={`w-8 h-8 rounded flex items-center justify-center transition-all ${theme === t ? 'bg-blue-600/20 text-blue-400 shadow-[0_0_10px_rgba(37,99,235,0.2)] border border-blue-500/30' : 'text-slate-600 hover:text-slate-400'}`}
-                                            title={t.toUpperCase()}
-                                        >
-                                            {t === 'cyber' && <Layers size={14} />}
-                                            {t === 'neon' && <Zap size={14} />}
-                                            {t === 'tactical' && <Palette size={14} />}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
+                        <div className="flex items-center gap-4">
                             {/* ML Activity */}
-                            <div className="hidden md:flex items-center gap-4">
-                                <MLActivityIndicator />
-                                <div className="h-8 w-px bg-white/5" />
-                                <ThreatLevelIndicator />
+                            <MLActivityIndicator />
+
+                            {/* Threat Level Indicator */}
+                            <ThreatLevelIndicator />
+
+                            {/* Executive Toggle */}
+                            <div className="flex items-center gap-3 pl-4 border-l border-slate-800/50">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                    Exec Mode
+                                </span>
+                                <button
+                                    onClick={toggleExecutiveMode}
+                                    className={`relative h-6 w-11 rounded-full transition-colors ${isExecutiveMode ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                                >
+                                    <div
+                                        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isExecutiveMode ? 'translate-x-5' : 'translate-x-0'}`}
+                                    />
+                                </button>
                             </div>
 
-                            {/* Right Actions */}
-                            <div className="flex items-center gap-6 border-l border-white/10 pl-8">
-                                {/* Executive Toggle HUD Style */}
-                                <div className="flex items-center gap-4">
-                                    <div className="text-right">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Operation</p>
-                                        <p className="text-[10px] font-bold text-blue-400 uppercase">{isExecutiveMode ? 'Executive' : 'Tactical'}</p>
-                                    </div>
-                                    <button
-                                        onClick={handleExecToggle}
-                                        className={`relative h-6 w-11 rounded-full border border-white/10 transition-all ${isExecutiveMode ? 'bg-blue-600/40 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-slate-800/40'}`}
-                                    >
-                                        <motion.div
-                                            animate={{ x: isExecutiveMode ? 20 : 2 }}
-                                            className="h-4 w-4 rounded-sm bg-white shadow-lg mt-0.5 ml-0.5"
-                                        />
-                                    </button>
-                                </div>
+                            {/* Audio Toggle */}
+                            <div className="flex items-center gap-2 pl-4 border-l border-slate-800/50">
+                                <button
+                                    onClick={() => useUiStore.getState().toggleAudio()}
+                                    className={`p-2 rounded-lg transition-colors ${useUiStore(s => s.isAudioEnabled) ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                                    title="Toggle Threat Audio"
+                                >
+                                    {useUiStore(s => s.isAudioEnabled) ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                                </button>
+                            </div>
 
-                                {/* User Profile */}
-                                <div className="flex items-center gap-4">
-                                    <div className="text-right hidden xl:block">
-                                        <p className="text-[10px] font-bold text-white leading-none tracking-wider">{user?.email}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500/60 mt-1">
-                                            Clearance: Level 5
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={logout}
-                                        onMouseEnter={() => playSound('HOVER')}
-                                        className="h-10 w-10 rounded-lg border border-white/10 flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/40 transition-all group"
-                                    >
-                                        <LogOut size={18} className="text-slate-500 group-hover:text-red-400" />
-                                    </button>
+                            {/* User Profile */}
+                            <div className="flex items-center gap-4 pl-4 border-l border-slate-800/50">
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-xs font-bold text-white leading-none">{user?.email}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mt-1">
+                                        {user?.role}
+                                    </p>
                                 </div>
+                                <div className="h-9 w-9 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+                                    {user?.role === 'admin' ? (
+                                        <Bot size={16} className="text-blue-400" />
+                                    ) : (
+                                        <User size={16} className="text-blue-400" />
+                                    )}
+                                </div>
+                                <button
+                                    onClick={logout}
+                                    className="text-slate-500 hover:text-red-400 transition-colors"
+                                >
+                                    <LogOut size={18} />
+                                </button>
                             </div>
                         </div>
                     </div>
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-8 modern-scrollbar relative z-10">
-                    <div className="max-w-[1800px] mx-auto w-full">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 modern-scrollbar relative">
+                    <div className="max-w-[1600px] mx-auto w-full relative z-10">
                         <Outlet />
                     </div>
                 </main>
 
-                {/* Status Bar */}
-                <div className="px-8 pb-4 shrink-0">
-                    <SystemStatusBar />
-                </div>
+                {/* Fixed bottom status bar */}
+                <SystemStatusBar />
             </div>
         </div>
     );

@@ -77,20 +77,36 @@ const computeStatsFromTransactions = (transactions: Transaction[]): TransactionS
   };
 };
 
-const normalizeTransaction = (raw: any): Transaction => {
-  const timestamp = safeDate(raw.timestamp || raw.createdAt)?.toISOString() ?? new Date().toISOString();
+const normalizeTransaction = (raw: Partial<Transaction>): Transaction => {
+  const timestamp = safeDate(raw.timestamp)?.toISOString() ?? new Date().toISOString();
   const riskLevel = (raw.riskLevel as RiskLevel | undefined) ?? 'Low';
 
   return {
-    ...raw,
-    transactionId: raw.transactionId || raw._id || `event-${Date.now()}`,
+    transactionId: raw.transactionId || `event-${Date.now()}`,
+    userId: raw.userId || 'unknown-user',
     amount: Number(raw.amount ?? 0),
+    currency: raw.currency || 'USD',
+    location: raw.location || 'Unknown',
+    latitude: typeof raw.latitude === 'number' ? raw.latitude : undefined,
+    longitude: typeof raw.longitude === 'number' ? raw.longitude : undefined,
+    city: raw.city,
+    country: raw.country,
+    deviceId: raw.deviceId || 'unknown-device',
+    ipAddress: raw.ipAddress || '0.0.0.0',
     timestamp,
+    action: raw.action,
+    ruleScore: typeof raw.ruleScore === 'number' ? raw.ruleScore : undefined,
+    mlScore: typeof raw.mlScore === 'number' ? raw.mlScore : undefined,
+    mlStatus: raw.mlStatus,
+    modelVersion: raw.modelVersion,
+    modelName: raw.modelName,
+    modelConfidence: typeof raw.modelConfidence === 'number' ? raw.modelConfidence : undefined,
     fraudScore: Number(raw.fraudScore ?? 0),
     riskLevel,
     isFraud: Boolean(raw.isFraud ?? riskLevel === 'High'),
+    geoVelocityFlag: Boolean(raw.geoVelocityFlag ?? false),
     ruleReasons: Array.isArray(raw.ruleReasons) ? raw.ruleReasons : [],
-    verificationStatus: raw.verificationStatus || 'NOT_REQUIRED'
+    explanations: raw.explanations
   };
 };
 

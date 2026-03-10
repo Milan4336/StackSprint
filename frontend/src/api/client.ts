@@ -16,12 +16,10 @@ import {
   UserDevice,
   DeviceIntelligence,
   GraphAnalytics,
-  EnrichedGraphNode,
-  GraphNodeMetrics,
-  FraudCluster,
   AlertRecord,
   CaseStatus,
-  CasePriority
+  CasePriority,
+  EnrichedGraphNode
 } from '../types';
 import { useAuthStore } from '../store/auth';
 import { generateDeviceFingerprint } from '../utils/deviceFingerprint';
@@ -72,7 +70,8 @@ export const monitoringApi = {
     riskScore: number;
     lastLogin?: string;
   }> {
-    const { data } = await apiClient.get('/auth/me');
+    const fp = await generateDeviceFingerprint();
+    const { data } = await apiClient.post('/auth/me', { deviceFingerprint: fp });
     return data;
   },
   async getEntity(id: string): Promise<any> {
@@ -338,52 +337,5 @@ export const monitoringApi = {
   async acknowledgeAlert(alertId: string): Promise<AlertRecord> {
     const { data } = await apiClient.patch<AlertRecord>(`/alerts/${alertId}/acknowledge`);
     return data;
-  },
-
-  // --- Normal User Portal API ---
-  async getPortalDashboard(): Promise<{
-    user: {
-      fullName: string;
-      email: string;
-      identitySafetyScore: number;
-      riskScore: number;
-      mfaEnabled: boolean;
-      status: string;
-    },
-    recentTransactions: Transaction[],
-    activeDevices: any[]
-  }> {
-    const { data } = await apiClient.get('/portal/dashboard');
-    return data;
-  },
-  async getPortalTransactions(): Promise<Transaction[]> {
-    const { data } = await apiClient.get('/portal/transactions');
-    return data;
-  },
-  async getPortalDevices(): Promise<any[]> {
-    const { data } = await apiClient.get('/portal/devices');
-    return data;
-  },
-  async getPortalLogins(): Promise<any[]> {
-    const { data } = await apiClient.get('/portal/logins');
-    return data;
-  },
-  async getPortalAlerts(): Promise<any[]> {
-    const { data } = await apiClient.get('/portal/alerts');
-    return data;
-  },
-  async reportPortalFraud(transactionId: string, notes: string): Promise<any> {
-    const { data } = await apiClient.post('/portal/report-fraud', { transactionId, notes });
-    return data;
-  },
-
-  // --- Copilot Intelligence API ---
-  async queryCopilot(query: string, context?: any): Promise<any> {
-    const { data } = await apiClient.post('/copilot/query', { query, context });
-    return data;
-  },
-  async getCopilotReport(id: string): Promise<string> {
-    const { data } = await apiClient.get(`/copilot/report/${id}`);
-    return data.report;
   }
 };

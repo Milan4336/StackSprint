@@ -11,7 +11,7 @@ export class AuthService {
     private readonly otpRepository: any
   ) { }
 
-  async register(email: string, password: string, role: 'admin' | 'analyst' | 'user', fullName: string, phone?: string, mfaEnabled?: boolean) {
+  async register(email: string, password: string, role: 'admin' | 'analyst' | 'user') {
     try {
       // Check if user already exists
       const existing = await this.userRepository.findByEmail(email);
@@ -24,10 +24,7 @@ export class AuthService {
       const user = await this.userRepository.upsert(
         email,
         hashPassword(password),
-        role,
-        fullName,
-        phone,
-        mfaEnabled
+        role
       );
 
       // Audit log

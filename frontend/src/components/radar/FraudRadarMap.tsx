@@ -8,12 +8,6 @@ import { useThreatStore } from '../../store/threatStore';
 import { Transaction } from '../../types';
 import { formatSafeDate, safeDate } from '../../utils/date';
 import { GeoTrajectoryOverlay } from '../visual/GeoTrajectoryOverlay';
-import { HUDCard } from '../layout/HUDCard';
-import { HUDDataReadout } from '../visual/HUDDecorations';
-import { useUISound } from '../../hooks/useUISound';
-import { Activity, ShieldAlert, Globe, Crosshair, Terminal } from 'lucide-react';
-import { useThemeStore, ThemeType } from '../../store/themeStore';
-import { HUDPanel, HUDCorner, HUDScanline } from '../visual/HUDDecorations';
 
 interface FraudRadarMapProps {
   transactions: Transaction[];
@@ -76,61 +70,101 @@ const toLocalDateTimeValue = (date: Date): string => {
 };
 
 const haversineKm = (from: [number, number], to: [number, number]): number => {
-  const earthRadius = 6371;
   const toRad = (v: number) => (v * Math.PI) / 180;
+  const earthRadius = 6371;
+
   const dLat = toRad(to[0] - from[0]);
   const dLon = toRad(to[1] - from[1]);
   const lat1 = toRad(from[0]);
   const lat2 = toRad(to[0]);
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadius * c;
 };
 
 const coordsForTransaction = (tx: Transaction): [number, number] | null => {
-  if (typeof tx.latitude === 'number' && typeof tx.longitude === 'number' && isValidCoordinates(tx.latitude, tx.longitude)) return [tx.latitude, tx.longitude];
-  return locationMap[normalizeLocation(tx.location)] ?? null;
+  if (
+    typeof tx.latitude === 'number' &&
+    typeof tx.longitude === 'number' &&
+    isValidCoordinates(tx.latitude, tx.longitude)
+  ) {
+    return [tx.latitude, tx.longitude];
+  }
+
+  const mapped = locationMap[normalizeLocation(tx.location)];
+  return mapped ?? null;
 };
 
-const buildPopupHtml = (point: RadarPoint, themeColors: any): string => {
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const badgeLabel = (badge: DeviceBadge): string => {
+  if (badge === 'high') return '🔴 High-Risk Device';
+  if (badge === 'new') return '🟡 New Device';
+  return '🟢 Trusted Device';
+};
+
+const buildPopupHtml = (point: RadarPoint): string => {
   const { tx, meta } = point;
-  const isCritical = tx.fraudScore > 80;
-  const accent = isCritical ? themeColors.critical : themeColors.primary;
+  const cityCountry = [tx.city, tx.country].filter(Boolean).join(', ') || tx.location;
+  const warning = tx.geoVelocityFlag
+    ? '<p class="radar-warning">Suspicious Geo Jump Detected</p>'
+    : '';
 
   return `
-    <div style="background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(12px); padding: 16px; color: #fff; font-family: 'JetBrains Mono', monospace; min-width: 220px; border: 1px solid ${accent}40; border-radius: 4px; box-shadow: 0 0 30px rgba(0,0,0,0.5);">
-      <div style="position: absolute; top:0; right:0; width: 10px; height: 10px; border-top: 2px solid ${accent}; border-right: 2px solid ${accent};"></div>
-      <div style="font-size: 8px; color: ${accent}; text-transform: uppercase; letter-spacing: 0.3em; margin-bottom: 6px; font-weight: 900;">SIGNAL_DETECTED</div>
-      <div style="font-size: 15px; font-weight: 900; margin-bottom: 12px; letter-spacing: -0.05em; color: #fff;">ID_${tx.transactionId.slice(0, 8)}</div>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px;">
-        <div style="color: #64748b; font-weight: 900;">RISK</div><div style="text-align: right; color: ${accent}; font-weight: 900;">${tx.fraudScore}%</div>
-        <div style="color: #64748b; font-weight: 900;">VAL</div><div style="text-align: right; color: #fff;">$${tx.amount.toLocaleString()}</div>
-      </div>
-      
-      <div style="margin-top: 12px; font-size: 9px; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-        <span style="width: 4px; height: 4px; border-radius: 50%; background: ${accent};"></span>
-        <span>LOCATION: ${tx.location.toUpperCase()}</span>
-      </div>
+    <div class="radar-popup">
+      <p class="radar-popup-title">${escapeHtml(tx.transactionId)}</p>
+      <p>User: ${escapeHtml(tx.userId)}</p>
+      <p>Geo: ${escapeHtml(cityCountry)}</p>
+      <p>Amount: $${tx.amount.toLocaleString()}</p>
+      <p>Fraud Score: ${tx.fraudScore} (${escapeHtml(tx.riskLevel)})</p>
+      <p>Action: ${escapeHtml(tx.action ?? 'N/A')}</p>
+      ${warning}
+      <hr />
+      <p><strong>Device ID:</strong> ${escapeHtml(tx.deviceId)}</p>
+      <p><strong>Device Status:</strong> ${badgeLabel(meta.badge)}</p>
+      <p><strong>New Device:</strong> ${meta.isNewDevice ? 'Yes' : 'No'}</p>
+      <p><strong>Device Risk Score:</strong> ${meta.deviceRiskScore}</p>
+      <p><strong>Previous Location:</strong> ${escapeHtml(meta.previousLocation)}</p>
+      <p><strong>Last Transaction:</strong> ${escapeHtml(meta.previousTime)}</p>
+      <p><strong>TX Time:</strong> ${escapeHtml(formatSafeDate(tx.timestamp))}</p>
     </div>
   `;
 };
 
-const markerIconFor = (score: number, themeColors: any): L.DivIcon => {
-  const color = score > 70 ? themeColors.critical : score > 40 ? themeColors.secondary : themeColors.primary;
-  const pulse = score > 70 ? 'animate-ping' : '';
+const markerIconFor = (score: number, incidentMode: boolean): L.DivIcon => {
+  const level = score > 70 ? 'high' : score > 40 ? 'medium' : 'low';
+  const pulseClass = score > 70 ? 'radar-marker-pulse' : '';
+  const incidentClass = incidentMode && score > 70 ? 'radar-marker-critical' : '';
 
   return divIcon({
     html: `
-      <div class="relative flex items-center justify-center">
-        <div class="absolute h-8 w-8 rounded-full ${pulse} opacity-20" style="background: ${color}"></div>
-        <div class="relative h-3 w-3 rounded-full border border-white/40" style="background: ${color}; box-shadow: 0 0 15px ${color}"></div>
-      </div>
+      <span class="radar-node ${pulseClass} ${incidentClass}">
+        <span class="radar-node-core radar-node-${level}"></span>
+        <span class="radar-node-ripple"></span>
+      </span>
     `,
     className: 'radar-marker',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
   });
 };
+
+const arrowIcon = divIcon({
+  html: '<span class="radar-jump-arrow">➤</span>',
+  className: 'radar-arrow-marker',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8]
+});
 
 interface MapLayersProps {
   points: RadarPoint[];
@@ -139,23 +173,32 @@ interface MapLayersProps {
   showMarkers: boolean;
   showPaths: boolean;
   incidentMode: boolean;
-  themeColors: any;
 }
 
-const MapLayers = ({ points, paths, showHeatmap, showMarkers, showPaths, incidentMode, themeColors }: MapLayersProps) => {
+const MapLayers = ({
+  points,
+  paths,
+  showHeatmap,
+  showMarkers,
+  showPaths,
+  incidentMode
+}: MapLayersProps) => {
+
   const map = useMap();
+
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const clusterRef = useRef<any>(null);
   const heatRef = useRef<any>(null);
   const pathsRef = useRef<L.LayerGroup | null>(null);
 
   useEffect(() => {
+
     if (!clusterRef.current) {
       clusterRef.current = (L as any).markerClusterGroup({
         showCoverageOnHover: false,
-        maxClusterRadius: 40,
-        polygonOptions: { fillColor: themeColors.primary, color: themeColors.primary, weight: 1, opacity: 0.2, fillOpacity: 0.1 }
+        maxClusterRadius: 52
       });
+
       map.addLayer(clusterRef.current);
     }
 
@@ -165,132 +208,318 @@ const MapLayers = ({ points, paths, showHeatmap, showMarkers, showPaths, inciden
     }
 
     if (showMarkers) {
+
       for (const point of points) {
+
         if (markersRef.current.has(point.tx.transactionId)) continue;
-        const marker = L.marker(point.coords, { icon: markerIconFor(point.tx.fraudScore, themeColors) });
-        marker.bindPopup(buildPopupHtml(point, themeColors));
+
+        const marker = L.marker(point.coords, {
+          icon: markerIconFor(point.tx.fraudScore, incidentMode)
+        });
+
+        marker.bindPopup(buildPopupHtml(point));
+
         clusterRef.current.addLayer(marker);
+
         markersRef.current.set(point.tx.transactionId, marker);
       }
+
+      if (markersRef.current.size > 300) {
+
+        const excess = markersRef.current.size - 300;
+
+        const keys = Array.from(markersRef.current.keys()).slice(0, excess);
+
+        for (const key of keys) {
+          const marker = markersRef.current.get(key);
+          if (marker) {
+            clusterRef.current.removeLayer(marker);
+            markersRef.current.delete(key);
+          }
+        }
+      }
+
     }
 
     if (showHeatmap) {
-      const heatData = points.map(p => [p.coords[0], p.coords[1], Math.max(0.1, Math.min(1, p.tx.fraudScore / 100))]);
+
+      const heatData = points.map(p => [
+        p.coords[0],
+        p.coords[1],
+        Math.max(0.1, Math.min(1, p.tx.fraudScore / 100))
+      ]);
+
       if (!heatRef.current) {
-        heatRef.current = (L as any).heatLayer(heatData, { radius: 20, blur: 15, minOpacity: 0.4, gradient: { 0.4: themeColors.primary, 0.6: themeColors.secondary, 0.9: themeColors.critical } });
+        heatRef.current = (L as any).heatLayer(heatData, {
+          radius: 26,
+          blur: 18,
+          minOpacity: 0.4
+        });
         map.addLayer(heatRef.current);
       } else {
         heatRef.current.setLatLngs(heatData);
       }
+
     }
-  }, [points, showMarkers, showHeatmap, incidentMode, map]);
+
+    if (showPaths) {
+
+      pathsRef.current.clearLayers();
+
+      for (const path of paths.slice(-100)) {
+
+        const polyline = L.polyline([path.from, path.to], {
+          color: '#ef4444',
+          weight: 3,
+          opacity: 0.75,
+          dashArray: '9 12'
+        });
+
+        pathsRef.current.addLayer(polyline);
+      }
+
+    }
+
+  }, [points, paths, showMarkers, showHeatmap, showPaths, incidentMode, map]);
 
   return null;
 };
 
-export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[600px]' }: FraudRadarMapProps) => {
+export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: FraudRadarMapProps) => {
   const deferredTransactions = useDeferredValue(transactions);
   const incidentMode = useThreatStore((state) => state.threatLevel === 'CRITICAL');
-  const { playSound } = useUISound();
-  const { theme } = useThemeStore();
-
-  const themeColors = useMemo(() => {
-    const colors: Record<ThemeType, { primary: string; secondary: string; critical: string; accent: string; shadow: string; bgButton: string }> = {
-      cyber: { primary: '#3b82f6', secondary: '#f59e0b', critical: '#ef4444', accent: 'text-blue-400', shadow: 'rgba(37,99,235,0.4)', bgButton: 'bg-blue-600' },
-      neon: { primary: '#a855f7', secondary: '#f472b6', critical: '#ef4444', accent: 'text-purple-400', shadow: 'rgba(168,85,247,0.4)', bgButton: 'bg-purple-600' },
-      tactical: { primary: '#10b981', secondary: '#facc15', critical: '#3b82f6', accent: 'text-emerald-400', shadow: 'rgba(16,185,129,0.4)', bgButton: 'bg-emerald-600' }
-    };
-    return colors[theme] || colors.cyber;
-  }, [theme]);
 
   const [timePreset, setTimePreset] = useState<TimePreset>('1h');
   const [showHeatmap, setShowHeatmap] = useState(true);
   const [showMarkers, setShowMarkers] = useState(true);
   const [showPaths, setShowPaths] = useState(true);
+  const [customStart, setCustomStart] = useState(() => toLocalDateTimeValue(new Date(Date.now() - 60 * 60 * 1000)));
+  const [customEnd, setCustomEnd] = useState(() => toLocalDateTimeValue(new Date()));
 
   const filteredTransactions = useMemo(() => {
     const now = Date.now();
-    let fromMs = 0;
-    if (timePreset === '10m') fromMs = now - 10 * 60 * 1000;
-    else if (timePreset === '1h') fromMs = now - 60 * 60 * 1000;
-    else if (timePreset === '24h') fromMs = now - 24 * 60 * 60 * 1000;
 
-    return deferredTransactions.filter(tx => (safeDate(tx.timestamp)?.getTime() || 0) >= fromMs);
-  }, [deferredTransactions, timePreset]);
+    let fromMs = 0;
+    let toMs = now;
+
+    if (timePreset === '10m') {
+      fromMs = now - 10 * 60 * 1000;
+    } else if (timePreset === '1h') {
+      fromMs = now - 60 * 60 * 1000;
+    } else if (timePreset === '24h') {
+      fromMs = now - 24 * 60 * 60 * 1000;
+    } else {
+      fromMs = safeDate(customStart)?.getTime() ?? now - 24 * 60 * 60 * 1000;
+      toMs = safeDate(customEnd)?.getTime() ?? now;
+    }
+
+    return deferredTransactions
+      .filter((tx) => {
+        const ts = safeDate(tx.timestamp)?.getTime();
+        if (!ts) return false;
+        return ts >= fromMs && ts <= toMs;
+      })
+      .sort((a, b) => (safeDate(a.timestamp)?.getTime() ?? 0) - (safeDate(b.timestamp)?.getTime() ?? 0));
+  }, [deferredTransactions, timePreset, customEnd, customStart]);
 
   const { points, paths, highRiskCount, fraudDensityScore, mostTargetedCountry } = useMemo(() => {
+    const userState = new Map<string, { seenDevices: Set<string>; previous?: Transaction }>();
     const pointsBuffer: RadarPoint[] = [];
-    const userPaths: GeoPath[] = [];
-    const countryCounts = new Map<string, number>();
 
-    filteredTransactions.forEach(tx => {
+    for (const tx of filteredTransactions) {
       const coords = coordsForTransaction(tx);
-      if (coords) {
-        pointsBuffer.push({ tx, coords, meta: { isNewDevice: false, deviceRiskScore: 0, previousLocation: '', previousTime: '', badge: 'trusted' } });
-        const c = tx.country || 'N/A';
-        countryCounts.set(c, (countryCounts.get(c) || 0) + 1);
-      }
-    });
+      if (!coords) continue;
 
-    // Simple path simulation for Suspicious Geo Jump
-    filteredTransactions.filter(t => t.geoVelocityFlag).slice(0, 10).forEach(tx => {
-      const to = coordsForTransaction(tx);
-      if (to) {
-        userPaths.push({ id: tx.transactionId, from: [to[0] - 10, to[1] - 10], to, userId: tx.userId, distanceKm: 2000, hoursDiff: 1, tx });
-      }
-    });
+      const state = userState.get(tx.userId) ?? { seenDevices: new Set<string>(), previous: undefined };
+      const isNewDevice = !state.seenDevices.has(tx.deviceId);
+      const previousLocation = state.previous?.location ?? 'N/A';
+      const previousTime = state.previous ? formatSafeDate(state.previous.timestamp) : 'N/A';
 
-    const highRisk = pointsBuffer.filter(p => p.tx.fraudScore > 75).length;
-    return { points: pointsBuffer, paths: userPaths, highRiskCount: highRisk, fraudDensityScore: pointsBuffer.length ? Math.round((highRisk / pointsBuffer.length) * 100) : 0, mostTargetedCountry: 'N/A' };
+      const deviceRiskScore = Math.min(
+        100,
+        Math.round(tx.fraudScore + (isNewDevice ? 15 : 0) + (tx.geoVelocityFlag ? 20 : 0) + (tx.isFraud ? 10 : 0))
+      );
+
+      const badge: DeviceBadge = deviceRiskScore >= 75 ? 'high' : isNewDevice ? 'new' : 'trusted';
+
+      pointsBuffer.push({
+        tx,
+        coords,
+        meta: {
+          isNewDevice,
+          deviceRiskScore,
+          previousLocation,
+          previousTime,
+          badge
+        }
+      });
+
+      state.seenDevices.add(tx.deviceId);
+      state.previous = tx;
+      userState.set(tx.userId, state);
+    }
+
+    const groupedByUser = new Map<string, RadarPoint[]>();
+    for (const point of pointsBuffer) {
+      const arr = groupedByUser.get(point.tx.userId) ?? [];
+      arr.push(point);
+      groupedByUser.set(point.tx.userId, arr);
+    }
+
+    const suspiciousPaths: GeoPath[] = [];
+    for (const [userId, userPoints] of groupedByUser.entries()) {
+      userPoints.sort((a, b) => (safeDate(a.tx.timestamp)?.getTime() ?? 0) - (safeDate(b.tx.timestamp)?.getTime() ?? 0));
+      for (let i = 1; i < userPoints.length; i += 1) {
+        const prev = userPoints[i - 1];
+        const curr = userPoints[i];
+
+        const prevTs = safeDate(prev.tx.timestamp)?.getTime();
+        const currTs = safeDate(curr.tx.timestamp)?.getTime();
+        if (!prevTs || !currTs) continue;
+
+        const distanceKm = haversineKm(prev.coords, curr.coords);
+        const hoursDiff = Math.abs(currTs - prevTs) / (1000 * 60 * 60);
+
+        if (distanceKm > 1500 && hoursDiff < 2) {
+          suspiciousPaths.push({
+            id: `${userId}-${prev.tx.transactionId}-${curr.tx.transactionId}`,
+            from: prev.coords,
+            to: curr.coords,
+            userId,
+            distanceKm,
+            hoursDiff,
+            tx: curr.tx
+          });
+        }
+      }
+    }
+
+    const highRiskCountValue = pointsBuffer.filter((p) => p.tx.fraudScore > 70 || p.tx.riskLevel === 'High').length;
+    const fraudDensityValue = pointsBuffer.length ? Math.round((highRiskCountValue / pointsBuffer.length) * 100) : 0;
+
+    const countryCounts = new Map<string, number>();
+    for (const point of pointsBuffer) {
+      const country = point.tx.country || 'Unknown';
+      countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
+    }
+
+    const mostTargeted = Array.from(countryCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A';
+
+    return {
+      points: pointsBuffer,
+      paths: suspiciousPaths,
+      highRiskCount: highRiskCountValue,
+      fraudDensityScore: fraudDensityValue,
+      mostTargetedCountry: mostTargeted
+    };
   }, [filteredTransactions]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex gap-2 bg-white/5 p-1 rounded-sm border border-white/10">
-          {['10m', '1h', '24h'].map(p => (
-            <button key={p} onClick={() => { playSound('CLICK'); setTimePreset(p as TimePreset); }} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${timePreset === p ? `${themeColors.bgButton} text-white shadow-[0_0_10px_${themeColors.shadow}]` : 'text-slate-500 hover:text-slate-300'}`}>
-              {p}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowHeatmap(!showHeatmap)} className={`w-10 h-10 flex items-center justify-center border border-white/10 rounded-sm bg-black/40 ${showHeatmap ? `${themeColors.accent} border-${themeColors.accent.replace('text-', '')}/50 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]` : 'opacity-40 hover:opacity-100'}`}><Activity size={18} /></button>
-          <button onClick={() => setShowMarkers(!showMarkers)} className={`w-10 h-10 flex items-center justify-center border border-white/10 rounded-sm bg-black/40 ${showMarkers ? `${themeColors.accent} border-${themeColors.accent.replace('text-', '')}/50 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]` : 'opacity-40 hover:opacity-100'}`}><Crosshair size={18} /></button>
-          <button onClick={() => setShowPaths(!showPaths)} className={`w-10 h-10 flex items-center justify-center border border-white/10 rounded-sm bg-black/40 ${showPaths ? `${themeColors.accent} border-${themeColors.accent.replace('text-', '')}/50 shadow-[inset_0_0_10px_rgba(59,130,246,0.1)]` : 'opacity-40 hover:opacity-100'}`}><Globe size={18} /></button>
+    <motion.article className="panel" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="panel-title mb-0">Fraud Intelligence GeoMap</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          {incidentMode ? (
+            <span className="chip border-red-500/35 bg-red-500/10 text-red-200">Incident Mode</span>
+          ) : null}
+          <button type="button" className={`glass-btn ${showMarkers ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setShowMarkers((p) => !p)}>
+            {showMarkers ? 'Hide Markers' : 'Show Markers'}
+          </button>
+          <button type="button" className={`glass-btn ${showHeatmap ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setShowHeatmap((p) => !p)}>
+            {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+          </button>
+          <button type="button" className={`glass-btn ${showPaths ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setShowPaths((p) => !p)}>
+            {showPaths ? 'Hide Paths' : 'Show Paths'}
+          </button>
         </div>
       </div>
 
-      <div className={`relative rounded-lg border border-white/10 bg-black/60 overflow-hidden ${heightClass} hud-panel`}>
-        <HUDScanline />
-        <HUDCorner position="top-right" />
-        <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom className="h-full w-full z-0 grayscale-[0.8] contrast-[1.2] opacity-80">
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="&copy; CartoDB" />
-          <MapLayers points={points} paths={paths} showHeatmap={showHeatmap} showMarkers={showMarkers} showPaths={showPaths} incidentMode={incidentMode} themeColors={themeColors} />
-          {showPaths && <GeoTrajectoryOverlay trajectories={paths.map(p => ({ from: p.from, to: p.to, risk: (p.tx.fraudScore || 0) / 100 }))} />}
-        </MapContainer>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button type="button" className={`glass-btn ${timePreset === '10m' ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setTimePreset('10m')}>
+          Last 10 min
+        </button>
+        <button type="button" className={`glass-btn ${timePreset === '1h' ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setTimePreset('1h')}>
+          Last 1 hour
+        </button>
+        <button type="button" className={`glass-btn ${timePreset === '24h' ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setTimePreset('24h')}>
+          Last 24 hours
+        </button>
+        <button type="button" className={`glass-btn ${timePreset === 'custom' ? 'ring-1 ring-blue-400/40' : ''}`} onClick={() => setTimePreset('custom')}>
+          Custom Range
+        </button>
+      </div>
 
-        {/* Tactical HUD Overlay for Map */}
-        <div className="absolute top-6 right-6 z-[500] space-y-4 pointer-events-none">
-          <div className="hud-panel !bg-black/80 border-white/10 p-4 w-64 backdrop-blur-xl">
-            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${themeColors.accent} mb-3 block`}>Grid_Optimization</span>
-            <div className="space-y-4">
-              <HUDDataReadout label="Density_Vector" value={`${fraudDensityScore}%`} />
-              <HUDDataReadout label="Active_Clusters" value={`${highRiskCount}`} />
-              <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${fraudDensityScore}%` }} className={`h-full ${themeColors.bgButton}`} />
-              </div>
-            </div>
+      {timePreset === 'custom' ? (
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+          <label className="text-xs text-slate-300">
+            Start
+            <input
+              type="datetime-local"
+              value={customStart}
+              onChange={(event) => setCustomStart(event.target.value)}
+              className="input mt-1"
+            />
+          </label>
+          <label className="text-xs text-slate-300">
+            End
+            <input
+              type="datetime-local"
+              value={customEnd}
+              onChange={(event) => setCustomEnd(event.target.value)}
+              className="input mt-1"
+            />
+          </label>
+        </div>
+      ) : null}
+
+      {points.length === 0 ? (
+        <p className="mb-3 rounded-xl border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-400">
+          No geo-resolved transactions in the selected time range.
+        </p>
+      ) : null}
+
+      <div className={`relative overflow-hidden rounded-xl border border-slate-700 ${heightClass}`}>
+        <div className="absolute right-3 top-3 z-[500] w-64 rounded-xl border border-slate-600/70 bg-slate-900/75 p-3 backdrop-blur">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">Global Intelligence</p>
+          <div className="mt-2 space-y-1 text-sm">
+            <p className="text-slate-200">Total TX: <span className="font-semibold">{points.length}</span></p>
+            <p className="text-slate-200">High Risk: <span className="font-semibold text-red-300">{highRiskCount}</span></p>
+            <p className="text-slate-200">Fraud Density: <span className="font-semibold text-amber-300">{fraudDensityScore}%</span></p>
+            <p className="text-slate-200">Top Country: <span className="font-semibold text-blue-300">{mostTargetedCountry}</span></p>
           </div>
         </div>
 
-        {/* Bottom Legend */}
-        <div className="absolute bottom-10 left-10 z-[500] flex gap-6 px-6 py-3 bg-black/80 backdrop-blur-xl rounded-sm border border-white/10 text-[9px] font-black uppercase tracking-[0.3em] pointer-events-none shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-          <div className="flex items-center gap-3"><div className="h-1.5 w-1.5 rounded-full" style={{ background: themeColors.primary, boxShadow: `0 0 10px ${themeColors.primary}` }} /> NOMINAL</div>
-          <div className="flex items-center gap-3"><div className="h-1.5 w-1.5 rounded-full" style={{ background: themeColors.secondary, boxShadow: `0 0 10px ${themeColors.secondary}` }} /> ELEVATED</div>
-          <div className="flex items-center gap-3"><div className="h-1.5 w-1.5 rounded-full" style={{ background: themeColors.critical, boxShadow: `0 0 10px ${themeColors.critical}` }} /> CRITICAL</div>
+        <div className="absolute bottom-3 left-3 z-[500] rounded-xl border border-slate-600/70 bg-slate-900/75 p-3 text-xs text-slate-300 backdrop-blur">
+          <p className="mb-1 font-semibold uppercase tracking-[0.12em]">Fraud Intensity</p>
+          <div className="flex items-center gap-2"><span className="h-2.5 w-6 rounded bg-yellow-300" /> Low</div>
+          <div className="flex items-center gap-2"><span className="h-2.5 w-6 rounded bg-orange-400" /> Medium</div>
+          <div className="flex items-center gap-2"><span className="h-2.5 w-6 rounded bg-red-500" /> High</div>
         </div>
+
+        <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom className="h-full w-full">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <MapLayers
+            points={points}
+            paths={paths}
+            showHeatmap={showHeatmap}
+            showMarkers={showMarkers}
+            showPaths={showPaths}
+            incidentMode={incidentMode}
+          />
+          {showPaths && (
+            <GeoTrajectoryOverlay
+              trajectories={paths.map(p => ({
+                from: p.from,
+                to: p.to,
+                risk: (p.tx.fraudScore || 0) / 100
+              }))}
+            />
+          )}
+        </MapContainer>
       </div>
-    </div>
+    </motion.article>
   );
 });

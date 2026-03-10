@@ -34,78 +34,60 @@ export class TransactionService {
   ) { }
 
   async create(input: CreateTransactionInput) {
-    try {
-      let deviceLabel = 'Unknown';
-      if (input.deviceFingerprint && this.deviceIntelligenceService) {
-        const dev = await this.deviceIntelligenceService.evaluateDevice(input.userId, input.deviceFingerprint);
-        deviceLabel = dev?.deviceLabel || 'Unknown';
-      }
-
-      const enrichedInput = {
-        ...input,
-        deviceLabel,
-        timestamp: input.timestamp || new Date()
-      };
-
-      console.log('ENRICHED INPUT:', JSON.stringify(enrichedInput, null, 2));
-      const scoring = await this.fraudScoringService.score(enrichedInput);
-      console.log('SCORING RESULT:', JSON.stringify(scoring, null, 2));
-
-      const transactionData = {
-        transactionId: input.transactionId ?? uuidv4(),
-        ...enrichedInput,
-        fraudScore: scoring.fraudScore,
-        riskLevel: scoring.riskLevel,
-        isFraud: scoring.isFraud,
-        action: scoring.action,
-        ruleScore: scoring.ruleScore,
-        mlScore: scoring.mlScore,
-        mlStatus: scoring.mlStatus,
-        behaviorScore: scoring.behaviorScore,
-        graphScore: scoring.graphScore,
-        modelName: scoring.modelName,
-        modelVersion: scoring.modelVersion,
-        modelConfidence: scoring.modelConfidence,
-        modelScores: scoring.modelScores,
-        modelWeights: scoring.modelWeights,
-        geoVelocityFlag: scoring.geoVelocityFlag,
-        ruleReasons: scoring.ruleReasons ?? [],
-        explanations: scoring.explanations ?? [],
-        verificationStatus: scoring.verificationStatus,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      console.log('TRANSACTION DATA TO SAVE:', JSON.stringify(transactionData, null, 2));
-      const transaction = await this.transactionRepository.create(transactionData);
-      console.log('TRANSACTION SAVED SUCCESSFULLY');
-
-      await this.fraudResponseService.process({
-        transactionId: transaction.transactionId,
-        userId: transaction.userId,
-        fraudScore: transaction.fraudScore,
-        deviceId: transaction.deviceId,
-        ipAddress: transaction.ipAddress,
-        location: transaction.location,
-        ruleReasons: scoring.ruleReasons ?? [],
-        explanations: scoring.explanations ?? []
-      });
-
-      // Phase 9: Evaluate Alerting Rules
-      await this.alertService.evaluateRules(transaction as any, transaction.fraudScore, transaction.ruleReasons || []);
-
-      return transaction;
-    } catch (error) {
-      const fs = require('fs');
-      const errorDetails = {
-        message: (error as Error).message,
-        stack: (error as Error).stack,
-        time: new Date().toISOString()
-      };
-      fs.writeFileSync('/tmp/api-gateway-error.log', JSON.stringify(errorDetails, null, 2));
-      console.error('CRITICAL TRANSACTION CREATE ERROR:', error);
-      throw error;
+    let deviceLabel = 'Unknown';
+    if (input.deviceFingerprint && this.deviceIntelligenceService) {
+      const dev = await this.deviceIntelligenceService.evaluateDevice(input.userId, input.deviceFingerprint);
+      deviceLabel = dev?.deviceLabel || 'Unknown';
     }
+
+    const enrichedInput = {
+      ...input,
+      deviceLabel,
+      timestamp: input.timestamp || new Date()
+    };
+
+    const scoring = await this.fraudScoringService.score(enrichedInput);
+
+    const transaction = await this.transactionRepository.create({
+      transactionId: input.transactionId ?? uuidv4(),
+      ...enrichedInput,
+      // Full scoring result — all fields required by the Mongoose schema
+      fraudScore: scoring.fraudScore,
+      riskLevel: scoring.riskLevel,
+      isFraud: scoring.isFraud,
+      action: scoring.action,
+      ruleScore: scoring.ruleScore,
+      mlScore: scoring.mlScore,
+      mlStatus: scoring.mlStatus,
+      behaviorScore: scoring.behaviorScore,
+      graphScore: scoring.graphScore,
+      modelName: scoring.modelName,
+      modelVersion: scoring.modelVersion,
+      modelConfidence: scoring.modelConfidence,
+      modelScores: scoring.modelScores,
+      modelWeights: scoring.modelWeights,
+      geoVelocityFlag: scoring.geoVelocityFlag,
+      ruleReasons: scoring.ruleReasons ?? [],
+      explanations: scoring.explanations ?? [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    await this.fraudResponseService.process({
+      transactionId: transaction.transactionId,
+      userId: transaction.userId,
+      fraudScore: transaction.fraudScore,
+      deviceId: transaction.deviceId,
+      ipAddress: transaction.ipAddress,
+      location: transaction.location,
+      ruleReasons: scoring.ruleReasons ?? [],
+      explanations: scoring.explanations ?? []
+    });
+
+    // Phase 9: Evaluate Alerting Rules
+    await this.alertService.evaluateRules(transaction as any, transaction.fraudScore, transaction.ruleReasons || []);
+
+    return transaction;
   }
 
   async list(limit = 50) {

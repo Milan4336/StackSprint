@@ -5,138 +5,149 @@
 @tailwind utilities;
 
 :root {
-  --app-bg: #02040a;
+  --app-bg: #030712;
   --app-text: #e2e8f0;
 
-  /* Theme Base: Cyber Blue */
-  --cyber-blue: #3b82f6;
-  --cyber-blue-glow: rgba(59, 130, 246, 0.5);
-  --neon-purple: #a855f7;
-  --tactical-green: #22c55e;
+  /* Premium HUD Palette */
+  --hud-neon-blue: #3b82f6;
+  --hud-neon-cyan: #06b6d4;
+  --hud-neon-red: #ef4444;
+  --hud-neon-emerald: #10b981;
+  --hud-text-dim: #94a3b8;
 
-  --primary: var(--cyber-blue);
-  --primary-glow: var(--cyber-blue-glow);
-
-  --bg-deep: #02040a;
-  --bg-panel: rgba(10, 15, 30, 0.7);
-
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-glow: rgba(59, 130, 246, 0.15);
-
-  --warning-orange: #f59e0b;
-  --alert-red: #ef4444;
-  --alert-red-glow: rgba(239, 68, 68, 0.5);
-
-  --hud-text: #94a3b8;
+  /* Glass Architecture */
+  --panel-bg: rgba(15, 23, 42, 0.6);
+  --panel-border: rgba(59, 130, 246, 0.2);
+  --panel-shadow: 0 0 40px -10px rgba(0, 0, 0, 0.5);
+  --panel-glow: 0 0 15px rgba(59, 130, 246, 0.1);
 }
 
-[data-theme='neon'] {
-  --primary: var(--neon-purple);
-  --primary-glow: rgba(168, 85, 247, 0.5);
-  --glass-glow: rgba(168, 85, 247, 0.15);
-}
-
-[data-theme='tactical'] {
-  --primary: var(--tactical-green);
-  --primary-glow: rgba(34, 197, 94, 0.5);
-  --glass-glow: rgba(34, 197, 94, 0.15);
+html.dark {
+  --app-bg: #020617;
+  --panel-bg: rgba(7, 10, 25, 0.7);
+  --panel-border: rgba(59, 130, 246, 0.15);
 }
 
 @layer base {
   * {
-    @apply border-white/5;
+    @apply border-slate-200 dark:border-slate-800;
   }
 
   html,
   body,
   #root {
-    @apply min-h-screen overflow-x-hidden;
-    background-color: var(--app-bg);
-    color: var(--app-text);
+    @apply min-h-screen;
   }
 
   body {
-    @apply font-sans antialiased;
-    font-family: 'Manrope', sans-serif;
-    image-rendering: optimizeSpeed;
+    @apply m-0 font-sans antialiased text-slate-900 dark:text-slate-100;
+    color: var(--app-text);
+    background-color: var(--app-bg);
+    background-image:
+      radial-gradient(1200px 720px at var(--mouse-x, -5%) var(--mouse-y, -10%), rgba(59, 130, 246, 0.18), transparent 55%),
+      radial-gradient(1100px 620px at calc(100% - var(--mouse-x, -5%)) calc(100% - var(--mouse-y, -10%)), rgba(16, 185, 129, 0.14), transparent 58%),
+      radial-gradient(900px 500px at 60% 105%, rgba(239, 68, 68, 0.12), transparent 58%),
+      linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: auto, auto, auto, 44px 44px, 44px 44px;
+    transition: background-color 220ms ease, color 220ms ease;
   }
 }
 
 @layer components {
-
-  /* Ultra Cinematic Panel */
-  .cyber-panel {
-    @apply relative overflow-hidden backdrop-blur-xl transition-all duration-300;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(8, 12, 24, 0.9));
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  .section-title {
+    @apply text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100;
   }
 
-  .cyber-panel::before {
+  .section-subtitle {
+    @apply text-sm text-slate-600 dark:text-slate-300;
+  }
+
+  .glass-panel {
+    border: 1px solid var(--panel-border);
+    background: var(--panel-bg);
+    box-shadow: var(--panel-shadow), var(--panel-glow);
+    @apply rounded-xl backdrop-blur-2xl transition-all duration-500;
+  }
+
+  .panel {
+    @apply glass-panel p-5 relative overflow-hidden;
+    border-top: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  .panel:hover {
+    @apply border-blue-500/40;
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+  }
+
+  /* Ultra HUD Panel - Futuristic Clipped Corners */
+  .hud-panel {
+    @apply panel;
+    clip-path: polygon(0 15px, 15px 0,
+        calc(100% - 15px) 0, 100% 15px,
+        100% calc(100% - 15px), calc(100% - 15px) 100%,
+        15px 100%, 0 calc(100% - 15px));
+  }
+
+  .hud-readout {
+    @apply font-mono text-[9px] uppercase tracking-widest text-blue-400/60;
+  }
+
+  .panel-title {
+    @apply mb-3 text-base font-bold tracking-tight text-slate-900 dark:text-slate-100;
+  }
+
+  .metric-card {
+    @apply glass-panel relative overflow-hidden p-4 transition duration-300 hover:-translate-y-1 hover:border-blue-400/40;
+  }
+
+  .metric-card::before {
     content: '';
-    @apply absolute inset-0 pointer-events-none;
-    background: linear-gradient(to bottom, transparent 0%, var(--primary-glow) 100%);
+    position: absolute;
+    inset: -2px;
+    z-index: 0;
+    border-radius: 18px;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgba(59, 130, 246, 0.16), rgba(16, 185, 129, 0.06), rgba(244, 63, 94, 0.12));
+    opacity: 0.5;
   }
 
-  /* HUD Clipped Corner Container */
-  .hud-clipped {
-    clip-path: polygon(0 12px, 12px 0,
-        calc(100% - 12px) 0, 100% 12px,
-        100% calc(100% - 12px), calc(100% - 12px) 100%,
-        12px 100%, 0 calc(100% - 12px));
+  .metric-card>* {
+    position: relative;
+    z-index: 1;
   }
 
-  /* Animated Neon Border */
-  .neon-line-x {
-    @apply h-[1px] w-full absolute;
-    background: linear-gradient(90deg, transparent, var(--primary), transparent);
-    animation: scanLineX 3s linear infinite;
+  .input {
+    @apply w-full rounded-xl border border-slate-300/80 bg-white/85 px-3 py-2.5 text-sm text-slate-900 outline-none ring-blue-300 transition focus:border-blue-500 focus:ring dark:border-slate-700/80 dark:bg-slate-950/65 dark:text-slate-100;
   }
 
-  .neon-line-y {
-    @apply w-[1px] h-full absolute;
-    background: linear-gradient(180deg, transparent, var(--primary), transparent);
-    animation: scanLineY 3s linear infinite;
+  .glass-btn {
+    @apply inline-flex items-center gap-2 rounded-xl border border-slate-300/90 bg-white/85 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-400/50 hover:bg-white dark:border-slate-600/75 dark:bg-slate-800/65 dark:text-slate-100 dark:hover:border-blue-400/50 dark:hover:bg-slate-800;
   }
 
-  /* Data Scanning Effect */
-  .scanning-overlay {
-    @apply absolute inset-0 pointer-events-none z-10;
-    background: linear-gradient(rgba(14, 165, 233, 0) 50%, rgba(14, 165, 233, 0.05) 50%),
-      linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
-    background-size: 100% 4px, 3px 100%;
-    opacity: 0.3;
+  .chip {
+    @apply inline-flex items-center rounded-full border border-slate-300/80 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700 dark:border-slate-600/70 dark:bg-slate-800/60 dark:text-slate-300;
   }
 
-  .status-ring {
-    @apply relative rounded-full flex items-center justify-center;
-    border: 2px solid var(--primary-glow);
-    box-shadow: inset 0 0 20px rgba(14, 165, 233, 0.05);
+  .table-shell {
+    @apply overflow-hidden rounded-2xl border border-slate-200/80 bg-white/70 dark:border-slate-700/70 dark:bg-slate-900/45;
   }
 
-  .glass-btn-cyber {
-    @apply relative overflow-hidden px-6 py-2 rounded-lg font-bold uppercase tracking-widest text-xs transition-all duration-300;
-    background: rgba(14, 165, 233, 0.1);
-    border: 1px solid var(--primary-glow);
-    color: var(--primary);
-    text-shadow: 0 0 10px var(--primary-glow);
+  .table-sort-btn {
+    @apply inline-flex items-center gap-1 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100;
   }
 
-  .glass-btn-cyber:hover {
-    @apply scale-105;
-    background: rgba(14, 165, 233, 0.2);
-    border-color: var(--primary);
-    box-shadow: 0 0 20px var(--primary-glow);
+  .table-row {
+    @apply border-t border-slate-200/70 bg-white/65 text-slate-700 transition hover:bg-slate-100/90 dark:border-slate-800/70 dark:bg-slate-900/30 dark:text-slate-300 dark:hover:bg-slate-800/65;
   }
 
-  .metric-value-huge {
-    @apply font-black tracking-tighter;
-    font-size: 3rem;
-    background: linear-gradient(to bottom, #fff, var(--primary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 15px var(--primary-glow));
+  .status-pill {
+    @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em];
+  }
+
+  .metric-value {
+    @apply bg-gradient-to-r from-blue-600 via-blue-400 to-emerald-500 bg-clip-text text-transparent dark:from-blue-400 dark:via-slate-100 dark:to-emerald-300;
   }
 
   .skeleton {
@@ -151,7 +162,7 @@
   }
 
   .app-empty {
-    @apply grid place-items-center gap-2 rounded-2xl border-dashed p-10 text-center;
+    @apply glass-panel grid place-items-center gap-2 rounded-2xl border-dashed p-10 text-center;
   }
 
   .app-error {
@@ -161,66 +172,6 @@
   .nav-item {
     @apply relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition;
   }
-}
-
-/* Animations */
-@keyframes scanLineX {
-  0% {
-    transform: translateY(-100%);
-  }
-
-  100% {
-    transform: translateY(1000%);
-  }
-}
-
-@keyframes scanLineY {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(1000%);
-  }
-}
-
-@keyframes gridPulse {
-
-  0%,
-  100% {
-    opacity: 0.2;
-  }
-
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes rotateRing {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-grid-pulse {
-  animation: gridPulse 4s ease-in-out infinite;
-}
-
-.animate-rotate-ring {
-  animation: rotateRing 20s linear infinite;
-}
-
-.cyber-grid {
-  background-image:
-    linear-gradient(rgba(14, 165, 233, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  transform: perspective(500px) rotateX(60deg);
-  transform-origin: top;
 }
 
 @keyframes pulseMarker {
@@ -322,7 +273,9 @@
 }
 
 .radar-marker-critical .radar-node-core {
-  box-shadow: 0 0 0 2px rgba(127, 29, 29, 0.45), 0 0 18px rgba(248, 113, 113, 0.95);
+  box-shadow:
+    0 0 0 2px rgba(127, 29, 29, 0.45),
+    0 0 18px rgba(248, 113, 113, 0.95);
 }
 
 .radar-marker-critical .radar-node-ripple {
@@ -391,6 +344,17 @@
   background: #0f172a;
 }
 
+.boot-cursor {
+  display: inline-block;
+  animation: bootBlink 1s steps(1, end) infinite;
+}
+
+.boot-glow {
+  text-shadow:
+    0 0 12px rgba(59, 130, 246, 0.55),
+    0 0 28px rgba(14, 165, 233, 0.35);
+}
+
 @keyframes bootBlink {
 
   0%,
@@ -428,6 +392,7 @@
     inset -22px 0 70px -60px rgba(239, 68, 68, 0.85);
 }
 
+/* ── New animation utilities ─────────────────────────────── */
 @keyframes floatY {
 
   0%,
@@ -452,6 +417,18 @@
   }
 }
 
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -467,6 +444,20 @@
 @keyframes spinSlow {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes ecgFlat {
+
+  0%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.5;
+  }
+
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 0.25;
   }
 }
 
@@ -501,15 +492,18 @@
   border-radius: 9999px;
 }
 
+/* ── Global Recharts Overrides ───────────────────────────── */
+/* Kills the white background washout on hover globally */
 .recharts-tooltip-cursor {
   fill: rgba(59, 130, 246, 0.08) !important;
 }
 
+/* Forces tooltips to have high-contrast text in dark mode (fixes pie chart) */
 .recharts-default-tooltip {
-  background-color: var(--bg-panel) !important;
-  border-color: var(--glass-border) !important;
+  background-color: var(--panel-bg) !important;
+  border-color: var(--panel-border) !important;
   color: var(--app-text) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--panel-shadow) !important;
   backdrop-filter: blur(12px) !important;
   border-radius: 8px !important;
 }
