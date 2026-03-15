@@ -42,21 +42,29 @@ interface GeoPath {
 }
 
 const locationMap: Record<string, [number, number]> = {
-  ny: [40.7128, -74.006],
-  newyork: [40.7128, -74.006],
-  ca: [36.7783, -119.4179],
-  california: [36.7783, -119.4179],
-  tx: [31.9686, -99.9018],
-  texas: [31.9686, -99.9018],
-  fl: [27.6648, -81.5158],
-  florida: [27.6648, -81.5158],
-  wa: [47.7511, -120.7401],
-  washington: [47.7511, -120.7401],
+  ny: [40.7128, -74.006], newyork: [40.7128, -74.006],
+  ca: [36.7783, -119.4179], california: [36.7783, -119.4179],
+  tx: [31.9686, -99.9018], texas: [31.9686, -99.9018],
+  fl: [27.6648, -81.5158], florida: [27.6648, -81.5158],
+  wa: [47.7511, -120.7401], washington: [47.7511, -120.7401],
   london: [51.5072, -0.1276],
-  delhi: [28.6139, 77.209],
-  tokyo: [35.6762, 139.6503],
+  paris: [48.8566, 2.3522],
+  berlin: [52.5200, 13.4050],
   dubai: [25.2048, 55.2708],
-  sydney: [-33.8688, 151.2093]
+  tokyo: [35.6762, 139.6503],
+  sydney: [-33.8688, 151.2093],
+  mumbai: [19.0760, 72.8777],
+  delhi: [28.6139, 77.2090],
+  singapore: [1.3521, 103.8198],
+  hongkong: [22.3193, 114.1694],
+  toronto: [43.6532, -79.3832],
+  london_uk: [51.5072, -0.1276],
+  uk: [51.5072, -0.1276],
+  us: [37.0902, -95.7129],
+  in: [20.5937, 78.9629],
+  fr: [46.2276, 2.2137],
+  de: [51.1657, 10.4515],
+  jp: [36.2048, 138.2529]
 };
 
 const normalizeLocation = (value: string): string => value.trim().toLowerCase().replace(/\s+/g, '');
@@ -141,14 +149,15 @@ const buildPopupHtml = (point: RadarPoint): string => {
   `;
 };
 
-const markerIconFor = (score: number, incidentMode: boolean): L.DivIcon => {
+const markerIconFor = (score: number, incidentMode: boolean, isSpiking: boolean): L.DivIcon => {
   const level = score > 70 ? 'high' : score > 40 ? 'medium' : 'low';
   const pulseClass = score > 70 ? 'radar-marker-pulse' : '';
-  const incidentClass = incidentMode && score > 70 ? 'radar-marker-critical' : '';
+  const incidentClass = (incidentMode && score > 70) || isSpiking ? 'radar-marker-critical' : '';
+  const glowClass = isSpiking ? 'radar-marker-glow-red' : '';
 
   return divIcon({
     html: `
-      <span class="radar-node ${pulseClass} ${incidentClass}">
+      <span class="radar-node ${pulseClass} ${incidentClass} ${glowClass}">
         <span class="radar-node-core radar-node-${level}"></span>
         <span class="radar-node-ripple"></span>
       </span>
@@ -214,7 +223,7 @@ const MapLayers = ({
         if (markersRef.current.has(point.tx.transactionId)) continue;
 
         const marker = L.marker(point.coords, {
-          icon: markerIconFor(point.tx.fraudScore, incidentMode)
+          icon: markerIconFor(point.tx.fraudScore, incidentMode, (point as any).isSpiking)
         });
 
         marker.bindPopup(buildPopupHtml(point));
@@ -394,6 +403,22 @@ export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: 
       }
     }
 
+    const cityRiskCount = new Map<string, number>();
+    const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
+    
+    for (const p of pointsBuffer) {
+      const ts = safeDate(p.tx.timestamp)?.getTime() || 0;
+      if (ts > fifteenMinAgo && p.tx.fraudScore > 80) {
+        const city = p.tx.city || p.tx.location || 'Unknown';
+        cityRiskCount.set(city, (cityRiskCount.get(city) ?? 0) + 1);
+      }
+    }
+
+    const spikingCities = new Set<string>();
+    for (const [city, count] of cityRiskCount.entries()) {
+      if (count >= 3) spikingCities.add(city);
+    }
+
     const highRiskCountValue = pointsBuffer.filter((p) => p.tx.fraudScore > 70 || p.tx.riskLevel === 'High').length;
     const fraudDensityValue = pointsBuffer.length ? Math.round((highRiskCountValue / pointsBuffer.length) * 100) : 0;
 
@@ -406,11 +431,15 @@ export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: 
     const mostTargeted = Array.from(countryCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'N/A';
 
     return {
-      points: pointsBuffer,
+      points: pointsBuffer.map(p => ({
+        ...p,
+        isSpiking: spikingCities.has(p.tx.city || p.tx.location || 'Unknown')
+      })),
       paths: suspiciousPaths,
       highRiskCount: highRiskCountValue,
       fraudDensityScore: fraudDensityValue,
-      mostTargetedCountry: mostTargeted
+      mostTargetedCountry: mostTargeted,
+      activeSpikes: Array.from(spikingCities)
     };
   }, [filteredTransactions]);
 
@@ -495,6 +524,20 @@ export const FraudRadarMap = memo(({ transactions, heightClass = 'h-[500px]' }: 
           <div className="flex items-center gap-2"><span className="h-2.5 w-6 rounded bg-orange-400" /> Medium</div>
           <div className="flex items-center gap-2"><span className="h-2.5 w-6 rounded bg-red-500" /> High</div>
         </div>
+
+        {activeSpikes.length > 0 && (
+          <div className="absolute bottom-20 left-1/2 z-[1000] -translate-x-1/2">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              className="px-6 py-2 rounded-full bg-red-600/20 border border-red-500/50 backdrop-blur-md shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse"
+            >
+              <span className="text-red-100 font-bold tracking-widest uppercase text-xs">
+                ⚠️ CRITICAL REGIONAL PULSE: {activeSpikes.join(', ')} ⚠️
+              </span>
+            </motion.div>
+          </div>
+        )}
 
         <MapContainer center={[20, 0]} zoom={2} scrollWheelZoom className="h-full w-full">
           <TileLayer

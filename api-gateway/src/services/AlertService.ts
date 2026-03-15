@@ -11,16 +11,16 @@ export class AlertService {
     async evaluateRules(tx: TransactionDocument, fraudScore: number, reasons: string[]): Promise<void> {
         let severity: AlertSeverity | null = null;
 
-        // Rule 1: fraudScore > 0.9 -> CRITICAL
-        if (fraudScore > 0.9) {
+        // Rule 1: fraudScore >= 90 -> CRITICAL
+        if (fraudScore >= 90) {
             severity = 'CRITICAL';
         }
         // Rule 2: Multiple fraud indicators -> HIGH
-        else if (reasons.length >= 3 || fraudScore > 0.75) {
+        else if (reasons.length >= 3 || fraudScore >= 75) {
             severity = 'HIGH';
         }
         // Rule 3: Moderate risk -> MEDIUM
-        else if (fraudScore > 0.5) {
+        else if (fraudScore >= 50) {
             severity = 'MEDIUM';
         }
 

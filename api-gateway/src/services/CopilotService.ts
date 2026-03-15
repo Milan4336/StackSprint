@@ -48,8 +48,6 @@ const CONTEXT_CHAR_LIMIT = 30000;
 const MAX_QUESTION_CHARS = 1500;
 const MAX_MEMORY_TURNS = 8;
 const MAX_MEMORY_USERS = 500;
-const DOMAIN_PATTERN =
-  /\b(fraud|risk|alert|transaction|case|device|ip|velocity|chargeback|anomaly|score|model|xai|investigat|triage|block|step[_ -]?up|zero trust|stack sprint)\b/i;
 
 export class CopilotService {
   private projectContext = '';
@@ -290,18 +288,8 @@ export class CopilotService {
     this.memory.delete(key);
   }
 
-  private shouldDecline(question: string, hints: QueryHints): boolean {
-    if (
-      hints.transactionIds.length ||
-      hints.alertIds.length ||
-      hints.caseIds.length ||
-      hints.userIds.length ||
-      hints.deviceIds.length
-    ) {
-      return false;
-    }
-
-    return !DOMAIN_PATTERN.test(question);
+  private shouldDecline(_question: string, _hints: QueryHints): boolean {
+    return false;
   }
 
   private isClearCommand(question: string): boolean {
@@ -436,9 +424,8 @@ export class CopilotService {
       : 'No evidence sources found.';
 
     return [
-      'You are the Stack Sprint Fraud Intelligence Copilot.',
-      'Answer only from provided evidence and project context.',
-      'If evidence is insufficient, say so clearly.',
+      'You are the Stack Sprint Fraud Intelligence Copilot, a full-scale AI assistant.',
+      'Provide deep forensic analysis when transaction context is present, but remain helpful for all technical and general queries.',
       '',
       'PROJECT CONTEXT:',
       this.projectContext.slice(0, 8000) || 'No project context loaded.',
@@ -699,14 +686,17 @@ export class CopilotService {
     try {
       const llmContext = this.buildContext(question, history, sources);
       const modelPrompt = [
-        'Return only valid JSON.',
-        'Format: {"answer":"string","suggestions":["string","string"]}',
+        'You are the Argus Fraud Intelligence Copilot, a full-scale AI assistant.',
+        'Act as a Senior Cyber-Security Architect and Fraud Investigator.',
+        'You have full permission to discuss any topic, but your specialization is in project "Argus" (also known as Stack Sprint).',
+        '',
         'Rules:',
-        '- Ground all facts in evidence sources.',
-        '- Add inline citations like [SRC:TX:...] or [SRC:ALERT:...] after factual claims.',
-        '- If data is missing, say "Insufficient evidence in current context."',
-        '- Keep answer concise and analyst-focused.',
-        '- Include at most 3 suggestions.'
+        '- Return only valid JSON in the format: {"answer":"string", "suggestions":["string"]}',
+        '- If the user asks about non-project topics, respond naturally but try to tie back to cyber-security or Argus if relevant.',
+        '- Use the PROVIDED evidence sources [SRC:...] to ground your investigation answers.',
+        '- If data for a specific transaction is missing, use your general expertise to suggest what MIGHT be happening while acknowledging the data gap.',
+        '- Maintain a professional, forensic, yet helpful and unrestricted tone.',
+        '- Add inline citations like [SRC:...] where appropriate.'
       ].join('\n');
 
       const raw = await geminiService.generateResponse(modelPrompt, llmContext);

@@ -135,12 +135,30 @@ export const AutonomousActions = () => {
                     </div>
 
                     <div className="space-y-4 w-full">
-                        <p className="theme-muted-text text-[9px] font-black uppercase tracking-widest">Recent Enforcement</p>
-                        {actions.slice(0, 3).map((a) => (
-                            <div key={`${a.timestamp}-${a.id}`} className="theme-divider theme-mono theme-muted-text border-b py-1 text-[10px] font-bold">
-                                <span className="mr-2" style={{ color: 'var(--status-danger)' }}>FIX:</span> {a.action} ({a.userId.slice(0, 6)}...)
-                            </div>
-                        ))}
+                        <p className="theme-muted-text text-[9px] font-black uppercase tracking-widest">Autonomous Battle Log</p>
+                        <div className="h-64 overflow-y-auto theme-panel-dark p-3 rounded-xl border border-white/5 space-y-2 font-mono scrollbar-hide">
+                            {actions.map((a, idx) => (
+                                <motion.div 
+                                    key={`${a.timestamp}-${idx}`}
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="text-[9px] border-l-2 pl-2 flex flex-col gap-0.5"
+                                    style={{ borderColor: a.severity === 'critical' ? 'var(--status-danger)' : 'var(--accent)' }}
+                                >
+                                    <div className="flex justify-between">
+                                        <span className="text-white/40">{new Date(a.timestamp).toLocaleTimeString()}</span>
+                                        <span style={{ color: a.severity === 'critical' ? 'var(--status-danger)' : 'var(--accent)' }}>[{a.type.toUpperCase()}]</span>
+                                    </div>
+                                    <div className="theme-strong-text uppercase tracking-tighter">
+                                        {a.action || 'LOCKDOWN_SEQUENCE'}: {a.userId.slice(0, 8)}
+                                    </div>
+                                    <div className="text-[8px] opacity-50 truncate">STATUS: APPREHENDED // PROTOCOL_ARGUS</div>
+                                </motion.div>
+                            ))}
+                            {actions.length === 0 && (
+                                <div className="text-[9px] text-white/20 italic p-4 text-center">Awaiting Live Engagement Data...</div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

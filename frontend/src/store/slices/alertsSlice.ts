@@ -19,6 +19,10 @@ export const useAlertsSlice = create<State>((set) => ({
     socket.on('alerts.pressure', (payload) => {
       window.dispatchEvent(new CustomEvent('alerts:pressure', { detail: payload }));
     });
+
+    socket.on('fraud.alerts', (payload) => {
+      window.dispatchEvent(new CustomEvent('alerts:new', { detail: payload }));
+    });
   },
 
   disconnectLive: () => {

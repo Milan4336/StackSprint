@@ -4,6 +4,7 @@ import { RuleEngineService } from './RuleEngineService';
 import { MlServiceClient } from './MlServiceClient';
 import { geminiService } from './GeminiService';
 import { SettingsService } from './SettingsService';
+import { MuleDetectionService } from './MuleDetectionService';
 
 export class FraudScoringService {
   constructor(
@@ -11,7 +12,8 @@ export class FraudScoringService {
     private readonly mlServiceClient: MlServiceClient,
     private readonly settingsService: SettingsService,
     private readonly userBehaviorService: any,
-    private readonly fraudGraphService: any
+    private readonly fraudGraphService: any,
+    private readonly muleDetectionService: MuleDetectionService
   ) { }
 
   private classify(score: number): 'Low' | 'Medium' | 'High' {
@@ -135,6 +137,7 @@ export class FraudScoringService {
         deviceId: input.deviceId,
         timestamp: input.timestamp.toISOString()
       });
+
       mlScore = mlResult.fraudScore;
       mlConfidence = mlResult.confidence ?? 0;
       mlModelScores = mlResult.modelScores ?? {};
@@ -142,9 +145,19 @@ export class FraudScoringService {
       explanations = mlResult.explanations ?? [];
       mlStatus = this.mlServiceClient.getStatus().status;
 
-      const [behaviorScore, graphScore] = await Promise.all([
+      // Fallback: If ML failed or returned no explanations, build them from rules
+      if (explanations.length === 0) {
+        explanations = ruleEvaluation.reasons.map(reason => ({
+          feature: reason.split(':')[0] || 'Behavioral',
+          impact: 0.25,
+          reason: reason
+        }));
+      }
+
+      const [behaviorScore, graphScore, muleResult] = await Promise.all([
         this.userBehaviorService.updateProfileAndGetDeviation(input).catch(() => 0),
-        this.fraudGraphService.updateGraphAndGetAnomaly(input).catch(() => 0)
+        this.fraudGraphService.updateGraphAndGetAnomaly(input).catch(() => 0),
+        this.muleDetectionService.detectMule(input.userId).catch(() => ({ isMule: false, confidence: 0, reason: '' }))
       ]);
 
       // BANK-GRADE WEIGHTED FUSION (Using Configurable Weights)
@@ -154,6 +167,17 @@ export class FraudScoringService {
         (behaviorScore * 100 * runtimeConfig.scoreBehaviorWeight) +
         (graphScore * 100 * runtimeConfig.scoreGraphWeight)
       );
+
+      // Add Mule Anomaly Penalty
+      if (muleResult.isMule) {
+        combinedScore = Math.min(100, combinedScore + (muleResult.confidence * 40));
+        ruleEvaluation.reasons.push(`Mule Account Indicator: ${muleResult.reason}`);
+        explanations.push({
+          feature: 'Network Graph',
+          impact: muleResult.confidence,
+          reason: muleResult.reason || 'Siphon pattern detected'
+        });
+      }
 
       // Device Intelligence Context Modifier
       if (input.deviceLabel === 'New Device' && input.amount > 1000) {
@@ -222,9 +246,6 @@ export class FraudScoringService {
         this.fraudGraphService.updateGraphAndGetAnomaly(input).catch(() => 0)
       ]);
 
-      // Fallback Strategy: Distribute missing ML weight proportionally to Rules, Behavior, and Graph
-      // Original: 20/40/25/15. If ML (40) is out, ratio is 20:25:15
-      // Sum = 60. New Weights: R: 20/60=0.33, B: 25/60=0.42, G: 15/60=0.25
       const sumOthers = runtimeConfig.scoreRuleWeight + runtimeConfig.scoreBehaviorWeight + runtimeConfig.scoreGraphWeight;
       const fallbackRuleWeight = runtimeConfig.scoreRuleWeight / sumOthers;
       const fallbackBehaviorWeight = runtimeConfig.scoreBehaviorWeight / sumOthers;
@@ -246,7 +267,7 @@ export class FraudScoringService {
       ) {
         action = 'STEP_UP_AUTH';
         verificationStatus = 'PENDING';
-        ruleEvaluation.reasons.push('Zero Trust Triggered: High score + new device + high amount.');
+        ruleEvaluation.reasons.push('Zero Trust Triggered: High score + new device + high amount (ML Offline).');
       } else if (action === 'BLOCK') {
         verificationStatus = 'FAILED';
       } else if (action === 'STEP_UP_AUTH') {
@@ -266,6 +287,12 @@ export class FraudScoringService {
         ruleEvaluation.reasons
       );
 
+      const fallbackExplanations = ruleEvaluation.reasons.map(reason => ({
+        feature: reason.split(':')[0] || 'Behavioral',
+        impact: 0.3,
+        reason: reason
+      }));
+
       return {
         fraudScore: fallbackScore,
         riskLevel: this.classify(fallbackScore),
@@ -282,7 +309,7 @@ export class FraudScoringService {
         modelConfidence: 0,
         modelScores: {},
         modelWeights: {},
-        explanations: [],
+        explanations: fallbackExplanations,
         ruleReasons: ruleEvaluation.reasons,
         geoVelocityFlag: ruleEvaluation.geoVelocityFlag,
         aiExplanation

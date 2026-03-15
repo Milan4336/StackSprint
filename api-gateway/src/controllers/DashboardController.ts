@@ -144,16 +144,22 @@ export class DashboardController {
 
             // Location → coordinates fallback map
             const locationCoords: Record<string, [number, number]> = {
-                ny: [40.7128, -74.006], newyork: [40.7128, -74.006],
-                ca: [36.7783, -119.4179], california: [36.7783, -119.4179],
-                tx: [31.9686, -99.9018], texas: [31.9686, -99.9018],
-                fl: [27.6648, -81.5158], florida: [27.6648, -81.5158],
-                wa: [47.7511, -120.7401], washington: [47.7511, -120.7401],
-                london: [51.5072, -0.1276],
-                delhi: [28.6139, 77.209],
-                tokyo: [35.6762, 139.6503],
-                dubai: [25.2048, 55.2708],
-                sydney: [-33.8688, 151.2093],
+                'NY': [40.7128, -74.0060],
+                'CA': [36.7783, -119.4179],
+                'TX': [31.9686, -99.9018],
+                'FL': [27.6648, -81.5158],
+                'WA': [47.7511, -120.7401],
+                'LONDON': [51.5072, -0.1276],
+                'PARIS': [48.8566, 2.3522],
+                'BERLIN': [52.5200, 13.4050],
+                'DUBAI': [25.2048, 55.2708],
+                'TOKYO': [35.6762, 139.6503],
+                'SYDNEY': [-33.8688, 151.2093],
+                'MUMBAI': [19.0760, 72.8777],
+                'DELHI': [28.6139, 77.2090],
+                'SINGAPORE': [1.3521, 103.8198],
+                'HONG KONG': [22.3193, 114.1694],
+                'TORONTO': [43.6532, -79.3832],
                 us: [37.0902, -95.7129],
                 uk: [51.5072, -0.1276],
                 in: [20.5937, 78.9629],
@@ -166,23 +172,37 @@ export class DashboardController {
                 au: [-25.2744, 133.7751]
             };
 
-            const points: { lat: number; lng: number; risk: number }[] = [];
+            const points: { lat: number; lng: number; risk: number; isSpiking?: boolean }[] = [];
+            const locationRiskCount: Record<string, number> = {};
+            const fifteenMinAgo = new Date(Date.now() - 15 * 60000);
+
+            // First pass: identify spikes in the last 15 minutes
+            const recentHighRisk = txs.filter((t: any) => 
+                new Date(t.timestamp) >= fifteenMinAgo && (t.fraudScore || 0) > 80
+            );
+
+            recentHighRisk.forEach((t: any) => {
+                const loc = (t.location || t.country || 'Unknown').toUpperCase();
+                locationRiskCount[loc] = (locationRiskCount[loc] || 0) + 1;
+            });
 
             for (const t of txs as any[]) {
                 let lat: number | null = t.latitude ?? null;
                 let lng: number | null = t.longitude ?? null;
+                const locName = (t.location || t.country || 'Unknown').toUpperCase();
 
                 if (!lat || !lng) {
-                    const loc = (t.location || t.country || '').toLowerCase().trim().replace(/\s+/g, '');
-                    const coords = locationCoords[loc];
+                    const locKey = locName.toLowerCase().trim().replace(/\s+/g, '');
+                    const coords = locationCoords[locKey];
                     if (coords) { lat = coords[0]; lng = coords[1]; }
                 }
 
                 if (lat && lng) {
                     points.push({
                         lat,
-                        lng: lng,
-                        risk: Math.max(0.1, Math.min(1, (t.fraudScore || 0) / 100))
+                        lng,
+                        risk: Math.max(0.1, Math.min(1, (t.fraudScore || 0) / 100)),
+                        isSpiking: locationRiskCount[locName] >= 3
                     });
                 }
             }

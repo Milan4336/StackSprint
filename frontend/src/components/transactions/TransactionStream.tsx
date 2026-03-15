@@ -4,6 +4,7 @@ import { Transaction, RiskLevel, FraudExplanation } from '../../types';
 import { formatSafeDate, safeDate } from '../../utils/date';
 import { RiskBadge } from '../RiskBadge';
 import { getSocket } from '../../services/socket';
+import { Play } from 'lucide-react';
 
 export const TransactionStream = () => {
     const [stream, setStream] = useState<Transaction[]>([]);
@@ -92,13 +93,22 @@ export const TransactionStream = () => {
                                             {formatSafeDate(tx.timestamp)} · {tx.location}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className={`text-sm font-black ${isCritical ? 'text-red-400' : isHighRisk ? 'text-amber-300' : 'text-slate-200'}`}>
-                                            ${tx.amount.toFixed(2)}
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <div className={`text-sm font-black ${isCritical ? 'text-red-400' : isHighRisk ? 'text-amber-300' : 'text-slate-200'}`}>
+                                                ${tx.amount.toFixed(2)}
+                                            </div>
+                                            <div className="text-[10px] text-slate-400">
+                                                Score: {tx.fraudScore.toFixed(0)}
+                                            </div>
                                         </div>
-                                        <div className="text-[10px] text-slate-400">
-                                            Score: {tx.fraudScore.toFixed(0)}
-                                        </div>
+                                        <button 
+                                            onClick={() => (window as any).showForensicReplay?.(tx.transactionId)}
+                                            className="p-2 rounded-md hover:bg-white/10 text-white/40 hover:text-white transition-all"
+                                            title="Forensic Replay"
+                                        >
+                                            <Play size={14} />
+                                        </button>
                                     </div>
                                 </motion.div>
                             );

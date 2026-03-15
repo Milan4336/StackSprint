@@ -37,19 +37,25 @@ export class FraudResponseService {
         let actionTaken = 'ALLOW';
         let newStatus: 'ACTIVE' | 'RESTRICTED' | 'FROZEN' = 'ACTIVE';
 
-        // Tier 4: Critical Threat (> 90%)
-        if (fraudScore >= this.thresholdCritical) {
-            actionTaken = 'BLOCK';
+        // Tier 5: Extreme Threat (> 95%) - Autonomous Defense Override
+        if (fraudScore >= 95) {
+            actionTaken = 'AUTONOMOUS_ENFORCEMENT';
             newStatus = 'FROZEN';
 
-            // Micro-isolation: freeze specific device
-            if (deviceId) {
-                await DeviceReputation.findOneAndUpdate(
-                    { deviceId },
-                    { riskLevel: 'Critical' },
-                    { upsert: true }
-                );
-            }
+            // Push to Autonomous Actions Feed for Cinematic UI
+            await this.eventBusService.publishDashboardEvent('system.actions', {
+                type: 'ACCOUNT_LOCKDOWN',
+                severity: 'critical',
+                userId,
+                transactionId,
+                reason: 'HEURISTIC_OVERRIDE: EXTREME_PROBABILITY_OF_FRAUD',
+                timestamp: new Date().toISOString()
+            });
+        }
+        // Tier 4: Critical Threat (90-95%)
+        else if (fraudScore >= this.thresholdCritical) {
+            actionTaken = 'BLOCK';
+            newStatus = 'FROZEN';
         }
         // Tier 3: High Risk (70-90%)
         else if (fraudScore >= this.thresholdHigh) {

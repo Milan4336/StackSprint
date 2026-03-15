@@ -22,6 +22,8 @@ import { AutonomousAgentController } from '../controllers/AutonomousAgentControl
 import { AdminController } from '../controllers/AdminController';
 import { AlertController } from '../controllers/AlertController';
 import { CopilotController } from '../controllers/CopilotController';
+import { ScamAdvisorController } from '../controllers/ScamAdvisorController';
+import { ForensicsController } from '../controllers/ForensicsController';
 import { UserRepository } from '../repositories/UserRepository';
 import { FraudAIAgentService } from '../services/FraudAIAgentService';
 import { realtimeEventBus } from '../services/RealtimeEventBus';
@@ -49,6 +51,7 @@ import { UserRiskProfileService } from '../services/UserRiskProfileService';
 import { UserBehaviorService } from '../services/UserBehaviorService';
 import { FraudGraphService } from '../services/FraudGraphService';
 import { AlertService } from '../services/AlertService';
+import { MuleDetectionService } from '../services/MuleDetectionService';
 import { OtpRepository } from '../repositories/OtpRepository';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authMiddleware, roleMiddleware } from '../middleware/auth';
@@ -81,6 +84,7 @@ const geoService = new GeoService();
 const auditService = new AuditService(auditLogRepository);
 const userBehaviorService = new (UserBehaviorService as any)(geoService);
 const fraudGraphService = new FraudGraphService(mlServiceClient);
+const muleDetectionService = new MuleDetectionService();
 
 const modelMetricsService = new ModelMetricsService(modelMetricRepository, transactionRepository, mlServiceClient);
 const settingsService = new SettingsService(systemSettingRepository, auditService);
@@ -91,7 +95,8 @@ const fraudScoringService = new FraudScoringService(
   mlServiceClient,
   settingsService,
   userBehaviorService,
-  fraudGraphService
+  fraudGraphService,
+  muleDetectionService
 );
 
 const fraudResponseService = new FraudResponseService(
@@ -109,7 +114,7 @@ const transactionService = new TransactionService(
   transactionRepository,
   fraudScoringService,
   eventBusService,
-  fraudResponseService as any, // Cast due to name change in constructor pattern
+  fraudResponseService as any,
   deviceFingerprintService,
   deviceIntelligenceService,
   fraudExplanationService,
@@ -143,6 +148,8 @@ const userRepository = new UserRepository();
 const authService = new AuthService(userRepository, auditService, otpRepository);
 const authController = new AuthController(authService, deviceIntelligenceService);
 const copilotController = new CopilotController();
+const scamAdvisorController = new ScamAdvisorController();
+const forensicsController = new ForensicsController();
 
 const entityController = new EntityController(
   transactionRepository,
@@ -161,7 +168,8 @@ const aiAgentService = new FraudAIAgentService(
     mlServiceClient,
     settingsService,
     userBehaviorService,
-    new FraudGraphService(mlServiceClient)
+    new FraudGraphService(mlServiceClient),
+    new MuleDetectionService()
   ),
   realtimeEventBus
 );
@@ -243,7 +251,8 @@ router.get('/api/v1/timeline/:id', authMiddleware, asyncHandler(entityController
 router.get('/api/v1/agent/status', authMiddleware, asyncHandler(agentController.getStatus));
 router.post('/api/v1/agent/toggle', authMiddleware, roleMiddleware(['admin']), asyncHandler(agentController.toggle));
 
-router.post('/api/v1/copilot/chat', authMiddleware, copilotRateLimiter, asyncHandler(copilotController.chat));
+router.post('/api/v1/copilot/chat', authMiddleware, copilotRateLimiter, asyncHandler(async (req, res) => { await copilotController.chat(req, res); }));
+router.post('/api/v1/scam-advisor/analyze', authMiddleware, asyncHandler(async (req, res) => { await scamAdvisorController.analyze(req, res); }));
 
 router.post('/api/v1/admin/unfreeze-user', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeUser));
 router.post('/api/v1/admin/unfreeze-device', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeDevice));
@@ -268,3 +277,6 @@ router.patch(
   validate(updateSettingsSchema),
   asyncHandler(settingsController.update)
 );
+
+router.get('/api/v1/forensics/replay/:sessionId', authMiddleware, asyncHandler(async (req, res) => { await forensicsController.getSessionReplay(req, res); }));
+router.get('/api/v1/forensics/sessions', authMiddleware, asyncHandler(async (req, res) => { await forensicsController.listSessions(req, res); }));

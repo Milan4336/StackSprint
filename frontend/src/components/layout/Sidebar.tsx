@@ -14,7 +14,8 @@ import {
   Network,
   Users,
   Zap,
-  Cpu
+  Cpu,
+  MessageSquare
 } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
@@ -35,6 +36,7 @@ const menu = [
   { label: 'Fraud Network', to: '/fraud-network', icon: Network },
   { label: 'System Updates', to: '/updates', icon: Zap },
   { label: 'System Health', to: '/system', icon: Activity },
+  { label: 'Scam Advisor', to: '/dashboard/scam-advisor', icon: MessageSquare },
   { label: 'Settings', to: '/settings', icon: Settings }
 ];
 

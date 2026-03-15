@@ -83,12 +83,34 @@ export const FraudNetwork = () => {
             .join("line")
             .attr("stroke-width", (d: Link) => Math.sqrt(d.value || 1) * 2);
 
+        // Add Glitch Animation Style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glitch-neon {
+                0% { filter: drop-shadow(0 0 5px var(--status-danger)); transform: translate(0,0); }
+                25% { filter: drop-shadow(2px 2px 10px var(--status-danger)); transform: translate(1px,-1px); }
+                50% { filter: drop-shadow(-2px 0 15px var(--status-danger)); transform: translate(-1px,1px); }
+                75% { filter: drop-shadow(0 -2px 10px var(--status-danger)); transform: translate(1px, 1px); }
+                100% { filter: drop-shadow(0 0 5px var(--status-danger)); transform: translate(0,0); }
+            }
+            .node-glitch {
+                animation: glitch-neon 0.2s infinite;
+            }
+        `;
+        document.head.appendChild(style);
+
         const node = g.append("g")
             .selectAll<SVGCircleElement, Node>("circle")
             .data(nodes as Node[])
             .join("circle")
             .attr("r", (d: Node) => (d.val || 5) * 2)
-            .attr("fill", (d: Node) => d.type === 'USER' ? accent : d.type === 'DEVICE' ? info : warning)
+            .attr("class", (d: any) => d.riskScore > 80 ? 'node-glitch' : '')
+            .attr("fill", (d: any) => {
+                if (d.riskScore > 80) return 'var(--status-danger)';
+                if (d.type === 'USER') return accent;
+                if (d.type === 'DEVICE') return info;
+                return warning;
+            })
             .attr("stroke", strong)
             .attr("stroke-width", 1.5)
             .style("cursor", "pointer")

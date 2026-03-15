@@ -97,7 +97,15 @@ export class RuleEngineService {
         { latitude: input.latitude as number, longitude: input.longitude as number }
       );
 
-      if (geoDistance > 1500 && hoursDiff < 2) {
+      const velocityKmH = hoursDiff > 0 ? geoDistance / hoursDiff : 0;
+
+      if (velocityKmH > 900) {
+        score += 40;
+        geoVelocityFlag = true;
+        reasons.push(
+          `Impossible Travel detected: ${Math.round(geoDistance)}km in ${hoursDiff.toFixed(2)}h (${Math.round(velocityKmH)}km/h exceeds 900km/h limit).`
+        );
+      } else if (geoDistance > 1500 && hoursDiff < 2) {
         score += 30;
         geoVelocityFlag = true;
         reasons.push(
