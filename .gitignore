@@ -55,6 +55,7 @@ fraud-api-gateway@1.0.0
 .aider*
 PATCH_NOTES.md
 Project_Details.md
+Feature_List.md
 
 # Docker
 .dockerignore
