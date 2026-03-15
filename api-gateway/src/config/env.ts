@@ -44,7 +44,9 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
   RATE_LIMIT_AUTH_MAX: z.coerce.number().int().min(1).default(20),
-  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().min(1).default(8)
+  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().min(1).default(8),
+  OLLAMA_URL: z.string().url().default('http://localhost:11434'),
+  OLLAMA_MODEL: z.string().default('mistral')
 });
 
 export const env = envSchema.parse(process.env);

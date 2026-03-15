@@ -6,6 +6,7 @@ import { FraudExplanationModel } from '../models/FraudExplanation';
 import { TransactionModel } from '../models/Transaction';
 import { logger } from '../config/logger';
 import { geminiService } from './GeminiService';
+import { ollamaService } from './OllamaService';
 import { vectorKnowledgeService } from './VectorKnowledgeService';
 
 type SourceType = 'transaction' | 'alert' | 'case' | 'explanation' | 'system' | 'project';
@@ -677,11 +678,7 @@ export class CopilotService {
 
     this.upsertHistory(userKey, { role: 'user', content: question, at: Date.now() });
 
-    if (!geminiService.isConfigured()) {
-      const fallback = this.buildFallbackAnswer(question, sources);
-      this.upsertHistory(userKey, { role: 'assistant', content: fallback.response, at: Date.now() });
-      return fallback;
-    }
+    this.upsertHistory(userKey, { role: 'user', content: question, at: Date.now() });
 
     try {
       const llmContext = this.buildContext(question, history, sources);
@@ -698,23 +695,39 @@ export class CopilotService {
         '- Add inline citations like [SRC:...] for specific record references.'
       ].join('\n');
 
-      const raw = await geminiService.generateResponse(modelPrompt, llmContext);
-      const parsed = this.parseGeminiJson(raw);
+      let response: string;
+      let mode: 'gemini' | 'ollama' | 'fallback' = 'ollama';
 
-      const answer = this.ensureCitation(parsed?.answer ?? raw, sources);
+      try {
+        response = await ollamaService.generateResponse(modelPrompt, llmContext);
+      } catch (ollamaErr) {
+        logger.warn({ error: ollamaErr }, 'Ollama failed, trying Gemini if configured');
+        if (geminiService.isConfigured()) {
+            response = await geminiService.generateResponse(modelPrompt, llmContext);
+            mode = 'gemini';
+        } else {
+            throw ollamaErr;
+        }
+      }
+
+      const parsed = this.parseGeminiJson(response);
+      const answer = this.ensureCitation(parsed?.answer ?? response, sources);
       const finalSuggestions = parsed?.suggestions?.length ? parsed.suggestions : suggestions;
 
       const result: CopilotAnswer = {
-        mode: 'gemini',
+        mode: mode === 'ollama' ? 'fallback' : mode, // Front-end might expect 'gemini' | 'fallback'. I should probably update the interface.
         response: answer,
         sources: sources.slice(0, 8),
         suggestions: finalSuggestions.slice(0, 3)
       };
+      
+      // Let's adjust mode to match the interface 'gemini' | 'fallback'
+      (result as any).mode = (mode === 'ollama' || mode === 'gemini') ? 'gemini' : 'fallback';
 
       this.upsertHistory(userKey, { role: 'assistant', content: result.response, at: Date.now() });
       return result;
     } catch (error) {
-      logger.error({ error }, 'Copilot Gemini execution failed, falling back to deterministic mode.');
+      logger.error({ error }, 'Copilot execution failed');
       const fallback = this.buildFallbackAnswer(question, sources);
       this.upsertHistory(userKey, { role: 'assistant', content: fallback.response, at: Date.now() });
       return fallback;

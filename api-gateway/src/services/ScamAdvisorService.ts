@@ -1,4 +1,5 @@
 import { geminiService } from './GeminiService';
+import { ollamaService } from './OllamaService';
 import { logger } from '../config/logger';
 
 export interface ScamAnalysisResult {
@@ -37,7 +38,14 @@ export class ScamAdvisorService {
                 }
             `;
 
-            const rawResponse = await geminiService.generateResponse(prompt, 'Analyze scam content.');
+            let rawResponse: string;
+
+            try {
+                rawResponse = await ollamaService.generateResponse(prompt, 'Analyze scam content.');
+            } catch (ollamaErr) {
+                logger.warn({ error: ollamaErr }, 'Ollama failed in ScamAdvisor, trying Gemini');
+                rawResponse = await geminiService.generateResponse(prompt, 'Analyze scam content.');
+            }
             
             // Clean up JSON response if model adds markers
             const cleanedJson = rawResponse.replace(/```json|```/g, '').trim();
