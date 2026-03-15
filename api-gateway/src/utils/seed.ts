@@ -1,10 +1,16 @@
-import { connectMongo } from '../config/db';
-import { TransactionModel } from '../models/Transaction';
-import { UserModel } from '../models/User';
-import { geocodeLocation } from './geolocation';
-import { hashPassword } from './password';
+import { loadRuntimeSecrets } from '../config/runtimeSecrets';
 
 const seed = async (): Promise<void> => {
+  await loadRuntimeSecrets();
+  const [{ connectMongo }, { TransactionModel }, { UserModel }, { geocodeLocation }, { hashPassword }] =
+    await Promise.all([
+      import('../config/db'),
+      import('../models/Transaction'),
+      import('../models/User'),
+      import('./geolocation'),
+      import('./password')
+    ]);
+
   await connectMongo();
   const now = Date.now();
   const docs = Array.from({ length: 100 }).map((_, i) => {

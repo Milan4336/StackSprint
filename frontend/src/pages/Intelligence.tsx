@@ -71,18 +71,18 @@ export const Intelligence = () => {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl font-black uppercase tracking-widest text-slate-100">Intelligence & ML Ops</h1>
-                <p className="text-sm font-bold text-slate-400 mt-1">Live ensemble model monitoring, behavioral drift, and risk forecasting</p>
+                <h1 className="theme-page-title">Intelligence & ML Ops</h1>
+                <p className="theme-page-subtitle">Live ensemble model monitoring, behavioral drift, and risk forecasting.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="rounded-2xl border border-indigo-500/20 bg-slate-900/50 p-6">
+                <div className="theme-surface-card theme-panel-accent p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                <BrainCircuit className="text-indigo-400" size={20} />
+                            <div className="rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--accent) 14%, transparent)' }}>
+                                <BrainCircuit size={20} style={{ color: 'var(--accent)' }} />
                             </div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Ensemble Confidence</h3>
+                            <h3 className="theme-stat-label">Ensemble Confidence</h3>
                         </div>
                     </div>
                     <div className="flex flex-col items-center justify-center py-4">
@@ -90,78 +90,79 @@ export const Intelligence = () => {
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-orange-500/20 bg-slate-900/50 p-6">
+                <div className="theme-surface-card theme-panel-warning p-6">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-500/10 rounded-lg">
-                                <Target className="text-orange-400" size={20} />
+                            <div className="rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--status-warning) 16%, transparent)' }}>
+                                <Target size={20} style={{ color: 'var(--status-warning)' }} />
                             </div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">KL Divergence (Drift)</h3>
+                            <h3 className="theme-stat-label">KL Divergence (Drift)</h3>
                         </div>
                     </div>
                     <div className="flex items-end gap-3">
-                        <span className="text-4xl font-black text-white">{klDivergence.toFixed(3)}</span>
-                        <span className="text-sm font-bold text-slate-500 mb-1">Threshold: 0.1</span>
+                        <span className="theme-strong-text text-4xl font-black">{klDivergence.toFixed(3)}</span>
+                        <span className="theme-muted-text mb-1 text-sm font-bold">Threshold: 0.1</span>
                     </div>
-                    <div className="w-full bg-slate-800 h-1.5 rounded-full mt-4 overflow-hidden">
+                    <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'color-mix(in srgb, var(--surface-3) 92%, transparent)' }}>
                         <motion.div
-                            className={`h-full ${klDivergence > 0.08 ? 'bg-red-500' : 'bg-orange-500'}`}
+                            className="h-full"
+                            style={{ background: klDivergence > 0.08 ? 'var(--status-danger)' : 'var(--status-warning)' }}
                             animate={{ width: `${Math.min(100, (klDivergence / 0.1) * 100)}%` }}
                         />
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-blue-500/20 bg-slate-900/50 p-6 col-span-1 md:col-span-2">
+                <div className="theme-surface-card theme-panel-accent col-span-1 p-6 md:col-span-2">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-500/10 rounded-lg">
-                                <AlertOctagon className="text-blue-400" size={20} />
+                            <div className="rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--accent) 16%, transparent)' }}>
+                                <AlertOctagon size={20} style={{ color: 'var(--accent)' }} />
                             </div>
-                            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Explainable AI (SHAP) — Real-time Feature Contribution</h3>
+                            <h3 className="theme-stat-label">Explainable AI (SHAP) - Real-time Feature Contribution</h3>
                         </div>
                     </div>
                     {lastContributions.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-4">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Live Prediction Baseline Shift</p>
+                                <p className="theme-muted-text text-[10px] font-black uppercase tracking-widest">Live Prediction Baseline Shift</p>
                                 <ContributionBars contributions={lastContributions} />
                             </div>
                             <div className="h-48">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 text-center">Relative Feature Importance</p>
+                                <p className="theme-muted-text mb-4 text-center text-[10px] font-black uppercase tracking-widest">Relative Feature Importance</p>
                                 <FeatureImportanceChart data={lastContributions} />
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-48 border border-dashed border-slate-800 rounded-xl">
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Awaiting live prediction data...</span>
+                        <div className="theme-empty-state h-48">
+                            <span className="theme-muted-text text-xs font-bold uppercase tracking-widest">Awaiting live prediction data...</span>
                         </div>
                     )}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="h-96 rounded-2xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col">
+                <div className="theme-surface-card h-96 p-6 flex flex-col">
                     <div className="flex items-center gap-3 mb-6">
-                        <LineChart className="text-blue-400" size={20} />
-                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Risk Forecast Projection</h3>
+                        <LineChart size={20} style={{ color: 'var(--accent)' }} />
+                        <h3 className="theme-stat-label">Risk Forecast Projection</h3>
                     </div>
                     <div className="flex-1 min-h-0 w-full overflow-hidden relative">
                         {confidenceQuery.isLoading ? (
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest absolute inset-0 flex items-center justify-center">Loading Data...</span>
+                            <span className="theme-muted-text absolute inset-0 flex items-center justify-center text-xs font-bold uppercase tracking-widest">Loading data...</span>
                         ) : confidenceQuery.data ? (
                             <ModelConfidenceChart initialData={confidenceQuery.data} />
                         ) : null}
                     </div>
                 </div>
 
-                <div className="h-96 rounded-2xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col">
+                <div className="theme-surface-card h-96 p-6 flex flex-col">
                     <div className="flex items-center gap-3 mb-6">
-                        <Target className="text-orange-400" size={20} />
-                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Model Drift (KL Divergence) Tracker</h3>
+                        <Target size={20} style={{ color: 'var(--status-warning)' }} />
+                        <h3 className="theme-stat-label">Model Drift (KL Divergence) Tracker</h3>
                     </div>
                     <div className="flex-1 min-h-0 w-full overflow-hidden relative">
                         {driftQuery.isLoading ? (
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest absolute inset-0 flex items-center justify-center">Loading Analytics...</span>
+                            <span className="theme-muted-text absolute inset-0 flex items-center justify-center text-xs font-bold uppercase tracking-widest">Loading analytics...</span>
                         ) : driftQuery.data ? (
                             <ModelDriftChart initialData={driftQuery.data} />
                         ) : null}

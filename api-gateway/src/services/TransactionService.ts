@@ -3,6 +3,9 @@ import { FraudResponseService } from './FraudResponseService';
 import { FraudExplanationItem } from '../models/FraudExplanation';
 import { TransactionQueryOptions } from '../repositories/TransactionRepository';
 import { AlertService } from './AlertService';
+import { logger } from '../config/logger';
+import { UserModel } from '../models/User';
+import { verifyTotpCode } from '../utils/totp';
 
 export interface CreateTransactionInput {
   userId: string;
@@ -69,9 +72,25 @@ export class TransactionService {
       geoVelocityFlag: scoring.geoVelocityFlag,
       ruleReasons: scoring.ruleReasons ?? [],
       explanations: scoring.explanations ?? [],
+      verificationStatus: scoring.verificationStatus,
+      aiExplanation: scoring.aiExplanation,
       createdAt: new Date(),
       updatedAt: new Date()
     });
+
+    if (this.fraudExplanationService?.save) {
+      try {
+        await this.fraudExplanationService.save({
+          transactionId: transaction.transactionId,
+          userId: transaction.userId,
+          fraudScore: transaction.fraudScore,
+          explanations: scoring.explanations ?? [],
+          aiExplanation: scoring.aiExplanation
+        });
+      } catch (error) {
+        logger.warn({ error, transactionId: transaction.transactionId }, 'Failed to persist fraud explanation record');
+      }
+    }
 
     await this.fraudResponseService.process({
       transactionId: transaction.transactionId,
@@ -118,9 +137,19 @@ export class TransactionService {
       throw new Error('Transaction is not pending verification');
     }
 
-    // In a real scenario, we would validate the tokens here.
-    // For this simulation, we assume if the tokens are provided, verification passes.
-    if (!payload.otpCode || !payload.biometricToken || !payload.deviceToken) {
+    const user = await UserModel.findOne({
+      $or: [{ userId: transaction.userId }, { email: transaction.userId }]
+    })
+      .select('+mfaSecret')
+      .exec();
+
+    const hasDeviceSignals = Boolean(payload.biometricToken && payload.deviceToken);
+    let otpValid = false;
+    if (user?.mfaEnabled && user.mfaSecret) {
+      otpValid = verifyTotpCode(user.mfaSecret, payload.otpCode ?? '', { window: 1 });
+    }
+
+    if (!hasDeviceSignals || !otpValid) {
       transaction.verificationStatus = 'FAILED';
       transaction.action = 'BLOCK';
       await transaction.save();
@@ -136,7 +165,7 @@ export class TransactionService {
         explanations: transaction.explanations ?? []
       });
 
-      throw new Error('Verification failed due to missing tokens');
+      throw new Error('Verification failed due to invalid MFA or missing device attestations');
     }
 
     transaction.verificationStatus = 'VERIFIED';

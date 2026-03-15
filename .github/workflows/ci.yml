@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            api-gateway/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install API dependencies
+        run: npm ci
+        working-directory: api-gateway
+
+      - name: Install Frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: API lint
+        run: npm run lint
+        working-directory: api-gateway
+
+      - name: API build
+        run: npm run build
+        working-directory: api-gateway
+
+      - name: API unit tests
+        run: npm run test
+        working-directory: api-gateway
+
+      - name: Frontend build
+        run: npm run build
+        working-directory: frontend
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Frontend E2E tests
+        run: npm run test:e2e
+        working-directory: frontend
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t stack-sprint-api:ci ./api-gateway
+
+      - name: Build Frontend image
+        run: docker build -t stack-sprint-frontend:ci ./frontend
+
+      - name: Build ML image
+        run: docker build -t stack-sprint-ml:ci ./ml-service
+

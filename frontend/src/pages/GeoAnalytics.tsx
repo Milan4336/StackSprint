@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Plane, Globe, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { monitoringApi } from '../api/client';
-import { FraudRadarMap, GeoHeatmap } from '../components';
+import { FraudRadarMap } from '../components/radar/FraudRadarMap';
+import { GeoHeatmap } from '../components/dashboard/GeoHeatmap';
 import { getSocket } from '../services/socket';
 import { Transaction } from '../types';
 

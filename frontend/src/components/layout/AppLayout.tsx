@@ -13,6 +13,7 @@ import { useDashboardStore } from '../../store/dashboard';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
 import { useThreatStore } from '../../store/threatStore';
 import { HUDCorner } from '../visual/HUDDecorations';
+import { ThreatLockdownModal } from '../security/ThreatLockdownModal';
 
 export const AppLayout = () => {
   const logout = useAuthStore((state) => state.logout);
@@ -107,6 +108,7 @@ export const AppLayout = () => {
         </div>
       </div>
       <LiveActivityFeed />
+      <ThreatLockdownModal />
     </div>
   );
 };

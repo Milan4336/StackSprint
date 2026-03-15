@@ -1,43 +1,60 @@
 # System Files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Dependencies
 node_modules/
-frontend/node_modules/
-api-gateway/node_modules/
+**/node_modules/
 
 # Build Outputs
 dist/
-frontend/dist/
-api-gateway/dist/
+**/dist/
 *.tsbuildinfo
+build/
+**/build/
+out/
+**/out/
 
-# Environment
+# Environment and Secrets
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-frontend/.env
-api-gateway/.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pub
+secrets/
+**/.env*
 
 # Logs
 *.log
+**/*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-api-gateway-logs.txt
+backend_logs.txt
+logs.txt
 api_build.log
-build.log
 ml_build.log
 ts_errors.log
+api-gateway-logs.txt
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
+
+# Useless / Misplaced Artifacts
+settings_diff.txt
+npm
+tsc
+fraud-api-gateway@1.0.0
+.aider*
+PATCH_NOTES.md
+Project_Details.md
 
 # Docker
 .dockerignore

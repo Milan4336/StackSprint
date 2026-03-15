@@ -101,24 +101,35 @@ export const Dashboard = () => {
     <>
       <div className="space-y-6" id="analytics">
         <motion.section className="panel relative overflow-hidden" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="absolute -bottom-4 left-0 h-24 w-24 rounded-full bg-emerald-500/15 blur-2xl" />
+          <div className="absolute right-0 top-0 h-28 w-28 rounded-full blur-3xl" style={{ background: 'color-mix(in srgb, var(--accent) 25%, transparent)' }} />
+          <div className="absolute -bottom-4 left-0 h-24 w-24 rounded-full blur-2xl" style={{ background: 'color-mix(in srgb, var(--status-success) 22%, transparent)' }} />
           <div className="relative flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="chip mb-2 border-blue-500/40 bg-blue-500/10 text-blue-200">Executive Dashboard</p>
-              <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-                Real-Time Fraud Intelligence
-              </h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <p className="page-kicker">Executive Dashboard</p>
+              <h2 className="theme-page-title">Real-Time Fraud Intelligence</h2>
+              <p className="theme-page-subtitle">
                 Hybrid ML + rules risk orchestration with live geospatial monitoring and autonomous response.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.14em]">
-              <span className="chip border-emerald-500/35 bg-emerald-500/10 text-emerald-200">{connected ? 'Socket Live' : 'Socket Offline'}</span>
-              <span className="chip border-slate-300/70 bg-white/80 text-slate-700 dark:border-slate-600/70 dark:bg-slate-800/70 dark:text-slate-300">
+              <span
+                className="chip"
+                style={{
+                  borderColor: connected
+                    ? 'color-mix(in srgb, var(--status-success) 40%, transparent)'
+                    : 'color-mix(in srgb, var(--status-warning) 40%, transparent)',
+                  background: connected
+                    ? 'color-mix(in srgb, var(--status-success) 16%, transparent)'
+                    : 'color-mix(in srgb, var(--status-warning) 16%, transparent)',
+                  color: connected ? 'var(--status-success)' : 'var(--status-warning)'
+                }}
+              >
+                {connected ? 'Socket Live' : 'Socket Offline'}
+              </span>
+              <span className="chip">
                 {transactions.length} Tracked TX
               </span>
-              <button type="button" onClick={() => void refreshTransactions()} className="glass-btn">
+              <button type="button" onClick={() => void refreshTransactions()} className="theme-btn-secondary">
                 <RefreshCw size={14} />
                 Sync
               </button>
@@ -134,11 +145,11 @@ export const Dashboard = () => {
           </section>
         ) : null}
 
-        <div className="glass-panel flex items-center justify-between rounded-xl border px-4 py-2 text-xs uppercase tracking-[0.16em] text-slate-700 dark:text-slate-300">
+        <div className="glass-panel flex items-center justify-between rounded-xl border px-4 py-2 text-xs uppercase tracking-[0.16em] theme-muted-text">
           <span className="flex items-center gap-2.5">
             {connected ? (
               /* ── Connected: animated ECG heartbeat ── */
-              <svg width="42" height="18" viewBox="0 0 42 18" className="text-emerald-500 dark:text-emerald-400" aria-hidden="true">
+              <svg width="42" height="18" viewBox="0 0 42 18" aria-hidden="true" style={{ color: 'var(--status-success)' }}>
                 <polyline
                   points="0,9 6,9 9,2 12,16 15,4 18,14 21,9 42,9"
                   fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -153,7 +164,7 @@ export const Dashboard = () => {
               </svg>
             ) : (
               /* ── Disconnected: slow orange flatline pulse ── */
-              <svg width="42" height="18" viewBox="0 0 42 18" className="text-orange-500 dark:text-orange-400" aria-hidden="true">
+              <svg width="42" height="18" viewBox="0 0 42 18" aria-hidden="true" style={{ color: 'var(--status-warning)' }}>
                 <line x1="0" y1="9" x2="42" y2="9"
                   stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
                   strokeDasharray="4 5"
@@ -164,7 +175,7 @@ export const Dashboard = () => {
                 />
               </svg>
             )}
-            <span className={connected ? 'text-slate-700 dark:text-slate-300' : 'text-orange-600 dark:text-orange-400'}>
+            <span style={{ color: connected ? 'var(--app-text)' : 'var(--status-warning)' }}>
               Live Feed {connected ? 'Connected' : 'Disconnected'}
             </span>
           </span>
@@ -186,7 +197,14 @@ export const Dashboard = () => {
         `}</style>
 
         {simulationMessage ? (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+          <div
+            className="rounded-xl border px-3 py-2 text-sm"
+            style={{
+              borderColor: 'color-mix(in srgb, var(--status-success) 36%, transparent)',
+              background: 'color-mix(in srgb, var(--status-success) 14%, transparent)',
+              color: 'var(--status-success)'
+            }}
+          >
             {simulationMessage}
           </div>
         ) : null}
@@ -245,7 +263,7 @@ export const Dashboard = () => {
 
           <div className="table-shell">
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 z-10 bg-slate-100/95 text-left text-xs uppercase tracking-[0.16em] text-slate-500 backdrop-blur dark:bg-slate-900/95 dark:text-slate-400">
+              <thead className="theme-table-head sticky top-0 z-10 text-left text-xs uppercase tracking-[0.16em] backdrop-blur">
                 <tr>
                   <th className="px-3 py-3">Transaction</th>
                   <th className="px-3 py-3">User</th>
@@ -277,7 +295,7 @@ export const Dashboard = () => {
               <tbody>
                 {sortedTransactions.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-6 text-sm text-slate-500 dark:text-slate-400" colSpan={9}>
+                    <td className="theme-muted-text px-3 py-6 text-sm" colSpan={9}>
                       No transactions yet. Create or simulate transactions.
                     </td>
                   </tr>
@@ -286,19 +304,19 @@ export const Dashboard = () => {
                   <tr
                     key={tx.transactionId}
                     onClick={() => setSelectedForensicTx(tx)}
-                    className="table-row cursor-pointer transition hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    className="table-row cursor-pointer transition"
                   >
-                    <td className="px-3 py-3 font-semibold text-blue-700 dark:text-blue-100">{tx.transactionId}</td>
-                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.userId}</td>
-                    <td className="px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">{money.format(tx.amount)}</td>
-                    <td className="px-3 py-3 text-slate-700 dark:text-slate-300">{tx.location}</td>
-                    <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.fraudScore}</td>
+                    <td className="px-3 py-3 font-semibold" style={{ color: 'var(--accent)' }}>{tx.transactionId}</td>
+                    <td className="px-3 py-3">{tx.userId}</td>
+                    <td className="px-3 py-3 font-semibold theme-strong-text">{money.format(tx.amount)}</td>
+                    <td className="px-3 py-3">{tx.location}</td>
+                    <td className="px-3 py-3">{tx.fraudScore}</td>
                     <td className="px-3 py-3">
                       <RiskBadge value={tx.riskLevel} />
                     </td>
-                    <td className="px-3 py-3 text-slate-700 dark:text-slate-200">{tx.action ?? 'N/A'}</td>
-                    <td className={`px-3 py-3 text-lg ${tx.isFraud ? 'text-red-400' : 'text-emerald-400'}`}>●</td>
-                    <td className="px-3 py-3 text-slate-500 dark:text-slate-400">{formatSafeDate(tx.timestamp)}</td>
+                    <td className="px-3 py-3">{tx.action ?? 'N/A'}</td>
+                    <td className="px-3 py-3 text-lg" style={{ color: tx.isFraud ? 'var(--status-danger)' : 'var(--status-success)' }}>●</td>
+                    <td className="theme-muted-text px-3 py-3">{formatSafeDate(tx.timestamp)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -306,8 +324,8 @@ export const Dashboard = () => {
           </div>
         </motion.section>
 
-        <section className="glass-panel flex items-center gap-2 rounded-xl p-3 text-sm text-slate-600 dark:text-slate-300">
-          <ShieldAlert size={16} className="text-amber-400" />
+        <section className="glass-panel theme-muted-text flex items-center gap-2 rounded-xl p-3 text-sm">
+          <ShieldAlert size={16} style={{ color: 'var(--status-warning)' }} />
           Live risk analytics and autonomous responses update continuously. Manual refresh is not required.
         </section>
       </div>

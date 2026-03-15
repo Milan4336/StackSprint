@@ -1,14 +1,28 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { ShieldAlert, Lock, Zap } from 'lucide-react';
 import { useThreatStore } from '../../store/threatStore';
 
 export const DefenseShield = () => {
     const threatIndex = useThreatStore(state => state.threatIndex);
-    const isActive = threatIndex > 95;
+    const [shouldShow, setShouldShow] = useState(false);
+
+    useEffect(() => {
+        let timer: any;
+        if (threatIndex > 95) {
+            // Sustained threat check: must be > 95 for 3.5 seconds
+            timer = setTimeout(() => {
+                setShouldShow(true);
+            }, 3500);
+        } else {
+            setShouldShow(false);
+        }
+        return () => clearTimeout(timer);
+    }, [threatIndex]);
 
     return (
         <AnimatePresence>
-            {isActive && (
+            {shouldShow && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

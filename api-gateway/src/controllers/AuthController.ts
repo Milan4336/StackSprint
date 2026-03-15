@@ -50,8 +50,95 @@ export class AuthController {
         res.status(401).json({ error: 'Invalid credentials' });
         return;
       }
+      if (error?.message?.toLowerCase().includes('frozen')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
       logger.error({ error }, 'Login failed');
       res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+
+  setupMfa = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.sub;
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const result = await this.authService.setupMfa(userId);
+      res.status(200).json(result);
+    } catch (error: any) {
+      const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
+      const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+      logger.error({ error }, 'MFA setup failed');
+      res.status(statusCode).json({ error: message });
+    }
+  };
+
+  enableMfa = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.sub;
+      const { code } = req.body as { code?: string };
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      if (!code) {
+        res.status(400).json({ error: 'MFA code is required' });
+        return;
+      }
+
+      const result = await this.authService.enableMfa(userId, code);
+      res.status(200).json(result);
+    } catch (error: any) {
+      const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
+      const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+      logger.error({ error }, 'MFA enable failed');
+      res.status(statusCode).json({ error: message });
+    }
+  };
+
+  verifyMfa = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.sub;
+      const { code, reason } = req.body as { code?: string; reason?: string };
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      if (!code) {
+        res.status(400).json({ error: 'MFA code is required' });
+        return;
+      }
+
+      const verificationReason = reason || (req.user?.mfaPending ? 'LOGIN_CHALLENGE' : 'THREAT_LOCKDOWN');
+      const result = await this.authService.verifyMfa(userId, code, verificationReason);
+      res.status(200).json(result);
+    } catch (error: any) {
+      const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
+      const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+      logger.error({ error }, 'MFA verify failed');
+      res.status(statusCode).json({ error: message });
+    }
+  };
+
+  mfaStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.sub;
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const status = await this.authService.mfaStatus(userId);
+      res.status(200).json(status);
+    } catch (error: any) {
+      const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : 500;
+      const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+      logger.error({ error }, 'MFA status failed');
+      res.status(statusCode).json({ error: message });
     }
   };
 
@@ -87,7 +174,7 @@ export class AuthController {
       const user = await this.authService.me(email);
 
       // Evaluate Device Fingerprint during session checks
-      const { deviceFingerprint } = req.body;
+      const { deviceFingerprint } = req.body ?? {};
       let fp = deviceFingerprint;
       if (!fp && req.headers['x-device-fingerprint']) {
         try {

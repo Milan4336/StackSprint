@@ -17,13 +17,22 @@ import { monitoringApi } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ATTACK_TYPES = [
-    { id: 'GENERIC', name: 'Random Chaos', icon: Rocket, color: 'text-slate-400', bg: 'bg-slate-400/10', desc: 'Generate 50 random high-velocity patterns' },
-    { id: 'CARD_TESTING', name: 'Card Testing', icon: MousePointer2, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Small value rapid merchant jumping' },
-    { id: 'ACCOUNT_TAKEOVER', name: 'Account Takeover', icon: Lock, color: 'text-red-500', bg: 'bg-red-500/10', desc: 'Login jump + massive transfer' },
-    { id: 'VELOCITY_BURST', name: 'Velocity Burst', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10', desc: 'High frequency single user spike' },
-    { id: 'GEO_JUMP', name: 'Geo Location Jump', icon: Globe, color: 'text-purple-500', bg: 'bg-purple-500/10', desc: 'Physically impossible travel distance' },
-    { id: 'BOT_FLOOD', name: 'Bot Transaction Flood', icon: Bot, color: 'text-emerald-500', bg: 'bg-emerald-500/10', desc: 'Distributed automated mass volume' },
+    { id: 'GENERIC', name: 'Random Chaos', tone: 'muted', icon: Rocket, desc: 'Generate 50 random high-velocity patterns' },
+    { id: 'CARD_TESTING', name: 'Card Testing', tone: 'accent', icon: MousePointer2, desc: 'Small value rapid merchant jumping' },
+    { id: 'ACCOUNT_TAKEOVER', name: 'Account Takeover', tone: 'danger', icon: Lock, desc: 'Login jump + massive transfer' },
+    { id: 'VELOCITY_BURST', name: 'Velocity Burst', tone: 'warning', icon: Zap, desc: 'High frequency single user spike' },
+    { id: 'GEO_JUMP', name: 'Geo Location Jump', tone: 'info', icon: Globe, desc: 'Physically impossible travel distance' },
+    { id: 'BOT_FLOOD', name: 'Bot Transaction Flood', tone: 'success', icon: Bot, desc: 'Distributed automated mass volume' },
 ];
+
+const toneColor = (tone: string) => {
+    if (tone === 'danger') return 'var(--status-danger)';
+    if (tone === 'warning') return 'var(--status-warning)';
+    if (tone === 'success') return 'var(--status-success)';
+    if (tone === 'info') return 'var(--status-info)';
+    if (tone === 'accent') return 'var(--accent)';
+    return 'var(--app-text-muted)';
+};
 
 export const SimulationControlCenter = () => {
     const [selectedAttack, setSelectedAttack] = useState('GENERIC');
@@ -49,14 +58,17 @@ export const SimulationControlCenter = () => {
     };
 
     return (
-        <div className="panel bg-slate-900/40 backdrop-blur-md border border-slate-800/50">
+        <div className="panel">
             <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                <div
+                    className="rounded-lg p-2"
+                    style={{ background: 'color-mix(in srgb, var(--status-danger) 12%, transparent)', color: 'var(--status-danger)' }}
+                >
                     <ShieldAlert size={20} />
                 </div>
                 <div>
-                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest italic">Simulation Control Center</h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Generate Synthetic Fraud Scenarios</p>
+                    <h3 className="theme-strong-text text-sm font-black uppercase tracking-widest italic">Simulation Control Center</h3>
+                    <p className="theme-muted-text text-[10px] font-bold uppercase tracking-tight">Generate Synthetic Fraud Scenarios</p>
                 </div>
             </div>
 
@@ -67,30 +79,45 @@ export const SimulationControlCenter = () => {
                         <button
                             key={type.id}
                             onClick={() => setSelectedAttack(type.id)}
-                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all text-left group ${selectedAttack === type.id
-                                ? 'bg-slate-800 border-slate-700 shadow-lg'
-                                : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
-                                }`}
+                            className="theme-surface-subtle flex items-start gap-3 rounded-xl border p-3 text-left transition-all"
+                            style={selectedAttack === type.id
+                                ? {
+                                    borderColor: 'var(--surface-border-strong)',
+                                    background: 'color-mix(in srgb, var(--surface-active) 80%, var(--surface-1) 20%)',
+                                    boxShadow: `0 10px 20px -16px ${toneColor(type.tone)}`
+                                }
+                                : undefined}
                         >
-                            <div className={`p-2 rounded-lg ${selectedAttack === type.id ? type.color + ' ' + type.bg : 'text-slate-600 bg-slate-800'}`}>
+                            <div
+                                className="rounded-lg p-2"
+                                style={selectedAttack === type.id
+                                    ? {
+                                        color: toneColor(type.tone),
+                                        background: `color-mix(in srgb, ${toneColor(type.tone)} 14%, transparent)`
+                                    }
+                                    : {
+                                        color: 'var(--app-text-muted)',
+                                        background: 'color-mix(in srgb, var(--surface-3) 75%, transparent)'
+                                    }}
+                            >
                                 <type.icon size={18} />
                             </div>
                             <div>
-                                <p className={`text-xs font-black uppercase tracking-widest ${selectedAttack === type.id ? 'text-slate-100' : 'text-slate-400'}`}>
+                                <p className={`text-xs font-black uppercase tracking-widest ${selectedAttack === type.id ? 'theme-strong-text' : 'theme-muted-text'}`}>
                                     {type.name}
                                 </p>
-                                <p className="text-[10px] text-slate-600 font-medium leading-tight mt-0.5">{type.desc}</p>
+                                <p className="theme-muted-text mt-0.5 text-[10px] font-medium leading-tight">{type.desc}</p>
                             </div>
                         </button>
                     ))}
                 </div>
 
                 {/* Configuration Sliders */}
-                <div className="space-y-4 pt-4 border-t border-slate-800">
+                <div className="theme-divider space-y-4 border-t pt-4">
                     <div className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                        <div className="theme-muted-text flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                             <span className="flex items-center gap-1"><Activity size={10} /> Volume</span>
-                            <span className="text-slate-300 font-mono">{volume} TX</span>
+                            <span className="theme-mono theme-strong-text">{volume} TX</span>
                         </div>
                         <input
                             type="range"
@@ -98,14 +125,15 @@ export const SimulationControlCenter = () => {
                             max="200"
                             value={volume}
                             onChange={(e) => setVolume(Number(e.target.value))}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500"
+                            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg"
+                            style={{ background: 'color-mix(in srgb, var(--surface-3) 90%, transparent)', accentColor: 'var(--status-danger)' }}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black text-slate-500 tracking-widest uppercase">
+                        <div className="theme-muted-text flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                             <span className="flex items-center gap-1"><Settings2 size={10} /> Intensity</span>
-                            <span className="text-slate-300 font-mono">Lv.{intensity}</span>
+                            <span className="theme-mono theme-strong-text">Lv.{intensity}</span>
                         </div>
                         <input
                             type="range"
@@ -113,7 +141,8 @@ export const SimulationControlCenter = () => {
                             max="10"
                             value={intensity}
                             onChange={(e) => setIntensity(Number(e.target.value))}
-                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500"
+                            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg"
+                            style={{ background: 'color-mix(in srgb, var(--surface-3) 90%, transparent)', accentColor: 'var(--status-danger)' }}
                         />
                     </div>
                 </div>
@@ -124,14 +153,14 @@ export const SimulationControlCenter = () => {
                         <button
                             onClick={handleStart}
                             disabled={simulateMutation.isPending}
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-900/20 active:scale-95"
+                            className="theme-btn-danger w-full py-3 text-xs font-black uppercase tracking-widest active:scale-95"
                         >
                             <Play size={14} className={simulateMutation.isPending ? 'animate-pulse' : ''} />
                             {simulateMutation.isPending ? 'Deploying Attack...' : 'Start Simulation'}
                         </button>
                     ) : (
                         <button
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 text-slate-400 text-xs font-black uppercase tracking-widest cursor-not-allowed"
+                            className="theme-surface-subtle theme-muted-text w-full cursor-not-allowed py-3 text-xs font-black uppercase tracking-widest"
                         >
                             <div className="flex gap-1">
                                 {[0, 1, 2].map((i) => (
@@ -139,7 +168,8 @@ export const SimulationControlCenter = () => {
                                         key={i}
                                         animate={{ height: [4, 12, 4] }}
                                         transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
-                                        className="w-1 bg-red-500 rounded-full"
+                                        className="w-1 rounded-full"
+                                        style={{ background: 'var(--status-danger)' }}
                                     />
                                 ))}
                             </div>
@@ -156,15 +186,16 @@ export const SimulationControlCenter = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="mt-4 p-3 rounded-xl bg-red-500/5 border border-red-500/20"
+                        className="theme-panel-danger mt-4 rounded-xl border p-3"
+                        style={{ background: 'color-mix(in srgb, var(--status-danger) 9%, transparent)' }}
                     >
                         <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1 italic">
+                            <span className="flex items-center gap-1 text-[10px] font-black uppercase italic" style={{ color: 'var(--status-danger)' }}>
                                 <ShieldAlert size={12} /> Live Attack Injected
                             </span>
-                            <span className="text-[10px] font-mono font-bold text-slate-500">#{activeTask}</span>
+                            <span className="theme-mono theme-muted-text text-[10px] font-bold">#{activeTask}</span>
                         </div>
-                        <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">Check Graph for Pulse Activity</p>
+                        <p className="theme-muted-text mt-1 text-[9px] font-bold uppercase">Check Graph for pulse activity</p>
                     </motion.div>
                 )}
             </AnimatePresence>

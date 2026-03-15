@@ -10,6 +10,9 @@ export interface UserDocument extends Document {
   status: 'ACTIVE' | 'RESTRICTED' | 'FROZEN';
   riskScore: number;
   lastLogin?: Date;
+  mfaEnabled: boolean;
+  mfaSecret?: string;
+  mfaVerifiedAt?: Date;
 }
 
 const userSchema = new Schema<UserDocument>(
@@ -20,7 +23,10 @@ const userSchema = new Schema<UserDocument>(
     role: { type: String, enum: ['admin', 'analyst', 'user'], required: true },
     status: { type: String, enum: ['ACTIVE', 'RESTRICTED', 'FROZEN'], default: 'ACTIVE' },
     riskScore: { type: Number, default: 0 },
-    lastLogin: { type: Date }
+    lastLogin: { type: Date },
+    mfaEnabled: { type: Boolean, default: false, index: true },
+    mfaSecret: { type: String, required: false, select: false },
+    mfaVerifiedAt: { type: Date, required: false }
   },
   { timestamps: true }
 );

@@ -7,11 +7,13 @@ export interface JwtPayload {
   email: string;
   role: UserRole;
   status: 'ACTIVE' | 'RESTRICTED' | 'FROZEN';
+  mfaPending?: boolean;
+  mfaVerified?: boolean;
 }
 
-export const signJwt = (payload: JwtPayload): string =>
+export const signJwt = (payload: JwtPayload, expiresIn?: SignOptions['expiresIn']): string =>
   jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn']
+    expiresIn: expiresIn ?? (env.JWT_EXPIRES_IN as SignOptions['expiresIn'])
   });
 
 export const verifyJwt = (token: string): JwtPayload => jwt.verify(token, env.JWT_SECRET) as JwtPayload;

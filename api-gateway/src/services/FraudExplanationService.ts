@@ -9,6 +9,7 @@ export class FraudExplanationService {
     userId: string;
     fraudScore: number;
     explanations: FraudExplanationItem[];
+    aiExplanation?: string;
   }): Promise<void> {
     if (!input.explanations.length) {
       return;
@@ -18,7 +19,8 @@ export class FraudExplanationService {
       transactionId: input.transactionId,
       userId: input.userId,
       fraudScore: input.fraudScore,
-      explanations: input.explanations
+      explanations: input.explanations,
+      aiExplanation: input.aiExplanation
     });
   }
 

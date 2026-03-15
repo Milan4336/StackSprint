@@ -9,6 +9,11 @@ const HIGH_RISK_WINDOW_MS = 5 * 60 * 1000;
 const HIGH_RISK_BURST_THRESHOLD = 4;
 const ELEVATED_FRAUD_RATE = 12;
 const CRITICAL_FRAUD_RATE = 25;
+const LOCKDOWN_THRESHOLD = (() => {
+  const raw = Number(import.meta.env.VITE_LOCKDOWN_THREAT_THRESHOLD ?? 90);
+  if (Number.isNaN(raw)) return 90;
+  return Math.max(1, Math.min(100, raw));
+})();
 
 interface ThreatEvaluation {
   threatLevel: ThreatLevel;
@@ -114,11 +119,19 @@ export const useThreatStore = create<ThreatStoreState>((set, get) => ({
 
   setThreatIndex: (value: number) => {
     const clamped = Math.max(0, Math.min(100, value));
+
+    const current = get().threatIndex;
+    // For critical spikes, bypass smoothing so lockdown controls trigger immediately.
+    const shouldBypassSmoothing = clamped >= LOCKDOWN_THRESHOLD || Math.abs(clamped - current) >= 35;
+    const smoothed = shouldBypassSmoothing
+      ? clamped
+      : Math.round(current + (clamped - current) * 0.4);
+
     const level: ThreatLevel =
-      clamped >= 90 ? 'CRITICAL' :
-        clamped >= 70 ? 'HIGH' :
-          clamped >= 40 ? 'SUSPICIOUS' : 'NORMAL';
-    set({ threatIndex: clamped, threatLevel: level });
+      smoothed >= 90 ? 'CRITICAL' :
+        smoothed >= 70 ? 'HIGH' :
+          smoothed >= 40 ? 'SUSPICIOUS' : 'NORMAL';
+    set({ threatIndex: smoothed, threatLevel: level });
   },
 
   setFraudRate: (rate) => {

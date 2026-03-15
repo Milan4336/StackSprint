@@ -2,6 +2,7 @@ import { env } from '../config/env';
 import { FraudExplanationItem } from '../models/FraudExplanation';
 import { RuleEngineService } from './RuleEngineService';
 import { MlServiceClient } from './MlServiceClient';
+import { geminiService } from './GeminiService';
 import { SettingsService } from './SettingsService';
 
 export class FraudScoringService {
@@ -23,6 +24,65 @@ export class FraudScoringService {
     if (score >= 71) return 'BLOCK';
     if (score >= 31) return 'STEP_UP_AUTH';
     return 'ALLOW';
+  }
+
+  private buildDeterministicNarrative(input: {
+    amount: number;
+    location: string;
+    deviceLabel?: string;
+  }, scores: {
+    fraudScore: number;
+    ruleScore: number;
+    mlScore: number;
+    behaviorScore: number;
+    graphScore: number;
+    modelConfidence: number;
+  }, reasons: string[]): string {
+    const primaryReason = reasons[0] ?? 'Composite anomaly indicators triggered the risk policy.';
+    const deviceSignal = input.deviceLabel ? `Device signal: ${input.deviceLabel}.` : '';
+    return [
+      `Risk ${scores.fraudScore}/100 driven by rule pressure ${scores.ruleScore.toFixed(1)}, ML ${Math.round(scores.mlScore * 100)}%, behavior ${Math.round(scores.behaviorScore * 100)}%, graph ${Math.round(scores.graphScore * 100)}%.`,
+      `Primary trigger: ${primaryReason}`,
+      `Model confidence ${Math.round(scores.modelConfidence * 100)}%.`,
+      `Transaction context: amount ${input.amount} at ${input.location}.`,
+      deviceSignal
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  private async buildNarrative(input: {
+    amount: number;
+    location: string;
+    deviceLabel?: string;
+  }, scores: {
+    fraudScore: number;
+    ruleScore: number;
+    mlScore: number;
+    behaviorScore: number;
+    graphScore: number;
+    modelConfidence: number;
+  }, reasons: string[]): Promise<string | undefined> {
+    if (scores.fraudScore < 40) {
+      return undefined;
+    }
+
+    const deterministic = this.buildDeterministicNarrative(input, scores, reasons);
+
+    if (!geminiService.isConfigured()) {
+      return deterministic;
+    }
+
+    const xaiPrompt = `Rewrite this fraud narrative in one concise sentence for an analyst and keep every concrete signal.
+    Narrative: ${deterministic}
+    Rule Reasons: ${reasons.join(', ') || 'None provided'}`;
+
+    try {
+      const generated = await geminiService.generateResponse(xaiPrompt);
+      return generated || deterministic;
+    } catch {
+      return deterministic;
+    }
   }
 
   async score(input: {
@@ -54,6 +114,7 @@ export class FraudScoringService {
     ruleReasons: string[];
     geoVelocityFlag: boolean;
     verificationStatus: 'NOT_REQUIRED' | 'PENDING' | 'VERIFIED' | 'FAILED';
+    aiExplanation?: string;
   }> {
     const ruleEvaluation = await this.ruleEngineService.evaluate(input);
     const runtimeConfig = await this.settingsService.getRuntimeConfig();
@@ -102,6 +163,19 @@ export class FraudScoringService {
 
       const finalFraudScore = Math.round(combinedScore);
 
+      const aiExplanation = await this.buildNarrative(
+        { amount: input.amount, location: input.location, deviceLabel: input.deviceLabel },
+        {
+          fraudScore: finalFraudScore,
+          ruleScore,
+          mlScore,
+          behaviorScore,
+          graphScore,
+          modelConfidence: mlConfidence
+        },
+        ruleEvaluation.reasons
+      );
+
       let action = this.responseAction(finalFraudScore);
       let verificationStatus: 'NOT_REQUIRED' | 'PENDING' | 'VERIFIED' | 'FAILED' = 'NOT_REQUIRED';
 
@@ -138,7 +212,8 @@ export class FraudScoringService {
         modelWeights: mlWeights,
         explanations,
         ruleReasons: ruleEvaluation.reasons,
-        geoVelocityFlag: ruleEvaluation.geoVelocityFlag
+        geoVelocityFlag: ruleEvaluation.geoVelocityFlag,
+        aiExplanation
       };
     } catch (error) {
       mlStatus = this.mlServiceClient.getStatus().status;
@@ -178,6 +253,19 @@ export class FraudScoringService {
         verificationStatus = 'PENDING';
       }
 
+      const aiExplanation = await this.buildNarrative(
+        { amount: input.amount, location: input.location, deviceLabel: input.deviceLabel },
+        {
+          fraudScore: fallbackScore,
+          ruleScore,
+          mlScore: 0,
+          behaviorScore,
+          graphScore,
+          modelConfidence: 0
+        },
+        ruleEvaluation.reasons
+      );
+
       return {
         fraudScore: fallbackScore,
         riskLevel: this.classify(fallbackScore),
@@ -196,7 +284,8 @@ export class FraudScoringService {
         modelWeights: {},
         explanations: [],
         ruleReasons: ruleEvaluation.reasons,
-        geoVelocityFlag: ruleEvaluation.geoVelocityFlag
+        geoVelocityFlag: ruleEvaluation.geoVelocityFlag,
+        aiExplanation
       };
     }
   }

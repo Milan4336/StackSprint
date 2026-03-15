@@ -18,21 +18,28 @@ export const ContributionBars: React.FC<ContributionBarsProps> = ({ contribution
                 return (
                     <div key={item.feature} className="space-y-1">
                         <div className="flex justify-between text-xs font-bold uppercase tracking-widest px-1">
-                            <span className="text-slate-400">{item.feature.replace('_', ' ')}</span>
-                            <span className={isPositive ? 'text-red-400' : 'text-emerald-400'}>
+                            <span className="theme-muted-text">{item.feature.replace('_', ' ')}</span>
+                            <span style={{ color: isPositive ? 'var(--status-danger)' : 'var(--status-success)' }}>
                                 {isPositive ? '+' : ''}{item.weight.toFixed(3)}
                             </span>
                         </div>
-                        <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex relative">
+                        <div
+                            className="relative flex h-2 w-full overflow-hidden rounded-full"
+                            style={{ background: 'color-mix(in srgb, var(--surface-3) 92%, transparent)' }}
+                        >
                             {/* Center line for zero */}
-                            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-700 z-10" />
+                            <div
+                                className="absolute bottom-0 left-1/2 top-0 z-10 w-px"
+                                style={{ background: 'color-mix(in srgb, var(--surface-border) 80%, transparent)' }}
+                            />
 
                             <div className="flex-1 flex justify-end">
                                 {!isPositive && (
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
-                                        className="h-full bg-emerald-500/60 rounded-l-full"
+                                        className="h-full rounded-l-full"
+                                        style={{ background: 'color-mix(in srgb, var(--status-success) 70%, transparent)' }}
                                     />
                                 )}
                             </div>
@@ -41,7 +48,8 @@ export const ContributionBars: React.FC<ContributionBarsProps> = ({ contribution
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${percentage}%` }}
-                                        className="h-full bg-red-500/60 rounded-r-full"
+                                        className="h-full rounded-r-full"
+                                        style={{ background: 'color-mix(in srgb, var(--status-danger) 70%, transparent)' }}
                                     />
                                 )}
                             </div>

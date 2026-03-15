@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Briefcase,
-  Search,
   Filter,
   FileText,
   UserPlus,
@@ -12,7 +11,6 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  MoreVertical,
   Plus
 } from 'lucide-react';
 import { monitoringApi } from '../api/client';
@@ -101,14 +99,15 @@ export const Cases = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="panel flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="section-title">Case Management</h1>
-          <p className="section-subtitle mt-1">Investigations, evidence gathering, and fraud resolution operations.</p>
+          <span className="page-kicker">Investigation Ops</span>
+          <h1 className="theme-page-title">Case Management</h1>
+          <p className="theme-page-subtitle">Investigations, evidence gathering, and fraud resolution operations.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-red-900/20 active:scale-95 transition-all"
+          className="theme-btn-danger text-xs uppercase tracking-widest"
         >
           <Briefcase size={14} />
           Initialize New Case
@@ -121,44 +120,40 @@ export const Cases = () => {
           label="Open Cases"
           value={stats.open}
           icon={AlertTriangle}
-          color="text-amber-500"
-          bg="bg-amber-500/10"
+          tone="warning"
         />
         <MetricCard
           label="Under Investigation"
           value={stats.assigned}
           icon={Clock}
-          color="text-blue-500"
-          bg="bg-blue-500/10"
+          tone="accent"
         />
         <MetricCard
           label="Resolved (7d)"
           value={stats.resolved}
           icon={CheckCircle2}
-          color="text-emerald-500"
-          bg="bg-emerald-500/10"
+          tone="success"
         />
         <MetricCard
           label="Estimated Fraud Loss"
           value={`$${stats.fraudLoss.toLocaleString()}`}
           icon={TrendingDown}
-          color="text-red-500"
-          bg="bg-red-500/10"
+          tone="danger"
         />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-6 items-start">
         {/* Case Queue */}
         <div className="panel space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/50 pb-4">
-            <h3 className="text-sm font-black text-slate-100 uppercase tracking-widest italic">Investigation Queue</h3>
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--surface-border)' }}>
+            <h3 className="panel-title mb-0 text-sm uppercase tracking-widest italic">Investigation Queue</h3>
             <div className="flex gap-2">
               <div className="relative">
-                <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--app-text-muted)' }} />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="pl-9 pr-4 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-bold uppercase tracking-tight text-slate-400 appearance-none focus:border-red-500/50 outline-none"
+                  className="input appearance-none pl-9 py-1.5 pr-4 text-[10px] font-bold uppercase tracking-tight"
                 >
                   <option value="">All Statuses</option>
                   <option value="NEW">New</option>
@@ -170,11 +165,11 @@ export const Cases = () => {
                 </select>
               </div>
               <div className="relative">
-                <ShieldAlert size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <ShieldAlert size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--app-text-muted)' }} />
                 <select
                   value={priorityFilter}
                   onChange={(e) => setPriorityFilter(e.target.value as any)}
-                  className="pl-9 pr-4 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-[10px] font-bold uppercase tracking-tight text-slate-400 appearance-none focus:border-red-500/50 outline-none"
+                  className="input appearance-none pl-9 py-1.5 pr-4 text-[10px] font-bold uppercase tracking-tight"
                 >
                   <option value="">All Priorities</option>
                   <option value="LOW">Low</option>
@@ -186,9 +181,9 @@ export const Cases = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-800/50 bg-slate-900/30">
+          <div className="table-shell overflow-x-auto rounded-xl">
             <table className="min-w-full text-left">
-              <thead className="bg-slate-800/50 text-[10px] uppercase font-black tracking-widest text-slate-500 italic">
+              <thead className="theme-table-head text-[10px] font-black uppercase tracking-widest italic">
                 <tr>
                   <th className="px-5 py-4">State</th>
                   <th className="px-5 py-4">Case ID</th>
@@ -197,40 +192,43 @@ export const Cases = () => {
                   <th className="px-5 py-4 text-right">Last Sync</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
+              <tbody>
                 {casesQuery.data?.data.map((item) => (
                   <tr
                     key={item.caseId}
                     onClick={() => setSelectedCaseId(item.caseId)}
-                    className={`group cursor-pointer hover:bg-slate-800/30 transition-colors ${selectedCaseId === item.caseId ? 'bg-red-500/5 border-l-2 border-red-500' : ''}`}
+                    className={`theme-table-row group cursor-pointer ${selectedCaseId === item.caseId ? 'theme-table-row-selected' : ''}`}
                   >
                     <td className="px-5 py-4">
                       <StatusBadge status={item.caseStatus} />
                     </td>
                     <td className="px-5 py-4">
-                      <div className="font-mono text-xs font-bold text-slate-100 uppercase tracking-tighter">
+                      <div className="text-xs font-bold uppercase tracking-tighter theme-strong-text" style={{ fontFamily: 'var(--font-mono)' }}>
                         {item.caseId}
                       </div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">TX: {item.transactionId.slice(0, 8)}...</div>
+                      <div className="mt-0.5 text-[10px] font-bold uppercase theme-muted-text">TX: {item.transactionId.slice(0, 8)}...</div>
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
                         <PriorityIcon priority={item.priority} />
                         {item.evidenceFiles.length > 0 && (
-                          <span className="flex items-center gap-1 text-[9px] font-black uppercase text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                          <span
+                            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-black uppercase"
+                            style={{ color: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 14%, transparent)' }}
+                          >
                             <FileText size={10} /> {item.evidenceFiles.length}
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5">
-                        <UserPlus size={12} className="text-slate-600" />
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold theme-muted-text">
+                        <UserPlus size={12} style={{ color: 'var(--app-text-muted)' }} />
                         {item.investigatorId || 'Unassigned'}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <div className="font-mono text-[10px] text-slate-500">{formatSafeDate(item.updatedAt)}</div>
+                      <div className="text-[10px] theme-muted-text" style={{ fontFamily: 'var(--font-mono)' }}>{formatSafeDate(item.updatedAt)}</div>
                     </td>
                   </tr>
                 ))}
@@ -240,21 +238,21 @@ export const Cases = () => {
 
           {/* Pagination */}
           <div className="flex items-center justify-between pt-4">
-            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
+            <div className="text-[10px] font-black uppercase tracking-widest italic theme-muted-text">
               Displaying {casesQuery.data?.total || 0} cases
             </div>
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-bold uppercase tracking-tight text-slate-400 disabled:opacity-50"
+                className="theme-btn-secondary px-3 py-1.5 text-[10px] font-bold uppercase tracking-tight disabled:opacity-50"
               >
                 Previous
               </button>
               <button
                 disabled={!casesQuery.data || page >= casesQuery.data.pages}
                 onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-bold uppercase tracking-tight text-slate-400 disabled:opacity-50"
+                className="theme-btn-secondary px-3 py-1.5 text-[10px] font-bold uppercase tracking-tight disabled:opacity-50"
               >
                 Next
               </button>
@@ -274,14 +272,14 @@ export const Cases = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="panel h-[600px] flex flex-col items-center justify-center text-center space-y-4 border-dashed"
+              className="theme-empty-state h-[600px] space-y-4"
             >
-              <div className="p-4 rounded-full bg-slate-800/50 text-slate-600">
+              <div className="rounded-full p-4" style={{ background: 'color-mix(in srgb, var(--surface-2) 75%, transparent)', color: 'var(--app-text-muted)' }}>
                 <ShieldAlert size={48} />
               </div>
               <div>
-                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">No Selection</h4>
-                <p className="text-[10px] text-slate-600 font-bold uppercase mt-1 leading-relaxed px-12">
+                <h4 className="text-sm font-black uppercase tracking-widest theme-muted-text">No Selection</h4>
+                <p className="mt-1 px-12 text-[10px] font-bold uppercase leading-relaxed theme-muted-text">
                   Select an investigative case from the queue to view timeline, evidence, and take action.
                 </p>
               </div>
@@ -297,34 +295,34 @@ export const Cases = () => {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowCreateModal(false)}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+              className="theme-modal-backdrop absolute inset-0"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6"
+              className="theme-modal-panel relative w-full max-w-xl rounded-2xl p-6"
             >
-              <h2 className="text-lg font-black text-slate-100 uppercase tracking-tighter italic flex items-center gap-2 mb-6">
-                <Plus className="text-red-500" /> Initialize Investigation
+              <h2 className="mb-6 flex items-center gap-2 text-lg font-black uppercase tracking-tighter italic theme-strong-text">
+                <Plus style={{ color: 'var(--status-danger)' }} /> Initialize Investigation
               </h2>
 
               <form onSubmit={onCreate} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Transaction ID</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest theme-muted-text">Transaction ID</label>
                     <input
                       required
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 outline-none focus:border-red-500/50"
+                      className="input px-4 py-3 text-xs"
                       placeholder="e.g. TX_8231..."
                       value={createForm.transactionId}
                       onChange={e => setCreateForm(f => ({ ...f, transactionId: e.target.value }))}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Priority Override</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest theme-muted-text">Priority Override</label>
                     <select
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 outline-none focus:border-red-500/50"
+                      className="input px-4 py-3 text-xs"
                       value={createForm.priority}
                       onChange={e => setCreateForm(f => ({ ...f, priority: e.target.value as any }))}
                     >
@@ -337,9 +335,9 @@ export const Cases = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Initial Investigator</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest theme-muted-text">Initial Investigator</label>
                   <input
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 outline-none focus:border-red-500/50"
+                    className="input px-4 py-3 text-xs"
                     placeholder="analyst@stacksprint.ai"
                     value={createForm.investigatorId}
                     onChange={e => setCreateForm(f => ({ ...f, investigatorId: e.target.value }))}
@@ -347,27 +345,27 @@ export const Cases = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Opening Brief</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest theme-muted-text">Opening Brief</label>
                   <textarea
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 outline-none focus:border-red-500/50 h-24 resize-none"
+                    className="input h-24 resize-none px-4 py-3 text-xs"
                     placeholder="Describe suspicious behavior or reason for case opening..."
                     value={createForm.note}
                     onChange={e => setCreateForm(f => ({ ...f, note: e.target.value }))}
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t border-slate-800">
+                <div className="flex gap-3 border-t pt-4" style={{ borderColor: 'var(--surface-border)' }}>
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-[10px] font-black text-slate-300 uppercase tracking-widest"
+                    className="theme-btn-secondary flex-1 py-3 text-[10px] font-black uppercase tracking-widest"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={createCaseMutation.isPending}
-                    className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-[10px] font-black text-white uppercase tracking-widest shadow-lg shadow-red-900/20"
+                    className="theme-btn-danger flex-1 py-3 text-[10px] font-black uppercase tracking-widest"
                   >
                     {createCaseMutation.isPending ? 'Processing...' : 'Deploy Case'}
                   </button>
@@ -383,39 +381,75 @@ export const Cases = () => {
 
 // ── Components ─────────────────────────────────────────────────────────────
 
-const MetricCard = ({ label, value, icon: Icon, color, bg }: any) => (
-  <div className="panel flex items-center gap-4 bg-slate-900/40">
-    <div className={`p-3 rounded-xl ${bg} ${color}`}>
+const MetricCard = ({ label, value, icon: Icon, tone }: any) => {
+  const toneClass: Record<string, string> = {
+    accent: 'theme-stat-card-accent',
+    success: 'theme-stat-card-success',
+    warning: 'theme-stat-card-accent',
+    danger: 'theme-stat-card-danger'
+  };
+  const toneColor: Record<string, string> = {
+    accent: 'var(--accent)',
+    success: 'var(--status-success)',
+    warning: 'var(--status-warning)',
+    danger: 'var(--status-danger)'
+  };
+
+  const resolvedTone = toneColor[tone] ?? 'var(--accent)';
+
+  return (
+    <div className={`theme-stat-card ${toneClass[tone] ?? 'theme-stat-card-accent'} flex items-center gap-4`}>
+      <div
+        className="rounded-xl p-3"
+        style={{
+          background: `color-mix(in srgb, ${resolvedTone} 14%, transparent)`,
+          color: resolvedTone
+        }}
+      >
       <Icon size={20} />
+      </div>
+      <div>
+        <p className="theme-stat-label">{label}</p>
+        <p className="text-xl font-black italic theme-strong-text">{value}</p>
+      </div>
     </div>
-    <div>
-      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
-      <p className="text-xl font-black text-slate-100 italic">{value}</p>
-    </div>
-  </div>
-);
+  );
+};
 
 const StatusBadge = ({ status }: { status: CaseStatus }) => {
-  const config: Record<string, { label: string, color: string, bg: string }> = {
-    NEW: { label: 'New', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-    UNDER_INVESTIGATION: { label: 'Investigation', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    ESCALATED: { label: 'Escalated', color: 'text-red-500', bg: 'bg-red-500/10' },
-    CONFIRMED_FRAUD: { label: 'Fraud', color: 'text-red-600', bg: 'bg-red-600/10' },
-    FALSE_POSITIVE: { label: 'Clean', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    RESOLVED: { label: 'Resolved', color: 'text-slate-500', bg: 'bg-white/5' },
+  const config: Record<string, { label: string; color: string }> = {
+    NEW: { label: 'New', color: 'var(--status-warning)' },
+    UNDER_INVESTIGATION: { label: 'Investigation', color: 'var(--accent)' },
+    ESCALATED: { label: 'Escalated', color: 'var(--status-danger)' },
+    CONFIRMED_FRAUD: { label: 'Fraud', color: 'var(--status-danger)' },
+    FALSE_POSITIVE: { label: 'Clean', color: 'var(--status-success)' },
+    RESOLVED: { label: 'Resolved', color: 'var(--app-text-muted)' }
   };
-  const { label, color, bg } = config[status] || config.NEW;
+  const { label, color } = config[status] || config.NEW;
   return (
-    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${color} ${bg} border border-current/10`}>
+    <span
+      className="rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest"
+      style={{
+        color,
+        borderColor: `color-mix(in srgb, ${color} 35%, transparent)`,
+        background: `color-mix(in srgb, ${color} 14%, transparent)`
+      }}
+    >
       {label}
     </span>
   );
 };
 
 const PriorityIcon = ({ priority }: { priority: string }) => {
-  const colors: any = { LOW: 'text-slate-600', MEDIUM: 'text-blue-400', HIGH: 'text-amber-500', CRITICAL: 'text-red-600 animate-pulse' };
+  const colors: Record<string, string> = {
+    LOW: 'var(--app-text-muted)',
+    MEDIUM: 'var(--accent)',
+    HIGH: 'var(--status-warning)',
+    CRITICAL: 'var(--status-danger)'
+  };
+  const color = colors[priority] ?? colors.MEDIUM;
   return (
-    <div className={`flex items-center gap-1 ${colors[priority]}`}>
+    <div className={`flex items-center gap-1 ${priority === 'CRITICAL' ? 'animate-pulse' : ''}`} style={{ color }}>
       <ShieldAlert size={12} />
       <span className="text-[9px] font-black tracking-tighter uppercase">{priority}</span>
     </div>

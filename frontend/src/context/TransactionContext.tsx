@@ -101,12 +101,18 @@ const normalizeTransaction = (raw: Partial<Transaction>): Transaction => {
     modelVersion: raw.modelVersion,
     modelName: raw.modelName,
     modelConfidence: typeof raw.modelConfidence === 'number' ? raw.modelConfidence : undefined,
+    modelScores: raw.modelScores,
+    modelWeights: raw.modelWeights,
     fraudScore: Number(raw.fraudScore ?? 0),
     riskLevel,
     isFraud: Boolean(raw.isFraud ?? riskLevel === 'High'),
     geoVelocityFlag: Boolean(raw.geoVelocityFlag ?? false),
     ruleReasons: Array.isArray(raw.ruleReasons) ? raw.ruleReasons : [],
-    explanations: raw.explanations
+    explanations: raw.explanations,
+    verificationStatus: raw.verificationStatus,
+    aiExplanation: raw.aiExplanation,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt
   };
 };
 

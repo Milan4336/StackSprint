@@ -21,14 +21,16 @@ export const AdminControlPanel = () => {
 
     const handleMfaSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (mfaCode !== '123456') { // Mock MFA validation
-            setMessage({ type: 'error', text: 'Invalid MFA Code. Expected 123456.' });
+        if (mfaCode.length !== 6) {
+            setMessage({ type: 'error', text: 'Invalid MFA code format.' });
             return;
         }
 
         setLoading(true);
         setMessage(null);
         try {
+            await monitoringApi.verifyMfa(mfaCode, 'ADMIN_OVERRIDE');
+
             if (actionType === 'user') {
                 await monitoringApi.unfreezeUser(targetId);
             } else if (actionType === 'device') {
@@ -94,7 +96,7 @@ export const AdminControlPanel = () => {
                         </div>
                         <input
                             type="text"
-                            placeholder="Enter 6-digit MFA Code (123456)"
+                            placeholder="Enter 6-digit authenticator code"
                             value={mfaCode}
                             onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
                             className="w-full bg-black border border-slate-700 rounded p-3 text-center text-xl tracking-[0.5em] text-white focus:outline-none focus:border-amber-500 font-mono"

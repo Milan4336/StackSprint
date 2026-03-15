@@ -54,8 +54,8 @@ export const RelationshipGraph: React.FC<RelationshipGraphProps> = ({ transactio
     }, [transactions, focusUserId]);
 
     return (
-        <div className="w-full h-full p-4 rounded-xl border border-slate-800 bg-slate-900/50 flex flex-col">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Identity Graph</h3>
+        <div className="theme-surface-card flex h-full w-full flex-col p-4">
+            <h3 className="theme-stat-label mb-4">Identity Graph</h3>
             <div className="flex-1 relative min-h-[250px]">
                 <svg viewBox="0 0 200 200" className="w-full h-full">
                     {/* Edges */}
@@ -68,7 +68,7 @@ export const RelationshipGraph: React.FC<RelationshipGraphProps> = ({ transactio
                                 key={i}
                                 x1={s.x} y1={s.y}
                                 x2={t.x} y2={t.y}
-                                stroke={edge.isFraud ? "#ef4444" : "#334155"}
+                                stroke={edge.isFraud ? 'var(--status-danger)' : 'color-mix(in srgb, var(--surface-border) 82%, transparent)'}
                                 strokeWidth={edge.isFraud ? 1.5 : 0.5}
                                 opacity={0.6}
                             />
@@ -80,12 +80,16 @@ export const RelationshipGraph: React.FC<RelationshipGraphProps> = ({ transactio
                         <g key={node.id} transform={`translate(${node.x},${node.y})`}>
                             <circle
                                 r={node.type === 'user' ? 4 : 3}
-                                fill={node.active ? "#3b82f6" : node.type === 'user' ? "#94a3b8" : "#475569"}
-                                stroke={node.active ? "#bfdbfe" : "none"}
+                                fill={node.active
+                                    ? 'var(--accent)'
+                                    : node.type === 'user'
+                                        ? 'var(--app-text-muted)'
+                                        : 'color-mix(in srgb, var(--surface-border) 90%, var(--app-text-muted) 10%)'}
+                                stroke={node.active ? 'color-mix(in srgb, var(--accent) 45%, white 55%)' : 'none'}
                                 strokeWidth={1}
                             />
                             {node.active && (
-                                <text y="-8" fontSize="6" fill="#cbd5e1" textAnchor="middle" fontWeight="bold">
+                                <text y="-8" fontSize="6" fill="var(--app-text-muted)" textAnchor="middle" fontWeight="bold">
                                     {node.id.substring(0, 6)}
                                 </text>
                             )}
@@ -93,10 +97,10 @@ export const RelationshipGraph: React.FC<RelationshipGraphProps> = ({ transactio
                     ))}
                 </svg>
             </div>
-            <div className="flex gap-4 mt-2 text-[10px] text-slate-500 justify-center">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400"></span> User</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-600"></span> Device</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-red-500"></span> Fraud Link</span>
+            <div className="theme-muted-text mt-2 flex justify-center gap-4 text-[10px]">
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'var(--app-text-muted)' }} /> User</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'color-mix(in srgb, var(--surface-border) 90%, var(--app-text-muted) 10%)' }} /> Device</span>
+                <span className="flex items-center gap-1"><span className="h-0.5 w-3" style={{ background: 'var(--status-danger)' }} /> Fraud Link</span>
             </div>
         </div>
     );

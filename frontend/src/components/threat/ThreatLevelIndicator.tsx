@@ -2,18 +2,31 @@ import { AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useMemo } from 'react';
 import { ThreatLevel, useThreatStore } from '../../store/threatStore';
 
-const toneByLevel: Record<ThreatLevel, string> = {
-  NORMAL: 'border-emerald-500/35 bg-emerald-500/10 text-emerald-300',
-  SUSPICIOUS: 'border-amber-500/35 bg-amber-500/10 text-amber-300',
-  HIGH: 'border-orange-500/35 bg-orange-500/10 text-orange-300',
-  CRITICAL: 'border-red-500/35 bg-red-500/10 text-red-300'
-};
-
-const dotByLevel: Record<ThreatLevel, string> = {
-  NORMAL: 'bg-emerald-400',
-  SUSPICIOUS: 'bg-amber-400',
-  HIGH: 'bg-orange-400',
-  CRITICAL: 'bg-red-400'
+const toneByLevel: Record<ThreatLevel, { border: string; bg: string; text: string; dot: string }> = {
+  NORMAL: {
+    border: 'color-mix(in srgb, var(--status-success) 36%, transparent)',
+    bg: 'color-mix(in srgb, var(--status-success) 12%, transparent)',
+    text: 'color-mix(in srgb, var(--status-success) 72%, white 28%)',
+    dot: 'var(--status-success)'
+  },
+  SUSPICIOUS: {
+    border: 'color-mix(in srgb, var(--status-warning) 36%, transparent)',
+    bg: 'color-mix(in srgb, var(--status-warning) 14%, transparent)',
+    text: 'color-mix(in srgb, var(--status-warning) 72%, white 28%)',
+    dot: 'var(--status-warning)'
+  },
+  HIGH: {
+    border: 'color-mix(in srgb, var(--status-warning) 44%, transparent)',
+    bg: 'color-mix(in srgb, var(--status-warning) 18%, transparent)',
+    text: 'color-mix(in srgb, var(--status-warning) 82%, white 18%)',
+    dot: 'var(--status-warning)'
+  },
+  CRITICAL: {
+    border: 'color-mix(in srgb, var(--status-danger) 42%, transparent)',
+    bg: 'color-mix(in srgb, var(--status-danger) 14%, transparent)',
+    text: 'color-mix(in srgb, var(--status-danger) 82%, white 18%)',
+    dot: 'var(--status-danger)'
+  }
 };
 
 export const ThreatLevelIndicator = () => {
@@ -44,18 +57,28 @@ export const ThreatLevelIndicator = () => {
       <span
         className={[
           'inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold',
-          toneByLevel[threatLevel],
           pulseClass
         ].join(' ')}
+        style={{
+          borderColor: toneByLevel[threatLevel].border,
+          background: toneByLevel[threatLevel].bg,
+          color: toneByLevel[threatLevel].text
+        }}
       >
-        <span className={`h-2 w-2 rounded-full ${dotByLevel[threatLevel]}`} />
+        <span className="h-2 w-2 rounded-full" style={{ background: toneByLevel[threatLevel].dot }} />
         <Icon size={12} />
         Threat {threatLevel}
       </span>
 
-      <div className="pointer-events-none absolute right-0 top-9 z-50 w-72 rounded-xl border border-slate-700/80 bg-slate-950/95 p-3 text-xs text-slate-200 opacity-0 shadow-xl transition group-hover:opacity-100">
-        <p className="mb-1 font-semibold uppercase tracking-[0.12em] text-slate-300">Threat Context</p>
-        <p className="whitespace-pre-line text-slate-300">{summary}</p>
+      <div className="pointer-events-none absolute right-0 top-9 z-50 w-72 rounded-xl border p-3 text-xs opacity-0 shadow-xl transition group-hover:opacity-100"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--surface-border) 80%, transparent)',
+          background: 'color-mix(in srgb, var(--surface-3) 88%, black 12%)',
+          color: 'var(--app-text)'
+        }}
+      >
+        <p className="mb-1 font-semibold uppercase tracking-[0.12em] theme-muted-text">Threat Context</p>
+        <p className="whitespace-pre-line theme-strong-text">{summary}</p>
       </div>
     </div>
   );

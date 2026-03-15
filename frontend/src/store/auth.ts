@@ -7,6 +7,8 @@ interface UserProfile {
   status: string;
   riskScore: number;
   lastLogin?: string;
+  mfaEnabled?: boolean;
+  mfaVerifiedAt?: string | null;
 }
 
 interface AuthState {

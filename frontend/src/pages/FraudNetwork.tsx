@@ -46,6 +46,12 @@ export const FraudNetwork = () => {
         const { nodes, links } = graphQuery.data;
         const width = 800;
         const height = 500;
+        const css = getComputedStyle(document.documentElement);
+        const accent = css.getPropertyValue('--accent').trim() || '#3b82f6';
+        const info = css.getPropertyValue('--status-info').trim() || '#06b6d4';
+        const warning = css.getPropertyValue('--status-warning').trim() || '#f59e0b';
+        const muted = css.getPropertyValue('--app-text-muted').trim() || '#94a3b8';
+        const strong = css.getPropertyValue('--app-text-strong').trim() || '#ffffff';
 
         const svg = d3.select(svgRef.current)
             .attr("viewBox", `0 0 ${width} ${height}`);
@@ -70,7 +76,7 @@ export const FraudNetwork = () => {
             .force("center", d3.forceCenter(width / 2, height / 2));
 
         const link = g.append("g")
-            .attr("stroke", "#94a3b8")
+            .attr("stroke", muted)
             .attr("stroke-opacity", 0.4)
             .selectAll<SVGLineElement, Link>("line")
             .data(links as Link[])
@@ -82,8 +88,8 @@ export const FraudNetwork = () => {
             .data(nodes as Node[])
             .join("circle")
             .attr("r", (d: Node) => (d.val || 5) * 2)
-            .attr("fill", (d: Node) => d.type === 'USER' ? '#3b82f6' : d.type === 'DEVICE' ? '#8b5cf6' : '#f59e0b')
-            .attr("stroke", "#fff")
+            .attr("fill", (d: Node) => d.type === 'USER' ? accent : d.type === 'DEVICE' ? info : warning)
+            .attr("stroke", strong)
             .attr("stroke-width", 1.5)
             .style("cursor", "pointer")
             .call(d3.drag<SVGCircleElement, Node>()
@@ -152,47 +158,47 @@ export const FraudNetwork = () => {
         <div className="space-y-6 pb-12">
             <header className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase flex items-center gap-3">
-                        <Network className="text-blue-500" strokeWidth={3} /> Fraud Relationship Graph
+                    <h2 className="theme-page-title flex items-center gap-3">
+                        <Network strokeWidth={3} style={{ color: 'var(--accent)' }} /> Fraud Relationship Graph
                     </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">
+                    <p className="theme-page-subtitle font-medium">
                         Realtime network analysis detecting shared devices, collusion, and fraud rings.
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => graphQuery.refetch()}
-                        className="chip border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                        className="theme-status-chip-success"
                     >
                         <RefreshCw size={12} className={`mr-1 ${graphQuery.isFetching ? 'animate-spin' : ''}`} /> Update Data
                     </button>
-                    <div className="chip border-emerald-500/30 bg-emerald-500/10 text-emerald-500">
+                    <div className="theme-status-chip-success">
                         <Activity size={12} className="mr-1" /> Live Sync: {graphQuery.data?.nodes.length ?? 0} Nodes
                     </div>
                 </div>
             </header>
 
             <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
-                <div className="panel overflow-hidden p-0 relative min-h-[500px] border-2 border-slate-200/50 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-900/30 backdrop-blur-sm">
+                <div className="theme-surface-card relative min-h-[500px] overflow-hidden border-2 p-0 backdrop-blur-sm">
                     {/* Zoom Controls */}
                     <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
                         <button
                             onClick={() => (window as any).zoomInGraph?.()}
-                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md text-slate-300 transition-colors"
+                            className="theme-control-icon theme-surface-subtle p-2 backdrop-blur-md"
                             title="Zoom In"
                         >
                             <Plus size={16} />
                         </button>
                         <button
                             onClick={() => (window as any).zoomOutGraph?.()}
-                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md text-slate-300 transition-colors"
+                            className="theme-control-icon theme-surface-subtle p-2 backdrop-blur-md"
                             title="Zoom Out"
                         >
                             <Minus size={16} />
                         </button>
                         <button
                             onClick={() => (window as any).resetGraphZoom?.()}
-                            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md text-slate-300 transition-colors"
+                            className="theme-control-icon theme-surface-subtle p-2 backdrop-blur-md"
                             title="Reset Zoom"
                         >
                             <Maximize2 size={16} />
@@ -201,22 +207,22 @@ export const FraudNetwork = () => {
 
                     {graphQuery.isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <RefreshCw className="animate-spin text-blue-500" size={32} />
+                            <RefreshCw className="animate-spin" size={32} style={{ color: 'var(--accent)' }} />
                         </div>
                     ) : (
                         <svg ref={svgRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
                     )}
 
                     {/* Legend */}
-                    <div className="absolute bottom-6 left-6 space-y-2 glass-panel p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            <div className="h-3 w-3 rounded-full bg-blue-500" /> Users
+                    <div className="absolute bottom-6 left-6 space-y-2 rounded-2xl border p-4" style={{ borderColor: 'var(--surface-border)', background: 'color-mix(in srgb, var(--surface-2) 90%, transparent)' }}>
+                        <div className="theme-muted-text flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                            <div className="h-3 w-3 rounded-full" style={{ background: 'var(--accent)' }} /> Users
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            <div className="h-3 w-3 rounded-full bg-purple-500" /> Devices
+                        <div className="theme-muted-text flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                            <div className="h-3 w-3 rounded-full" style={{ background: 'var(--status-info)' }} /> Devices
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            <div className="h-3 w-3 rounded-full bg-amber-500" /> IP Addresses
+                        <div className="theme-muted-text flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                            <div className="h-3 w-3 rounded-full" style={{ background: 'var(--status-warning)' }} /> IP Addresses
                         </div>
                     </div>
                 </div>
@@ -226,36 +232,37 @@ export const FraudNetwork = () => {
                         key={selectedNode?.id || 'none'}
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="panel glass-panel border-blue-500/30 dark:bg-blue-600/5"
+                        className="theme-surface-card theme-panel-accent p-5"
                     >
-                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <h3 className="theme-stat-label mb-4 flex items-center gap-2">
                             <Info size={14} /> Node Intelligence
                         </h3>
                         {selectedNode ? (
                             <div className="space-y-4">
                                 <div>
-                                    <p className="text-xl font-black text-slate-800 dark:text-slate-100 truncate">{selectedNode.id}</p>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">{selectedNode.type} ENTITY</p>
+                                    <p className="theme-strong-text truncate text-xl font-black">{selectedNode.id}</p>
+                                    <p className="theme-muted-text text-xs font-bold uppercase tracking-tighter">{selectedNode.type} ENTITY</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Live Degree</p>
-                                        <p className="text-lg font-black text-slate-800 dark:text-slate-100">
+                                    <div className="theme-surface-subtle rounded-xl p-3">
+                                        <p className="theme-muted-text mb-1 text-[10px] font-bold uppercase">Live Degree</p>
+                                        <p className="theme-strong-text text-lg font-black">
                                             {graphQuery.data?.links.filter(l =>
                                                 (typeof l.source === 'string' ? l.source === selectedNode.id : l.source.id === selectedNode.id) ||
                                                 (typeof l.target === 'string' ? l.target === selectedNode.id : l.target.id === selectedNode.id)
                                             ).length ?? 0}
                                         </p>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Risk Bias</p>
-                                        <p className="text-lg font-black text-slate-800 dark:text-slate-100">0.15<span className="text-xs text-blue-500 font-bold ml-1">AVG</span></p>
+                                    <div className="theme-surface-subtle rounded-xl p-3">
+                                        <p className="theme-muted-text mb-1 text-[10px] font-bold uppercase">Risk Bias</p>
+                                        <p className="theme-strong-text text-lg font-black">0.15<span className="ml-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>AVG</span></p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={handleAnalyzeClusters}
                                     disabled={isAnalyzing}
-                                    className="w-full glass-btn justify-center border-blue-500/40 text-blue-500 font-black text-xs uppercase tracking-widest disabled:opacity-50"
+                                    className="theme-btn-secondary w-full justify-center text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                                    style={{ color: 'var(--accent)', borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)' }}
                                 >
                                     {isAnalyzing ? (
                                         <>
@@ -269,28 +276,34 @@ export const FraudNetwork = () => {
                             </div>
                         ) : (
                             <div className="py-12 text-center">
-                                <Activity className="mx-auto text-slate-300 mb-3" size={32} />
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Select an entity to analyze</p>
+                                <Activity className="theme-muted-text mx-auto mb-3" size={32} />
+                                <p className="theme-muted-text text-xs font-bold uppercase tracking-widest">Select an entity to analyze</p>
                             </div>
                         )}
                     </motion.div>
 
-                    <div className="panel border-dashed border-red-500/30">
-                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Collusion Engine</h3>
+                    <div className="theme-surface-card border-dashed p-5" style={{ borderColor: 'color-mix(in srgb, var(--status-danger) 32%, transparent)' }}>
+                        <h3 className="theme-stat-label mb-4">Collusion Engine</h3>
                         {graphQuery.data && graphQuery.data.links.some(l => l.value > 2) ? (
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                                    <span className="text-xs font-bold text-red-500">COLLUSION_DETECTED</span>
-                                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-red-500 text-white animate-pulse">CRITICAL</span>
+                                <div
+                                    className="flex items-center justify-between rounded-lg border p-2"
+                                    style={{
+                                        borderColor: 'color-mix(in srgb, var(--status-danger) 30%, transparent)',
+                                        background: 'color-mix(in srgb, var(--status-danger) 10%, transparent)'
+                                    }}
+                                >
+                                    <span className="text-xs font-bold" style={{ color: 'var(--status-danger)' }}>COLLUSION_DETECTED</span>
+                                    <span className="animate-pulse rounded-md px-2 py-0.5 text-[10px] font-black text-white" style={{ background: 'var(--status-danger)' }}>CRITICAL</span>
                                 </div>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed">
+                                <p className="theme-muted-text text-[10px] font-bold uppercase leading-relaxed">
                                     Multiple users sharing entities detected. High probability of fraud ring or device sharing bypass.
                                 </p>
                             </div>
                         ) : (
                             <div className="py-6 text-center">
-                                <Shield className="mx-auto text-emerald-500/30 mb-2" size={24} />
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">No active collusion clusters</p>
+                                <Shield className="mx-auto mb-2" size={24} style={{ color: 'color-mix(in srgb, var(--status-success) 38%, transparent)' }} />
+                                <p className="theme-muted-text text-[10px] font-bold uppercase">No active collusion clusters</p>
                             </div>
                         )}
                     </div>

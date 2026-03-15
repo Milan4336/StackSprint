@@ -22,14 +22,14 @@ import { MLActivityIndicator } from '../components/visual/MLActivityIndicator';
 import { AttackModeOverlay } from '../components/visual/AttackModeOverlay';
 import { FraudCopilot } from '../components/intelligence/FraudCopilot';
 import { ThreatLevelIndicator } from '../components/threat/ThreatLevelIndicator';
+import { ThreatLockdownModal } from '../components/security/ThreatLockdownModal';
 
 export const CommandCenterLayout = () => {
     const { isExecutiveMode, toggleExecutiveMode } = useUiStore();
     const logout = useAuthStore((state) => state.logout);
+    const user = useAuthStore((state) => state.user);
+    const isAudioEnabled = useUiStore((state) => state.isAudioEnabled);
     const connectThreatSocket = useThreatStore((state) => state.connectThreatSocket);
-
-    // Mock user for the dashboard UI since auth store only manages the JWT token
-    const user = { email: 'admin@fraud.cmd', role: 'admin' };
 
     // Connect threat socket on mount
     useEffect(() => {
@@ -37,7 +37,7 @@ export const CommandCenterLayout = () => {
     }, [connectThreatSocket]);
 
     return (
-        <div className="flex h-screen w-full overflow-hidden text-slate-200 relative">
+        <div className="flex h-screen w-full overflow-hidden relative text-[var(--app-text)]">
             {/* ---- Visual Intelligence Layer (z-indexed overlays) ---- */}
             <ThreatAtmosphere />
             <SOCGrid />
@@ -57,14 +57,14 @@ export const CommandCenterLayout = () => {
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 relative z-10">
                 {/* Topbar */}
-                <header className="shrink-0 bg-[#0b1629]/80 backdrop-blur-md border-b border-slate-800/50 z-10">
+                <header className="theme-topbar z-10 shrink-0 border-b backdrop-blur-md">
                     {/* Threat Level bar (2px progress) */}
                     <ThreatLevelBar />
 
                     <div className="h-16 flex items-center justify-between px-6">
                         <div className="flex items-center gap-4">
-                            <h1 className="text-lg font-black uppercase tracking-widest text-slate-100">
-                                Fraud Command Center <span className="text-blue-500 ml-2">V3</span>
+                            <h1 className="text-lg font-black uppercase tracking-widest text-[var(--app-text-strong)]" style={{ fontFamily: 'var(--font-heading)' }}>
+                                Fraud Command Center <span className="ml-2" style={{ color: 'var(--accent)' }}>V3</span>
                             </h1>
                         </div>
 
@@ -76,13 +76,17 @@ export const CommandCenterLayout = () => {
                             <ThreatLevelIndicator />
 
                             {/* Executive Toggle */}
-                            <div className="flex items-center gap-3 pl-4 border-l border-slate-800/50">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            <div className="flex items-center gap-3 border-l pl-4 theme-topbar-separator">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-[var(--app-text-muted)]">
                                     Exec Mode
                                 </span>
                                 <button
                                     onClick={toggleExecutiveMode}
-                                    className={`relative h-6 w-11 rounded-full transition-colors ${isExecutiveMode ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                                    className="relative h-6 w-11 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                                    style={{
+                                        outlineColor: 'var(--focus-ring)',
+                                        background: isExecutiveMode ? 'var(--accent-strong)' : 'color-mix(in srgb, var(--app-text-muted) 45%, transparent)'
+                                    }}
                                 >
                                     <div
                                         className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isExecutiveMode ? 'translate-x-5' : 'translate-x-0'}`}
@@ -91,34 +95,37 @@ export const CommandCenterLayout = () => {
                             </div>
 
                             {/* Audio Toggle */}
-                            <div className="flex items-center gap-2 pl-4 border-l border-slate-800/50">
+                            <div className="theme-topbar-separator flex items-center gap-2 border-l pl-4">
                                 <button
                                     onClick={() => useUiStore.getState().toggleAudio()}
-                                    className={`p-2 rounded-lg transition-colors ${useUiStore(s => s.isAudioEnabled) ? 'bg-blue-500/10 text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className="theme-btn-ghost rounded-lg p-2"
+                                    style={isAudioEnabled
+                                        ? { background: 'color-mix(in srgb, var(--accent) 18%, transparent)', color: 'var(--accent)' }
+                                        : undefined}
                                     title="Toggle Threat Audio"
                                 >
-                                    {useUiStore(s => s.isAudioEnabled) ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                                    {isAudioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
                                 </button>
                             </div>
 
                             {/* User Profile */}
-                            <div className="flex items-center gap-4 pl-4 border-l border-slate-800/50">
+                            <div className="theme-topbar-separator flex items-center gap-4 border-l pl-4">
                                 <div className="text-right hidden sm:block">
-                                    <p className="text-xs font-bold text-white leading-none">{user?.email}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mt-1">
+                                    <p className="text-xs font-bold leading-none text-[var(--app-text-strong)]">{user?.email}</p>
+                                    <p className="mt-1 text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
                                         {user?.role}
                                     </p>
                                 </div>
-                                <div className="h-9 w-9 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full border" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)' }}>
                                     {user?.role === 'admin' ? (
-                                        <Bot size={16} className="text-blue-400" />
+                                        <Bot size={16} style={{ color: 'var(--accent)' }} />
                                     ) : (
-                                        <User size={16} className="text-blue-400" />
+                                        <User size={16} style={{ color: 'var(--accent)' }} />
                                     )}
                                 </div>
                                 <button
                                     onClick={logout}
-                                    className="text-slate-500 hover:text-red-400 transition-colors"
+                                    className="theme-btn-ghost p-1.5"
                                 >
                                     <LogOut size={18} />
                                 </button>
@@ -137,6 +144,7 @@ export const CommandCenterLayout = () => {
                 {/* Fixed bottom status bar */}
                 <SystemStatusBar />
             </div>
+            <ThreatLockdownModal />
         </div>
     );
 };

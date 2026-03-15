@@ -3,8 +3,68 @@ import { AppError } from '../utils/errors';
 
 export class UserRepository {
 
-  async findByEmail(email: string): Promise<UserDocument | null> {
-    return UserModel.findOne({ email }).exec();
+  async findByEmail(email: string, includeMfaSecret = false): Promise<UserDocument | null> {
+    const query = UserModel.findOne({ email });
+    if (includeMfaSecret) {
+      query.select('+mfaSecret');
+    }
+    return query.exec();
+  }
+
+  async findByEmailOrUserId(identifier: string, includeMfaSecret = false): Promise<UserDocument | null> {
+    const query = UserModel.findOne({
+      $or: [{ email: identifier }, { userId: identifier }]
+    });
+    if (includeMfaSecret) {
+      query.select('+mfaSecret');
+    }
+    return query.exec();
+  }
+
+  async markLoginSuccess(email: string, userIdFallback: string): Promise<void> {
+    const user = await UserModel.findOne({ email });
+    const finalUserId = user?.userId || userIdFallback || email;
+
+    await UserModel.updateOne(
+      { email },
+      {
+        $set: {
+          lastLogin: new Date(),
+          userId: finalUserId
+        }
+      }
+    ).exec();
+  }
+
+  async setMfaSecret(identifier: string, secret: string): Promise<void> {
+    await UserModel.updateOne(
+      {
+        $or: [{ email: identifier }, { userId: identifier }]
+      },
+      {
+        $set: {
+          mfaSecret: secret,
+          mfaEnabled: false
+        },
+        $unset: {
+          mfaVerifiedAt: ''
+        }
+      }
+    ).exec();
+  }
+
+  async setMfaEnabled(identifier: string, enabled: boolean, verifiedAt?: Date): Promise<void> {
+    await UserModel.updateOne(
+      {
+        $or: [{ email: identifier }, { userId: identifier }]
+      },
+      {
+        $set: {
+          mfaEnabled: enabled,
+          mfaVerifiedAt: verifiedAt
+        }
+      }
+    ).exec();
   }
 
   async upsert(
@@ -31,7 +91,8 @@ export class UserRepository {
         role,
         status: 'ACTIVE',
         riskScore: 0,
-        lastLogin: new Date()
+        lastLogin: new Date(),
+        mfaEnabled: false
       });
 
       await user.save();

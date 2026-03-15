@@ -33,8 +33,8 @@ const InvestigationWorkspace = lazy(() => import('./pages/investigation/Investig
 const UserDashboard = lazy(() => import('./pages/user/UserDashboard').then(m => ({ default: m.UserDashboard })));
 
 const LoadingFallback = () => (
-  <div className="flex h-full w-full items-center justify-center bg-[#0b1629]">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+  <div className="flex h-full w-full items-center justify-center" style={{ background: 'color-mix(in srgb, var(--surface-3) 92%, black 8%)' }}>
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
   </div>
 );
 

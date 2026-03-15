@@ -19,9 +19,20 @@ export const Login = () => {
   const [password, setPassword] = useState('StrongPassword123!');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaMessage, setMfaMessage] = useState<string | null>(null);
   const [showBoot, setShowBoot] = useState(false);
 
   const from = (location.state as { from?: string } | null)?.from ?? '/dashboard';
+
+  const completeLogin = async (token: string) => {
+    localStorage.setItem('token', token);
+    const userProfile = await monitoringApi.getMe();
+    setPendingIntro(false);
+    login(token, userProfile);
+    setShowBoot(true);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,21 +41,57 @@ export const Login = () => {
 
     try {
       const deviceFingerprint = await generateDeviceFingerprint();
-      const response = await apiClient.post<{ token: string }>('/auth/login', { email, password, deviceFingerprint });
+      const response = await apiClient.post<{
+        token?: string;
+        mfaRequired?: boolean;
+        mfaToken?: string;
+        message?: string;
+      }>('/auth/login', { email, password, deviceFingerprint });
 
-      // Store token early for catch-all middleware or getMe()
-      localStorage.setItem('token', response.data.token);
+      if (response.data.mfaRequired && response.data.mfaToken) {
+        setMfaToken(response.data.mfaToken);
+        setMfaMessage(response.data.message ?? 'Enter the 6-digit code from your authenticator app.');
+        return;
+      }
 
-      const userProfile = await monitoringApi.getMe();
+      if (!response.data.token) {
+        throw new Error('Login token was not returned.');
+      }
 
-      setPendingIntro(false);
-      login(response.data.token, userProfile);
-      setShowBoot(true);
+      await completeLogin(response.data.token);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError((err.response?.data as { error?: string } | undefined)?.error || 'Invalid credentials');
       } else {
         setError('Unable to login');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyMfa = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!mfaToken) {
+      setError('MFA session expired. Please sign in again.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const verify = await monitoringApi.verifyMfaWithChallenge(mfaCode, mfaToken);
+      if (!verify.token) {
+        throw new Error('MFA verification did not return an access token.');
+      }
+
+      await completeLogin(verify.token);
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError((err.response?.data as { error?: string } | undefined)?.error || 'Invalid MFA code');
+      } else {
+        setError('Unable to verify MFA code');
       }
     } finally {
       setLoading(false);
@@ -86,45 +133,91 @@ export const Login = () => {
             <h2 className="mt-3 text-3xl font-extrabold tracking-tight">Sign in to Command Center</h2>
             <p className="mt-2 text-sm text-slate-400">Use your analyst or admin credentials to continue.</p>
 
-            <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-              <label className="block">
-                <span className="mb-1 block text-sm font-semibold text-slate-200">Email</span>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                  <input
-                    className="w-full rounded-xl border border-slate-600 bg-slate-950/80 py-2.5 pl-9 pr-3 text-sm text-slate-100 outline-none ring-blue-300 transition focus:border-blue-400 focus:ring"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+            {!mfaToken ? (
+              <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+                <label className="block">
+                  <span className="mb-1 block text-sm font-semibold text-slate-200">Email</span>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <input
+                      className="w-full rounded-xl border border-slate-600 bg-slate-950/80 py-2.5 pl-9 pr-3 text-sm text-slate-100 outline-none ring-blue-300 transition focus:border-blue-400 focus:ring"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-semibold text-slate-200">Password</span>
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <input
+                      className="w-full rounded-xl border border-slate-600 bg-slate-950/80 py-2.5 pl-9 pr-3 text-sm text-slate-100 outline-none ring-blue-300 transition focus:border-blue-400 focus:ring"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </label>
+
+                {error ? <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm font-medium text-red-300">{error}</p> : null}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-white transition hover:from-blue-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-cyan-300"
+                >
+                  {loading ? 'Signing in...' : 'Sign in'}
+                </button>
+              </form>
+            ) : (
+              <form className="mt-6 space-y-4" onSubmit={verifyMfa}>
+                <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-100">
+                  {mfaMessage ?? 'Multi-factor authentication is required to complete sign in.'}
                 </div>
-              </label>
+                <label className="block">
+                  <span className="mb-1 block text-sm font-semibold text-slate-200">Authenticator Code</span>
+                  <div className="relative">
+                    <ShieldCheck className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                    <input
+                      className="w-full rounded-xl border border-slate-600 bg-slate-950/80 py-2.5 pl-9 pr-3 text-sm tracking-[0.2em] text-slate-100 outline-none ring-blue-300 transition focus:border-blue-400 focus:ring"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                      required
+                    />
+                  </div>
+                </label>
 
-              <label className="block">
-                <span className="mb-1 block text-sm font-semibold text-slate-200">Password</span>
-                <div className="relative">
-                  <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-                  <input
-                    className="w-full rounded-xl border border-slate-600 bg-slate-950/80 py-2.5 pl-9 pr-3 text-sm text-slate-100 outline-none ring-blue-300 transition focus:border-blue-400 focus:ring"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </label>
+                {error ? <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm font-medium text-red-300">{error}</p> : null}
 
-              {error ? <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm font-medium text-red-300">{error}</p> : null}
+                <button
+                  type="submit"
+                  disabled={loading || mfaCode.length < 6}
+                  className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-sm font-bold text-white transition hover:from-emerald-600 hover:to-teal-600 disabled:cursor-not-allowed disabled:from-emerald-300 disabled:to-teal-300"
+                >
+                  {loading ? 'Verifying...' : 'Verify & Continue'}
+                </button>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-white transition hover:from-blue-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-cyan-300"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMfaToken(null);
+                    setMfaCode('');
+                    setMfaMessage(null);
+                    setError(null);
+                  }}
+                  className="w-full rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800/40"
+                >
+                  Back to Password Login
+                </button>
+              </form>
+            )}
           </motion.section>
         </div>
       </div>

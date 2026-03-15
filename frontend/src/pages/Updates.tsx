@@ -2,17 +2,6 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rocket, Shield, Zap, Database, Cpu, Layout, Activity, Code, ChevronDown } from 'lucide-react';
 
-interface UpdateItem {
-    version: string;
-    date: string;
-    title: string;
-    description: string;
-    details?: string;
-    type: 'major' | 'feature' | 'fix' | 'performance';
-    icon: any;
-    color: string;
-}
-
 // Re-using the same Globe icon as Sidebar
 const Globe = ({ size }: { size: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -38,23 +27,38 @@ export const Updates = () => {
         b.version.localeCompare(a.version, undefined, { numeric: true, sensitivity: 'base' })
     );
 
+    const toneFrom = (color?: string) => {
+        const key = (color || '').toLowerCase();
+        if (key.includes('red') || key.includes('rose')) {
+            return { color: 'var(--status-danger)' };
+        }
+        if (key.includes('amber') || key.includes('orange') || key.includes('yellow')) {
+            return { color: 'var(--status-warning)' };
+        }
+        if (key.includes('green') || key.includes('emerald')) {
+            return { color: 'var(--status-success)' };
+        }
+        return { color: 'var(--accent)' };
+    };
+
     return (
         <div className="space-y-8 pb-12">
-            {/* ── Header ───────────────────────────────────────────── */}
             <header>
-                <h2 className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white uppercase">
-                    Platform Evolution
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 font-medium">
+                <h2 className="theme-page-title">Platform Evolution</h2>
+                <p className="theme-page-subtitle font-medium">
                     Chronological record of system upgrades and forensic capability enhancements.
                 </p>
             </header>
 
-            {/* ── Timeline ─────────────────────────────────────────── */}
-            <div className="relative space-y-12 before:absolute before:left-[19px] before:top-4 before:h-[calc(100%-16px)] before:w-0.5 before:bg-gradient-to-b before:from-blue-500 before:via-blue-500/50 before:to-transparent">
+            <div className="relative space-y-12">
+                <div
+                    className="pointer-events-none absolute left-[19px] top-4 h-[calc(100%-16px)] w-0.5"
+                    style={{ background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent) 75%, transparent), color-mix(in srgb, var(--accent) 35%, transparent), transparent)' }}
+                />
                 {query.isLoading ? (
-                    <div className="text-sm font-bold text-slate-500 animate-pulse pl-12">Loading system updates via API...</div>
+                    <div className="theme-muted-text animate-pulse pl-12 text-sm font-bold">Loading system updates via API...</div>
                 ) : updatesResponse.map((update, idx) => {
+                    const tone = toneFrom(update.color);
                     // Match string icon name from API to actual Lucide component
                     let Icon: any = Globe;
                     if (update.icon === 'Layout') Icon = Layout;
@@ -71,40 +75,54 @@ export const Updates = () => {
                             transition={{ delay: idx * 0.1 }}
                             className="relative pl-12"
                         >
-                            {/* Timeline Dot */}
-                            <div className={`absolute left-0 top-1 grid h-10 w-10 place-items-center rounded-xl bg-white shadow-xl ring-4 ring-slate-50 dark:bg-slate-950 dark:ring-[#0f172a]`}>
-                                <Icon size={18} className={`text-${update.color}-500`} />
+                            <div
+                                className="absolute left-0 top-1 grid h-10 w-10 place-items-center rounded-xl border shadow-xl"
+                                style={{
+                                    background: 'color-mix(in srgb, var(--surface-2) 90%, transparent)',
+                                    borderColor: 'color-mix(in srgb, var(--surface-border) 80%, transparent)',
+                                    boxShadow: '0 12px 24px -20px color-mix(in srgb, var(--accent) 85%, transparent)'
+                                }}
+                            >
+                                <Icon size={18} style={{ color: tone.color }} />
                             </div>
 
-                            {/* Content Card */}
                             <div
-                                className="panel border-l-2 border-blue-500/30 group hover:border-blue-500 transition-colors cursor-pointer"
+                                className="theme-surface-card group cursor-pointer border-l-2 p-5 transition-colors"
+                                style={{ borderLeftColor: `color-mix(in srgb, ${tone.color} 35%, transparent)` }}
                                 onClick={() => setExpandedId(expandedId === update.version ? null : update.version)}
                             >
                                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                                     <div className="flex items-center gap-3">
-                                        <span className={`rounded-lg bg-${update.color}-500/10 px-2 py-1 text-[10px] font-bold text-${update.color}-500 uppercase tracking-widest ring-1 ring-${update.color}-500/30`}>
+                                        <span
+                                            className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-widest ring-1"
+                                            style={{
+                                                background: `color-mix(in srgb, ${tone.color} 12%, transparent)`,
+                                                color: tone.color,
+                                                boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${tone.color} 30%, transparent)`
+                                            }}
+                                        >
                                             {update.version}
                                         </span>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">
+                                        <p className="theme-muted-text text-xs font-bold uppercase tracking-tighter">
                                             {update.date}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <div className="hidden sm:flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase italic">
+                                        <div className="hidden sm:flex items-center gap-1 text-[10px] font-black uppercase italic" style={{ color: 'var(--status-success)' }}>
                                             <Activity size={12} /> Live in Control Center
                                         </div>
                                         <ChevronDown
                                             size={16}
-                                            className={`text-slate-500 transition-transform ${expandedId === update.version ? 'rotate-180 text-blue-400' : ''}`}
+                                            className={`theme-muted-text transition-transform ${expandedId === update.version ? 'rotate-180' : ''}`}
+                                            style={expandedId === update.version ? { color: tone.color } : undefined}
                                         />
                                     </div>
                                 </div>
 
-                                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-2">
+                                <h3 className="theme-strong-text mb-2 text-lg font-black">
                                     {update.title}
                                 </h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                                <p className="theme-muted-text text-sm leading-relaxed font-medium">
                                     {update.description}
                                 </p>
 
@@ -116,7 +134,7 @@ export const Updates = () => {
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden"
                                         >
-                                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3 pb-2 text-sm text-slate-600 dark:text-slate-300">
+                                            <div className="theme-muted-text theme-divider mt-4 space-y-3 border-t pb-2 pt-4 text-sm">
                                                 {update.details.split('\n').map((line: string, i: number) => {
                                                     const trimmed = line.trim();
                                                     if (!trimmed) return null;
@@ -127,14 +145,14 @@ export const Updates = () => {
                                                         if (boldMatch) {
                                                             return (
                                                                 <div key={i} className="flex gap-2 items-start">
-                                                                    <span className="text-blue-500 mt-1">•</span>
-                                                                    <p><strong className="text-slate-900 dark:text-white">{boldMatch[1]}</strong> {boldMatch[2]}</p>
+                                                                    <span className="mt-1" style={{ color: tone.color }}>•</span>
+                                                                    <p><strong className="theme-strong-text">{boldMatch[1]}</strong> {boldMatch[2]}</p>
                                                                 </div>
                                                             );
                                                         }
                                                         return (
                                                             <div key={i} className="flex gap-2 items-start">
-                                                                <span className="text-blue-500 mt-1">•</span>
+                                                                <span className="mt-1" style={{ color: tone.color }}>•</span>
                                                                 <p>{text}</p>
                                                             </div>
                                                         );
@@ -146,12 +164,11 @@ export const Updates = () => {
                                     )}
                                 </AnimatePresence>
 
-                                {/* Decorative detail */}
-                                <div className="mt-6 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                    <div className="flex items-center gap-1.5 ring-1 ring-slate-200 dark:ring-slate-800 px-2 py-1 rounded-md">
+                                <div className="theme-muted-text mt-6 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+                                    <div className="theme-surface-subtle flex items-center gap-1.5 rounded-md px-2 py-1">
                                         <Code size={12} /> Production Build
                                     </div>
-                                    <div className="flex items-center gap-1.5 ring-1 ring-slate-200 dark:ring-slate-800 px-2 py-1 rounded-md">
+                                    <div className="theme-surface-subtle flex items-center gap-1.5 rounded-md px-2 py-1">
                                         <Shield size={12} /> Verified
                                     </div>
                                 </div>
@@ -161,24 +178,26 @@ export const Updates = () => {
                 })}
             </div>
 
-            {/* ── Footer Stats ─────────────────────────────────────── */}
-            <footer className="panel bg-gradient-to-br from-blue-600/5 to-emerald-600/5 border-dashed border-2">
+            <footer
+                className="theme-surface-card border-2 border-dashed p-5"
+                style={{ background: 'linear-gradient(140deg, color-mix(in srgb, var(--accent) 9%, transparent), color-mix(in srgb, var(--status-success) 9%, transparent))' }}
+            >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                     <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Architecture</p>
-                        <p className="text-xl font-black text-slate-800 dark:text-slate-100 italic">BANK-GRADE</p>
+                        <p className="theme-muted-text mb-1 text-[10px] font-black uppercase tracking-widest">Architecture</p>
+                        <p className="theme-strong-text text-xl font-black italic">BANK-GRADE</p>
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Protection</p>
-                        <p className="text-xl font-black text-slate-800 dark:text-slate-100 italic">ENSEMBLE ML</p>
+                        <p className="theme-muted-text mb-1 text-[10px] font-black uppercase tracking-widest">Protection</p>
+                        <p className="theme-strong-text text-xl font-black italic">ENSEMBLE ML</p>
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Deploy State</p>
-                        <p className="text-xl font-black text-emerald-500 italic">SYNCED</p>
+                        <p className="theme-muted-text mb-1 text-[10px] font-black uppercase tracking-widest">Deploy State</p>
+                        <p className="text-xl font-black italic" style={{ color: 'var(--status-success)' }}>SYNCED</p>
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Last Sync</p>
-                        <p className="text-xl font-black text-slate-800 dark:text-slate-100 italic">LIVE</p>
+                        <p className="theme-muted-text mb-1 text-[10px] font-black uppercase tracking-widest">Last Sync</p>
+                        <p className="theme-strong-text text-xl font-black italic">LIVE</p>
                     </div>
                 </div>
             </footer>

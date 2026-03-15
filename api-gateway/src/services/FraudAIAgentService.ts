@@ -64,15 +64,16 @@ export class FraudAIAgentService {
         // Check if case already exists
         const cases = await this.caseRepository.list({ transactionId: alert.transactionId, page: 1, limit: 1 });
         if (cases.data.length === 0) {
-            await this.caseRepository.create({
+            const payload = {
                 caseId: `CASE-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                 transactionId: alert.transactionId,
                 alertId: alert.alertId,
-                caseStatus: 'UNDER_INVESTIGATION',
-                priority: 'CRITICAL',
+                caseStatus: 'UNDER_INVESTIGATION' as const,
+                priority: 'CRITICAL' as const,
                 investigatorId: 'AI_AGENT',
                 caseNotes: [`[AI Agent Escalation] ${reason}`]
-            });
+            };
+            await this.caseRepository.create(payload);
 
             alert.status = 'investigating';
             await alert.save();

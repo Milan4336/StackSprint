@@ -31,22 +31,29 @@ export const SystemStatusBar = () => {
     const isHealthy = Boolean(mongoOk && redisOk && mlOk);
 
     const threatColor = threatLevel === 'CRITICAL'
-        ? 'text-red-400'
+        ? 'var(--status-danger)'
         : threatLevel === 'HIGH'
-            ? 'text-orange-400'
+            ? 'var(--status-warning)'
             : threatLevel === 'SUSPICIOUS'
-                ? 'text-amber-400'
-                : 'text-emerald-400';
+                ? 'var(--accent-strong)'
+                : 'var(--status-success)';
 
     return (
-        <div className="h-8 shrink-0 bg-[#0b1629]/95 backdrop-blur-md border-t border-slate-800/50 flex items-center justify-between px-4 z-20 text-[10px] uppercase tracking-widest font-black text-slate-500">
+        <div
+            className="z-20 flex h-8 shrink-0 items-center justify-between border-t px-4 text-[10px] font-black uppercase tracking-widest backdrop-blur-md"
+            style={{
+                background: 'color-mix(in srgb, var(--surface-3) 88%, transparent)',
+                borderColor: 'var(--surface-border)',
+                color: 'var(--app-text-muted)'
+            }}
+        >
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                     <PulseDot status={isHealthy ? 'up' : 'degraded'} />
                     <span>System {isHealthy ? 'Operational' : 'Degraded'}</span>
                 </div>
 
-                <div className="hidden md:flex items-center gap-4 border-l border-slate-800 pl-4">
+                <div className="hidden items-center gap-4 border-l pl-4 md:flex" style={{ borderColor: 'var(--surface-border)' }}>
                     <div className="flex items-center gap-1.5">
                         <PulseDot status={mongoOk ? 'up' : 'down'} />
                         <Database size={10} />
@@ -77,9 +84,9 @@ export const SystemStatusBar = () => {
 
             <div className="flex items-center gap-4">
                 <span className="hidden sm:inline">
-                    Risk: <span className={`font-black ${threatColor}`}>{threatLevel}</span>
+                    Risk: <span className="font-black" style={{ color: threatColor }}>{threatLevel}</span>
                 </span>
-                <span className="border-l border-slate-800 pl-4">
+                <span className="border-l pl-4" style={{ borderColor: 'var(--surface-border)' }}>
                     <Activity size={8} className="inline mr-1" />
                     {formatSafeDate(new Date().toISOString())}
                 </span>

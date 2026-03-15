@@ -1,9 +1,9 @@
-# FRAUD COMMAND CENTER (Ultra-HUD Editon v3.9)
+# FRAUD COMMAND CENTER (Enterprise v4.0)
 
 A high-performance, cloud-native fraud intelligence platform designed for realtime detection, deep forensic investigation, and autonomous risk response. This platform has been evolved into a high-fidelity "Cinematic Ultra-HUD" environment, balancing expert heuristics with advanced ML ensemble scoring.
 
 > [!NOTE]
-> Detailed technical evolution and version history can be found in the [PATCH_NOTES.md](file:///\\wsl.localhost\kali-linux\home\milan\Stack_Sprint\PATCH_NOTES.md) file.
+> Detailed technical evolution and version history are tracked in `PATCH_NOTES.md`.
 
 ---
 
@@ -47,6 +47,7 @@ Transformed investigation workflows from standard tables into a multi-dimensiona
 - **4-Tier Action Engine**: Automated responses scale from nominal `ALLOW`, up step-up authentication (`SUSPICIOUS`), localized `REQUIRE_MANUAL_REVIEW` account freezing (`HIGH RISK`), and `BLOCK_TRANSACTION` micro-device isolation (`CRITICAL`).
 - **Fraud Protection Mode (Safe Mode)**: A threshold-activated system state that dynamically triggers when multiple high-severity threats occur in rapid succession, temporarily requiring manual human authorization on all high-value outbound pipelines.
 - **Zero Trust Verification**: A cryptographic device-level 3-stage challenge modal (OTP + Biometric + Device Handshake) that intercepts high-risk transactions dynamically mid-flight.
+- **Threat Lockdown + MFA Unlock**: When `threatIndex >= 90`, UI operations are locked until a valid TOTP code is verified.
 - **MFA Admin Override**: Secure, role-gated mechanism to bypass system freezes on individual entities.
 
 ---
@@ -66,6 +67,9 @@ The heart of the system is a 3-model weighted ensemble (XGBoost + Autoencoder + 
 - **Realtime Layer**: Redis Pub/Sub Event Bus + Socket.io high-frequency streams.
 - **Persistence**: MongoDB (Forensics), Redis (In-memory aggregation).
 - **ML Service**: FastAPI/Python, Pydantic, Scikit-learn, PyTorch.
+- **Copilot Intelligence**: Gemini + optional Pinecone RAG retrieval with source citations.
+- **Observability**: Pino structured logs with optional Loki push (`LOKI_PUSH_URL`).
+- **Migrations**: Versioned MongoDB migration runner with applied-state tracking.
 
 ---
 
@@ -75,6 +79,32 @@ The heart of the system is a 3-model weighted ensemble (XGBoost + Autoencoder + 
 ```bash
 # Spin up the entire ecosystem
 docker-compose up --build -d
+```
+
+### Default Local Credentials (Development)
+These are auto-bootstrapped in non-production after Mongo connects:
+- `admin@fraud.local` / `StrongPassword123!`
+- `analyst@fraud.local` / `AnalystPassword123!`
+
+### Run Database Migrations
+```bash
+cd api-gateway
+npm run migrate
+```
+
+### Index Copilot Knowledge Base (Optional RAG)
+```bash
+cd api-gateway
+npm run index:kb
+```
+
+### Run Tests
+```bash
+# Backend unit tests
+cd api-gateway && npm run test
+
+# Frontend E2E tests
+cd frontend && npm run test:e2e
 ```
 
 ### Accessing the Platform

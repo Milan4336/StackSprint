@@ -7,6 +7,36 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface LoginResponse {
+  token?: string;
+  userId?: string;
+  mfaRequired?: boolean;
+  mfaToken?: string;
+  message?: string;
+}
+
+export interface MfaStatusResponse {
+  enabled: boolean;
+  hasSecret: boolean;
+  verifiedAt: string | null;
+  issuer: string;
+}
+
+export interface MfaSetupResponse {
+  enabled: boolean;
+  issuer: string;
+  accountName: string;
+  secret: string;
+  otpauthUrl: string;
+}
+
+export interface MfaVerifyResponse {
+  verified?: boolean;
+  enabled?: boolean;
+  verifiedAt: string;
+  token: string;
+}
+
 export interface AuthUser {
   sub: string;
   email: string;
@@ -44,6 +74,7 @@ export interface Transaction {
   explanations?: FraudExplanation[];
   featureContributions?: FeatureContribution[];
   verificationStatus?: 'NOT_REQUIRED' | 'PENDING' | 'VERIFIED' | 'FAILED';
+  aiExplanation?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -167,7 +198,24 @@ export interface FraudExplanationRecord {
   fraudScore: number;
   explanations: FraudExplanation[];
   featureContributions?: FeatureContribution[];
+  aiExplanation?: string;
   createdAt: string;
+}
+
+export type CopilotSourceType = 'transaction' | 'alert' | 'case' | 'explanation' | 'system' | 'project';
+
+export interface CopilotSource {
+  id: string;
+  type: CopilotSourceType;
+  label: string;
+  snippet: string;
+}
+
+export interface CopilotChatResponse {
+  response: string;
+  sources: CopilotSource[];
+  suggestions: string[];
+  mode?: 'gemini' | 'fallback';
 }
 
 export interface PaginatedResponse<T> {
@@ -274,6 +322,15 @@ export interface SystemHealth {
   mlStatus: 'UP' | 'DOWN';
   websocketStatus: 'UP' | 'DOWN';
   websocketClients: number;
+  containers: Array<{
+    name: string;
+    status: 'UP' | 'DOWN';
+    rawStatus: string;
+    cpuPercent: number;
+    memoryUsageMb: number;
+    memoryLimitMb: number;
+    memoryPercent: number;
+  }>;
 }
 
 export interface SystemSettings {

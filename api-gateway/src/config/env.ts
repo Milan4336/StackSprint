@@ -25,7 +25,26 @@ const envSchema = z.object({
   MODEL_NAME: z.string().default('IsolationForest-Fraud-v1'),
   MODEL_VERSION: z.string().default('1.0.0'),
   ML_CIRCUIT_FAIL_THRESHOLD: z.coerce.number().int().min(1).default(3),
-  ML_CIRCUIT_RESET_SECONDS: z.coerce.number().int().min(5).default(60)
+  ML_CIRCUIT_RESET_SECONDS: z.coerce.number().int().min(5).default(60),
+  GOOGLE_GEMINI_API_KEY: z.string().optional(),
+  PINECONE_API_KEY: z.string().optional(),
+  PINECONE_INDEX_HOST: z.string().optional(),
+  PINECONE_NAMESPACE: z.string().default('fraud-copilot'),
+  RAG_VECTOR_TOP_K: z.coerce.number().int().min(1).max(20).default(5),
+  SECRET_PROVIDER: z.enum(['env', 'vault']).default('env'),
+  VAULT_ADDR: z.string().url().optional(),
+  VAULT_TOKEN: z.string().optional(),
+  VAULT_PATH: z.string().default('secret/data/stack-sprint'),
+  MFA_TOTP_ISSUER: z.string().default('Stack Sprint Fraud Command Center'),
+  LOCKDOWN_THREAT_THRESHOLD: z.coerce.number().int().min(1).max(100).default(90),
+  LOKI_PUSH_URL: z.string().optional(),
+  LOKI_LABELS: z.string().default('service=api-gateway,stack=stack-sprint'),
+  DOCKER_SOCKET_PATH: z.string().default('/var/run/docker.sock'),
+  DOCKER_CONTAINERS: z.string().optional(),
+  RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).default(60),
+  RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
+  RATE_LIMIT_AUTH_MAX: z.coerce.number().int().min(1).default(20),
+  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().min(1).default(8)
 });
 
 export const env = envSchema.parse(process.env);

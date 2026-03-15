@@ -33,18 +33,18 @@ interface D3Link extends d3.SimulationLinkDatum<D3Node> {
 // Risk score → colour gradient
 const nodeColor = (d: D3Node): string => {
     const s = d.riskScore ?? 0;
-    if (s >= 75) return '#ef4444';
-    if (s >= 50) return '#f97316';
-    if (s >= 30) return '#f59e0b';
-    return d.type === 'USER' ? '#3b82f6' : d.type === 'DEVICE' ? '#8b5cf6' : d.type === 'IP' ? '#06b6d4' : '#10b981';
+    if (s >= 75) return 'var(--status-danger)';
+    if (s >= 50) return 'var(--status-warning)';
+    if (s >= 30) return 'var(--status-warning)';
+    return d.type === 'USER' ? 'var(--accent)' : d.type === 'DEVICE' ? 'var(--status-info)' : d.type === 'IP' ? 'var(--status-info)' : 'var(--status-success)';
 };
 
 // Edge colour by relationship type
 const linkColor = (l: D3Link): string => {
-    if (l.type === 'TX_USER') return l.fraudScore && l.fraudScore > 0.6 ? '#ef4444' : '#64748b';
-    if (l.type === 'USER_DEVICE' || l.type === 'USED_BY') return '#06b6d4';
-    if (l.type === 'USER_IP' || l.type === 'CONNECTED_TO') return '#f97316';
-    return '#334155';
+    if (l.type === 'TX_USER') return l.fraudScore && l.fraudScore > 0.6 ? 'var(--status-danger)' : 'var(--app-text-muted)';
+    if (l.type === 'USER_DEVICE' || l.type === 'USED_BY') return 'var(--status-info)';
+    if (l.type === 'USER_IP' || l.type === 'CONNECTED_TO') return 'var(--status-warning)';
+    return 'color-mix(in srgb, var(--surface-border) 85%, transparent)';
 };
 
 export const InvestigationWorkspace = () => {
@@ -71,16 +71,16 @@ export const InvestigationWorkspace = () => {
         if (!svgRef.current) return;
         const svg = d3.select(svgRef.current);
         svg.transition().duration(200)
-            .style('filter', 'brightness(2) saturate(2) drop-shadow(0 0 20px #3b82f6)')
+            .style('filter', 'brightness(2) saturate(2) drop-shadow(0 0 20px var(--accent))')
             .transition().duration(900).style('filter', 'none');
         svg.select('g').selectAll<SVGCircleElement, D3Node>('.node circle')
             .transition().duration(500)
             .attr('r', (d) => (d.riskScore ?? 0) > 70 ? 26 : (d.type === 'TRANSACTION' ? 8 : 15))
-            .style('stroke', (d) => (d.riskScore ?? 0) > 70 ? '#fff' : '#0f172a')
+            .style('stroke', (d) => (d.riskScore ?? 0) > 70 ? 'var(--app-text-strong)' : 'var(--surface-3)')
             .style('stroke-width', (d) => (d.riskScore ?? 0) > 70 ? 4 : 2)
             .transition().duration(2000)
             .attr('r', (d) => d.type === 'TRANSACTION' ? 8 : 15)
-            .style('stroke', '#0f172a').style('stroke-width', 2);
+            .style('stroke', 'var(--surface-3)').style('stroke-width', 2);
     }, []);
 
     useEffect(() => {
@@ -165,7 +165,7 @@ export const InvestigationWorkspace = () => {
             .append('circle')
             .attr('r', 22)
             .attr('fill', 'none')
-            .attr('stroke', '#ef4444')
+            .attr('stroke', 'var(--status-danger)')
             .attr('stroke-width', 1.5)
             .attr('stroke-opacity', 0.5)
             .attr('filter', 'url(#glow)')
@@ -182,7 +182,7 @@ export const InvestigationWorkspace = () => {
         node.append('circle')
             .attr('r', (d) => d.type === 'TRANSACTION' ? 7 : d.type === 'USER' ? 14 : 11)
             .attr('fill', (d) => nodeColor(d))
-            .attr('stroke', (d) => (d.riskScore ?? 0) >= 70 ? '#fff' : '#0f172a')
+            .attr('stroke', (d) => (d.riskScore ?? 0) >= 70 ? 'var(--app-text-strong)' : 'var(--surface-3)')
             .attr('stroke-width', (d) => (d.riskScore ?? 0) >= 70 ? 2.5 : 1.5)
             .attr('filter', (d) => (d.riskScore ?? 0) >= 70 ? 'url(#glow)' : '');
 
@@ -190,7 +190,7 @@ export const InvestigationWorkspace = () => {
         node.append('text')
             .attr('dy', 4)
             .attr('text-anchor', 'middle')
-            .attr('fill', '#fff')
+            .attr('fill', 'var(--app-text-strong)')
             .style('font-size', '7px')
             .style('font-weight', '900')
             .style('pointer-events', 'none')
@@ -200,7 +200,7 @@ export const InvestigationWorkspace = () => {
         node.append('text')
             .attr('dx', 17)
             .attr('dy', 5)
-            .attr('fill', '#94a3b8')
+            .attr('fill', 'var(--app-text-muted)')
             .style('font-size', '9px')
             .style('pointer-events', 'none')
             .text((d) => d.id.split('@')[0].substring(0, 16));
@@ -226,17 +226,17 @@ export const InvestigationWorkspace = () => {
             <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
+                        <Search className="theme-muted-text absolute left-3 top-1/2 -translate-y-1/2" size={14} />
                         <input
                             type="text"
                             placeholder="Search nodes..."
-                            className="w-72 rounded-xl bg-slate-900 border border-slate-800 py-2 pl-9 pr-4 text-sm text-slate-100 outline-none focus:border-blue-500/50"
+                            className="input w-72 py-2 pl-9 pr-4"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <select
-                        className="rounded-xl bg-slate-900 border border-slate-800 py-2 px-3 text-sm text-slate-300 outline-none"
+                        className="input py-2 px-3 text-sm"
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
                     >
@@ -248,35 +248,35 @@ export const InvestigationWorkspace = () => {
 
                 <div className="flex items-center gap-3">
                     {fraudClusters.length > 0 && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 border border-red-500/30 rounded-lg">
-                            <Activity size={12} className="text-red-400" />
-                            <span className="text-[11px] font-bold text-red-400">{fraudClusters.length} Fraud Ring{fraudClusters.length > 1 ? 's' : ''} Detected</span>
+                        <div className="theme-status-chip-danger px-3 py-1.5">
+                            <Activity size={12} />
+                            <span className="text-[11px] font-bold">{fraudClusters.length} Fraud Ring{fraudClusters.length > 1 ? 's' : ''} Detected</span>
                         </div>
                     )}
-                    <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl">
-                        <button className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400" title="Zoom in"><ZoomIn size={16} /></button>
-                        <button className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400" title="Zoom out"><ZoomOut size={16} /></button>
-                        <button className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400" title="Full screen"><Maximize2 size={16} /></button>
+                    <div className="theme-control-shell">
+                        <button className="theme-control-icon" title="Zoom in"><ZoomIn size={16} /></button>
+                        <button className="theme-control-icon" title="Zoom out"><ZoomOut size={16} /></button>
+                        <button className="theme-control-icon" title="Full screen"><Maximize2 size={16} /></button>
                     </div>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Graph Canvas */}
-                <div className="lg:col-span-3 relative bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden" style={{ height: 750 }}>
+                <div className="theme-surface-card relative overflow-hidden lg:col-span-3" style={{ height: 750 }}>
                     {/* Legend */}
                     <div className="absolute top-4 left-4 z-10">
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 bg-slate-900/80 backdrop-blur border border-slate-700 p-2 rounded-lg text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> User</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" /> Device</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-cyan-500" /> IP</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> TX</span>
-                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> High Risk</span>
+                        <div className="theme-muted-text flex flex-wrap gap-x-3 gap-y-1 rounded-lg border p-2 text-[10px] font-bold uppercase tracking-widest" style={{ background: 'color-mix(in srgb, var(--surface-2) 90%, transparent)', borderColor: 'var(--surface-border)' }}>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} /> User</span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'var(--status-info)' }} /> Device</span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'var(--status-info)' }} /> IP</span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'var(--status-success)' }} /> TX</span>
+                            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: 'var(--status-danger)' }} /> High Risk</span>
                         </div>
                     </div>
 
                     {isLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60 z-20">
+                        <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--surface-3) 70%, transparent)' }}>
                             <div className="loading-spinner h-8 w-8" />
                         </div>
                     )}
@@ -285,28 +285,29 @@ export const InvestigationWorkspace = () => {
 
                     {/* Cluster Detection Panel */}
                     <div className="absolute bottom-4 left-4 z-10">
-                        <div className="panel p-4 w-64 bg-slate-900/90 backdrop-blur border-blue-500/20 shadow-2xl">
-                            <h4 className="flex items-center gap-2 text-xs font-black uppercase text-blue-400 tracking-tighter mb-2">
+                        <div className="theme-surface-card w-64 p-4 backdrop-blur shadow-2xl" style={{ background: 'color-mix(in srgb, var(--surface-2) 92%, transparent)' }}>
+                            <h4 className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-tighter" style={{ color: 'var(--accent)' }}>
                                 <AlertOctagon size={13} /> Cluster Detection
                             </h4>
                             {fraudClusters.length === 0 ? (
-                                <p className="text-xs text-slate-500">No fraud clusters detected yet.</p>
+                                <p className="theme-muted-text text-xs">No fraud clusters detected yet.</p>
                             ) : (
                                 <div className="space-y-1.5">
                                     {fraudClusters.slice(0, 3).map((c) => (
-                                        <div key={c.clusterId} className="p-2 rounded-lg bg-red-500/5 border border-red-500/20 text-[10px]">
+                                        <div key={c.clusterId} className="rounded-lg border p-2 text-[10px]" style={{ borderColor: 'color-mix(in srgb, var(--status-danger) 28%, transparent)', background: 'color-mix(in srgb, var(--status-danger) 9%, transparent)' }}>
                                             <div className="flex justify-between mb-0.5">
-                                                <span className="font-mono text-red-300">{c.clusterId}</span>
-                                                <span className="text-red-400 font-bold">{(c.avgFraudScore * 100).toFixed(0)}%</span>
+                                                <span className="theme-mono font-mono" style={{ color: 'var(--status-danger)' }}>{c.clusterId}</span>
+                                                <span className="font-bold" style={{ color: 'var(--status-danger)' }}>{(c.avgFraudScore * 100).toFixed(0)}%</span>
                                             </div>
-                                            <span className="text-slate-400">{c.size} accounts · {c.sharedDevices.length} devices · {c.sharedIPs.length} IPs</span>
+                                            <span className="theme-muted-text">{c.size} accounts · {c.sharedDevices.length} devices · {c.sharedIPs.length} IPs</span>
                                         </div>
                                     ))}
                                 </div>
                             )}
                             <button
                                 onClick={runForensicAnalysis}
-                                className="mt-3 w-full py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[10px] font-bold uppercase transition hover:bg-blue-600/30 active:scale-95"
+                                className="theme-btn-secondary mt-3 w-full py-1.5 text-[10px] font-bold uppercase active:scale-95"
+                                style={{ color: 'var(--accent)', borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)' }}
                             >
                                 Run Forensic Scan
                             </button>
@@ -316,17 +317,17 @@ export const InvestigationWorkspace = () => {
                     {/* Node Stats */}
                     <div className="absolute bottom-4 right-4 z-10">
                         <div className="flex gap-2">
-                            <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-700 text-[10px] text-center">
-                                <div className="font-black text-white">{graphData?.nodes?.length ?? 0}</div>
-                                <div className="text-slate-400 uppercase">Nodes</div>
+                            <div className="theme-surface-subtle rounded-lg p-2 text-center text-[10px]">
+                                <div className="theme-strong-text font-black">{graphData?.nodes?.length ?? 0}</div>
+                                <div className="theme-muted-text uppercase">Nodes</div>
                             </div>
-                            <div className="p-2 rounded-lg bg-slate-900/80 border border-slate-700 text-[10px] text-center">
-                                <div className="font-black text-white">{graphData?.links?.length ?? 0}</div>
-                                <div className="text-slate-400 uppercase">Edges</div>
+                            <div className="theme-surface-subtle rounded-lg p-2 text-center text-[10px]">
+                                <div className="theme-strong-text font-black">{graphData?.links?.length ?? 0}</div>
+                                <div className="theme-muted-text uppercase">Edges</div>
                             </div>
-                            <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-[10px] text-center">
-                                <div className="font-black text-red-400">{fraudClusters.length}</div>
-                                <div className="text-slate-400 uppercase">Clusters</div>
+                            <div className="rounded-lg border p-2 text-center text-[10px]" style={{ borderColor: 'color-mix(in srgb, var(--status-danger) 35%, transparent)', background: 'color-mix(in srgb, var(--status-danger) 12%, transparent)' }}>
+                                <div className="font-black" style={{ color: 'var(--status-danger)' }}>{fraudClusters.length}</div>
+                                <div className="theme-muted-text uppercase">Clusters</div>
                             </div>
                         </div>
                     </div>
@@ -346,20 +347,20 @@ export const InvestigationWorkspace = () => {
                     <SimulationControlCenter />
 
                     {/* Additional Forensic Context */}
-                    <div className="panel bg-slate-900/20 border-dashed border-slate-800">
-                        <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Forensic Intelligence</h4>
+                    <div className="theme-surface-card border-dashed p-5">
+                        <h4 className="theme-muted-text mb-3 text-[10px] font-black uppercase tracking-widest italic">Forensic Intelligence</h4>
                         <div className="space-y-3">
                             <div className="flex items-center justify-between text-[10px]">
-                                <span className="text-slate-400 font-bold uppercase">ML Confidence</span>
-                                <span className="text-blue-400 font-mono">94.2%</span>
+                                <span className="theme-muted-text font-bold uppercase">ML Confidence</span>
+                                <span className="theme-mono" style={{ color: 'var(--accent)' }}>94.2%</span>
                             </div>
                             <div className="flex items-center justify-between text-[10px]">
-                                <span className="text-slate-400 font-bold uppercase">Graph Density</span>
-                                <span className="text-blue-400 font-mono">0.024</span>
+                                <span className="theme-muted-text font-bold uppercase">Graph Density</span>
+                                <span className="theme-mono" style={{ color: 'var(--accent)' }}>0.024</span>
                             </div>
                             <div className="flex items-center justify-between text-[10px]">
-                                <span className="text-slate-400 font-bold uppercase">Processing Lcy</span>
-                                <span className="text-emerald-400 font-mono">14ms</span>
+                                <span className="theme-muted-text font-bold uppercase">Processing Lcy</span>
+                                <span className="theme-mono" style={{ color: 'var(--status-success)' }}>14ms</span>
                             </div>
                         </div>
                     </div>
@@ -369,7 +370,7 @@ export const InvestigationWorkspace = () => {
             {/* Device Intelligence */}
             {deviceIntelligence && deviceIntelligence.length > 0 && (
                 <div>
-                    <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                    <h2 className="theme-stat-label mb-3 flex items-center gap-2">
                         <Network size={14} /> Device Intelligence
                     </h2>
                     <DeviceIntelligencePanel devices={deviceIntelligence} />

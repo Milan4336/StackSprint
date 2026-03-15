@@ -43,8 +43,24 @@ services:
       - ML_SERVICE_URL=http://ml-service:8000
       - JWT_SECRET=supersecretminimum32charactersforjwt
       - JWT_EXPIRES_IN=1h
+      - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY:-}
+      - SECRET_PROVIDER=${SECRET_PROVIDER:-env}
+      - PINECONE_API_KEY=${PINECONE_API_KEY:-}
+      - PINECONE_INDEX_HOST=${PINECONE_INDEX_HOST:-}
+      - PINECONE_NAMESPACE=${PINECONE_NAMESPACE:-fraud-copilot}
+      - MFA_TOTP_ISSUER=${MFA_TOTP_ISSUER:-Stack Sprint Fraud Command Center}
+      - LOCKDOWN_THREAT_THRESHOLD=${LOCKDOWN_THREAT_THRESHOLD:-90}
+      - LOKI_PUSH_URL=${LOKI_PUSH_URL:-}
+      - LOKI_LABELS=${LOKI_LABELS:-service=api-gateway,stack=stack-sprint}
+      - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      - DOCKER_CONTAINERS=${DOCKER_CONTAINERS:-fraud-api-gateway,fraud-ml-service,fraud-mongo,fraud-redis}
+      - RATE_LIMIT_WINDOW_SECONDS=${RATE_LIMIT_WINDOW_SECONDS:-60}
+      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-120}
+      - RATE_LIMIT_AUTH_MAX=${RATE_LIMIT_AUTH_MAX:-20}
+      - RATE_LIMIT_LOGIN_MAX=${RATE_LIMIT_LOGIN_MAX:-8}
     volumes:
       - ./PATCH_NOTES.md:/app/PATCH_NOTES.md
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       - mongo
       - redis

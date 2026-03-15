@@ -45,20 +45,21 @@ export const LeftNav = () => {
         <motion.aside
             initial={false}
             animate={{ width: isSidebarCollapsed ? 80 : 256 }}
-            className="flex flex-col h-full bg-slate-900 border-r border-slate-800 shrink-0 relative z-20"
+            className="theme-left-nav flex h-full flex-col shrink-0 relative z-20"
         >
-            <div className="flex h-16 items-center px-4 shrink-0 border-b border-slate-800/50 font-black italic tracking-tighter text-white uppercase justify-between">
+            <div className="theme-left-nav-header flex h-16 shrink-0 items-center justify-between border-b px-4 font-black italic uppercase tracking-tighter" style={{ fontFamily: 'var(--font-heading)' }}>
                 {!isSidebarCollapsed && (
-                    <span className="truncate bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    <span className="truncate bg-gradient-to-r bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(to right, var(--accent), var(--accent-strong))' }}>
                         Intel Console
                     </span>
                 )}
                 {isSidebarCollapsed && (
-                    <span className="mx-auto text-blue-400">IC</span>
+                    <span className="mx-auto" style={{ color: 'var(--accent)' }}>IC</span>
                 )}
                 <button
                     onClick={toggleSidebar}
-                    className="text-slate-400 hover:text-white transition-colors"
+                    className="theme-left-nav-toggle theme-btn-ghost h-8 w-8 p-0"
+                    aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
                     {isSidebarCollapsed ? <PanelRightClose size={18} /> : <PanelLeftClose size={18} />}
                 </button>
@@ -76,18 +77,18 @@ export const LeftNav = () => {
                 ))}
             </div>
 
-            <div className="p-4 border-t border-slate-800/50">
-                <div className={`rounded-xl border border-slate-800 bg-slate-800/30 p-3 
+            <div className="theme-left-nav-footer border-t p-4">
+                <div className={`theme-left-nav-status rounded-xl border p-3 
                     ${isSidebarCollapsed ? 'flex justify-center' : ''}`}
                 >
                     {isSidebarCollapsed ? (
-                        <ShieldAlert className="text-emerald-500" size={20} />
+                        <ShieldAlert size={20} style={{ color: 'var(--status-success)' }} />
                     ) : (
                         <div className="flex items-center gap-3">
-                            <ShieldAlert className="text-emerald-500 shrink-0" size={20} />
+                            <ShieldAlert className="shrink-0" size={20} style={{ color: 'var(--status-success)' }} />
                             <div>
-                                <p className="text-[10px] uppercase tracking-widest font-black text-slate-400 leading-none">Status</p>
-                                <p className="text-xs font-bold text-emerald-500 mt-1">Operational</p>
+                                <p className="theme-left-nav-status-label text-[10px] font-black uppercase leading-none tracking-widest">Status</p>
+                                <p className="mt-1 text-xs font-bold" style={{ color: 'var(--status-success)' }}>Operational</p>
                             </div>
                         </div>
                     )}

@@ -14,59 +14,82 @@ export const DeviceIntelligencePanel = ({ devices }: DeviceIntelligencePanelProp
     return (
         <motion.article className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, delay: 0.11 }}>
             <h3 className="panel-title">Device Intelligence</h3>
-            <p className="mb-3 text-xs uppercase tracking-[0.15em] text-slate-400">
-                {devices.length} Tracked · <span className="text-emerald-500">{trusted} Trusted</span> · <span className="text-amber-500">{newDevices} New</span> · <span className="text-red-500">{suspicious} Suspicious</span>
+            <p className="theme-muted-text mb-3 text-xs uppercase tracking-[0.15em]">
+                {devices.length} Tracked · <span style={{ color: 'var(--status-success)' }}>{trusted} Trusted</span> · <span style={{ color: 'var(--status-warning)' }}>{newDevices} New</span> · <span style={{ color: 'var(--status-danger)' }}>{suspicious} Suspicious</span>
             </p>
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {devices.map((device) => {
                     let LabelIcon = Shield;
-                    let labelColor = 'text-slate-500';
+                    let labelColor = 'var(--app-text-muted)';
+                    let pillStyle: { background: string; borderColor: string } = {
+                        background: 'color-mix(in srgb, var(--surface-1) 80%, transparent)',
+                        borderColor: 'color-mix(in srgb, var(--surface-border) 75%, transparent)'
+                    };
 
                     if (device.deviceLabel === 'Trusted Device') {
                         LabelIcon = ShieldCheck;
-                        labelColor = 'text-emerald-500 dark:text-emerald-400';
+                        labelColor = 'var(--status-success)';
+                        pillStyle = {
+                            background: 'color-mix(in srgb, var(--status-success) 12%, transparent)',
+                            borderColor: 'color-mix(in srgb, var(--status-success) 30%, transparent)'
+                        };
                     } else if (device.deviceLabel === 'Suspicious Device') {
                         LabelIcon = ShieldAlert;
-                        labelColor = 'text-red-500 dark:text-red-400';
+                        labelColor = 'var(--status-danger)';
+                        pillStyle = {
+                            background: 'color-mix(in srgb, var(--status-danger) 12%, transparent)',
+                            borderColor: 'color-mix(in srgb, var(--status-danger) 30%, transparent)'
+                        };
                     } else if (device.deviceLabel === 'New Device') {
                         LabelIcon = Shield;
-                        labelColor = 'text-amber-500 dark:text-amber-400';
+                        labelColor = 'var(--status-warning)';
+                        pillStyle = {
+                            background: 'color-mix(in srgb, var(--status-warning) 12%, transparent)',
+                            borderColor: 'color-mix(in srgb, var(--status-warning) 30%, transparent)'
+                        };
                     }
 
                     return (
-                        <div key={`${device.userId}-${device.deviceHash}`} className="rounded-xl border border-slate-200/80 bg-white/70 p-3 dark:border-slate-700 dark:bg-slate-900/60 transition-colors hover:border-indigo-500/30">
+                        <div
+                            key={`${device.userId}-${device.deviceHash}`}
+                            className="theme-surface-subtle rounded-xl p-3 transition"
+                            style={{ borderColor: 'var(--surface-border)' }}
+                        >
                             <div className="mb-2 flex items-start justify-between">
                                 <div>
-                                    <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-100 text-sm">
-                                        <SmartphoneNfc size={14} className="text-indigo-500" />
+                                    <div className="theme-strong-text flex items-center gap-1.5 text-sm font-semibold">
+                                        <SmartphoneNfc size={14} style={{ color: 'var(--accent)' }} />
                                         <span className="truncate max-w-[120px]" title={device.deviceHash}>{device.deviceHash.substring(0, 12)}...</span>
                                     </div>
-                                    <div className="text-[10px] text-slate-500 font-mono mt-0.5 px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded w-fit">
+                                    <div
+                                        className="theme-mono theme-muted-text mt-0.5 w-fit rounded px-1 py-0.5 text-[10px]"
+                                        style={{ background: 'color-mix(in srgb, var(--surface-3) 76%, transparent)' }}
+                                    >
                                         Score: {device.deviceTrustScore}
                                     </div>
                                 </div>
 
-                                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border ${device.deviceLabel === 'Trusted Device' ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20' :
-                                    device.deviceLabel === 'Suspicious Device' ? 'bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20' :
-                                        'bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20'
-                                    }`}>
-                                    <LabelIcon size={12} className={labelColor} />
-                                    <span className={labelColor}>{device.deviceLabel}</span>
+                                <div className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium" style={pillStyle}>
+                                    <LabelIcon size={12} style={{ color: labelColor }} />
+                                    <span style={{ color: labelColor }}>{device.deviceLabel}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                            <div
+                                className="theme-muted-text mt-2 grid grid-cols-2 gap-2 rounded-lg p-2 text-xs"
+                                style={{ background: 'color-mix(in srgb, var(--surface-2) 72%, transparent)' }}
+                            >
                                 <div>
-                                    <span className="block text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Device Type</span>
-                                    <span className="truncate block" title={device.platform || 'Unknown'}>{device.platform || 'Unknown'} • {device.userAgent || 'Unknown Browser'}</span>
+                                    <span className="theme-muted-text mb-0.5 block text-[10px] font-semibold uppercase">Device Type</span>
+                                    <span className="block truncate" title={device.platform || 'Unknown'}>{device.platform || 'Unknown'} · {device.userAgent || 'Unknown Browser'}</span>
                                 </div>
                                 <div>
-                                    <span className="block text-[10px] uppercase text-slate-400 font-semibold mb-0.5">Last Location</span>
+                                    <span className="theme-muted-text mb-0.5 block text-[10px] font-semibold uppercase">Last Location</span>
                                     <span className="truncate block" title={device.lastKnownIp || device.timezone || 'Unknown'}>{device.lastKnownIp || device.timezone || 'Unknown'}</span>
                                 </div>
                                 <div className="col-span-2">
-                                    <span className="block text-[10px] uppercase text-slate-400 font-semibold mb-0.5">History</span>
+                                    <span className="theme-muted-text mb-0.5 block text-[10px] font-semibold uppercase">History</span>
                                     <span className="truncate block">Seen {new Date(device.firstSeen).toLocaleDateString()} — {new Date(device.lastSeen).toLocaleDateString()}</span>
                                 </div>
                             </div>
@@ -76,7 +99,7 @@ export const DeviceIntelligencePanel = ({ devices }: DeviceIntelligencePanelProp
 
                 {devices.length === 0 ? (
                     <div className="app-empty min-h-[150px]">
-                        <p className="text-sm text-slate-500 dark:text-slate-400">No device intelligence data available.</p>
+                        <p className="theme-muted-text text-sm">No device intelligence data available.</p>
                     </div>
                 ) : null}
             </div>

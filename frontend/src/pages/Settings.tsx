@@ -4,11 +4,11 @@ import { Cpu, MoonStar, Save, SunMedium } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { monitoringApi } from '../api/client';
 import { useTheme } from '../context/ThemeContext';
-import { useThemeStore } from '../store/theme';
+import { APP_THEMES, THEME_META, isLightTheme, useThemeStore } from '../store/theme';
 
 export const Settings = () => {
   const queryClient = useQueryClient();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
   const settingsQuery = useQuery({
     queryKey: ['settings'],
     queryFn: () => monitoringApi.getSettings()
@@ -56,37 +56,54 @@ export const Settings = () => {
   return (
     <div className="space-y-6">
       <motion.section className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="section-title">Platform Settings</h2>
-        <p className="section-subtitle mt-1">Configure risk thresholds, scoring weights, and simulation controls.</p>
+        <span className="page-kicker">Platform Controls</span>
+        <h2 className="theme-page-title">Platform Settings</h2>
+        <p className="theme-page-subtitle">Configure risk thresholds, scoring weights, and simulation controls.</p>
       </motion.section>
 
       <motion.section className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
         <h2 className="panel-title">Appearance & Effects</h2>
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-8">
           <div>
-            <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">
-              Current theme: <span className="font-semibold text-emerald-500">{theme}</span>
+            <p className="theme-muted-text mb-3 text-sm">
+              Current theme: <span className="font-semibold" style={{ color: 'var(--accent)' }}>{THEME_META[theme].label}</span>
             </p>
-            <button type="button" onClick={toggleTheme} className="glass-btn">
-              {theme === 'dark' ? <SunMedium size={15} /> : <MoonStar size={15} />}
-              Toggle Theme
+            <button type="button" onClick={toggleTheme} className="theme-btn-secondary">
+              {isLightTheme(theme) ? <MoonStar size={15} /> : <SunMedium size={15} />}
+              Cycle Theme
             </button>
           </div>
           <div>
-            <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">
-              High Threat Border Glow: <span className="font-semibold text-emerald-500">{useThemeStore(s => s.enableThreatGlow) ? 'Enabled' : 'Disabled'}</span>
+            <p className="theme-muted-text mb-3 text-sm">
+              High Threat Border Glow: <span className="font-semibold" style={{ color: 'var(--status-success)' }}>{useThemeStore(s => s.enableThreatGlow) ? 'Enabled' : 'Disabled'}</span>
             </p>
-            <button type="button" onClick={() => useThemeStore.getState().toggleThreatGlow()} className="glass-btn">
+            <button type="button" onClick={() => useThemeStore.getState().toggleThreatGlow()} className="theme-btn-secondary">
               Toggle Threat Glow
             </button>
           </div>
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-5">
+          {APP_THEMES.map((option) => {
+            const active = option === theme;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setTheme(option)}
+                className={`theme-option-btn ${active ? 'theme-option-btn-active' : ''}`}
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.12em]">{THEME_META[option].label}</p>
+                <p className="mt-1 text-[11px] uppercase opacity-80">{THEME_META[option].mode}</p>
+              </button>
+            );
+          })}
         </div>
       </motion.section>
 
       <motion.section className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
         <h2 className="panel-title">Fraud Runtime Settings</h2>
         <form className="grid gap-3 md:grid-cols-2" onSubmit={onSubmit}>
-          <label className="text-sm text-slate-700 dark:text-slate-200">
+          <label className="theme-muted-text text-sm">
             High Amount Threshold
             <input
               className="input mt-1"
@@ -95,7 +112,7 @@ export const Settings = () => {
               onChange={(event) => setForm((prev) => ({ ...prev, highAmountThreshold: Number(event.target.value) }))}
             />
           </label>
-          <label className="text-sm text-slate-700 dark:text-slate-200">
+          <label className="theme-muted-text text-sm">
             Velocity Window Minutes
             <input
               className="input mt-1"
@@ -106,7 +123,7 @@ export const Settings = () => {
               }
             />
           </label>
-          <label className="text-sm text-slate-700 dark:text-slate-200">
+          <label className="theme-muted-text text-sm">
             Velocity Transaction Threshold
             <input
               className="input mt-1"
@@ -115,7 +132,7 @@ export const Settings = () => {
               onChange={(event) => setForm((prev) => ({ ...prev, velocityTxThreshold: Number(event.target.value) }))}
             />
           </label>
-          <label className="text-sm text-slate-700 dark:text-slate-200">
+          <label className="theme-muted-text text-sm">
             Autonomous Alert Threshold
             <input
               className="input mt-1"
@@ -129,9 +146,12 @@ export const Settings = () => {
             />
           </label>
 
-          <div className="md:col-span-2 grid grid-cols-2 bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl gap-4 border border-slate-200 dark:border-slate-700">
-            <h3 className="col-span-2 text-xs font-black uppercase tracking-widest text-slate-500">Ensemble Master Weights</h3>
-            <label className="text-sm text-slate-700 dark:text-slate-200">
+          <div
+            className="md:col-span-2 grid grid-cols-2 gap-4 rounded-xl border p-4"
+            style={{ background: 'var(--surface-1)', borderColor: 'var(--surface-border)' }}
+          >
+            <h3 className="theme-muted-text col-span-2 text-xs font-black uppercase tracking-widest">Ensemble Master Weights</h3>
+            <label className="theme-muted-text text-sm">
               Rule Weight
               <input
                 className="input mt-1"
@@ -140,7 +160,7 @@ export const Settings = () => {
                 onChange={(event) => setForm((prev) => ({ ...prev, scoreRuleWeight: Number(event.target.value) }))}
               />
             </label>
-            <label className="text-sm text-slate-700 dark:text-slate-200">
+            <label className="theme-muted-text text-sm">
               ML Weight
               <input
                 className="input mt-1"
@@ -149,7 +169,7 @@ export const Settings = () => {
                 onChange={(event) => setForm((prev) => ({ ...prev, scoreMlWeight: Number(event.target.value) }))}
               />
             </label>
-            <label className="text-sm text-slate-700 dark:text-slate-200">
+            <label className="theme-muted-text text-sm">
               Behavior Weight
               <input
                 className="input mt-1"
@@ -158,7 +178,7 @@ export const Settings = () => {
                 onChange={(event) => setForm((prev) => ({ ...prev, scoreBehaviorWeight: Number(event.target.value) }))}
               />
             </label>
-            <label className="text-sm text-slate-700 dark:text-slate-200">
+            <label className="theme-muted-text text-sm">
               Graph Weight
               <input
                 className="input mt-1"
@@ -169,16 +189,17 @@ export const Settings = () => {
             </label>
           </div>
 
-          <label className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200 md:col-span-2">
+          <label className="theme-muted-text md:col-span-2 flex items-center gap-3 text-sm">
             <input
               type="checkbox"
+              style={{ accentColor: 'var(--accent)' }}
               checked={form.simulationMode}
               onChange={(event) => setForm((prev) => ({ ...prev, simulationMode: event.target.checked }))}
             />
             Enable Simulation Mode
           </label>
           <div className="md:col-span-2">
-            <button className="glass-btn" disabled={updateMutation.isPending} type="submit">
+            <button className="theme-btn-primary" disabled={updateMutation.isPending} type="submit">
               <Save size={14} />
               {updateMutation.isPending ? 'Saving Runtime...' : 'Save Settings'}
             </button>
@@ -227,12 +248,12 @@ const MlEnsembleSettings = () => {
   return (
     <motion.section className="panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
       <h2 className="panel-title">ML Ensemble Orchestration</h2>
-      <p className="text-xs text-slate-500 mb-6 font-bold uppercase tracking-widest">Configure per-model sub-weighting for the ML scoring layer.</p>
+      <p className="theme-muted-text mb-6 text-xs font-bold uppercase tracking-widest">Configure per-model sub-weighting for the ML scoring layer.</p>
 
       <form onSubmit={onMlSubmit} className="space-y-6">
         <div className="grid gap-4 md:grid-cols-3">
           {Object.entries(mlForm.weights).map(([model, weight]) => (
-            <label key={model} className="text-xs font-black uppercase tracking-widest text-slate-500">
+            <label key={model} className="theme-muted-text text-xs font-black uppercase tracking-widest">
               {model.replace('_', ' ')} Weight
               <input
                 className="input mt-2"
@@ -247,7 +268,7 @@ const MlEnsembleSettings = () => {
           ))}
         </div>
 
-        <label className="block text-xs font-black uppercase tracking-widest text-slate-500 max-w-xs">
+        <label className="theme-muted-text block max-w-xs text-xs font-black uppercase tracking-widest">
           Consensus Fraud Threshold
           <input
             className="input mt-2"
@@ -257,7 +278,7 @@ const MlEnsembleSettings = () => {
           />
         </label>
 
-        <button className="glass-btn" disabled={mlUpdateMutation.isPending} type="submit">
+        <button className="theme-btn-primary" disabled={mlUpdateMutation.isPending} type="submit">
           <Cpu size={14} />
           {mlUpdateMutation.isPending ? 'Updating Neural Plane...' : 'Push Ensemble Config'}
         </button>

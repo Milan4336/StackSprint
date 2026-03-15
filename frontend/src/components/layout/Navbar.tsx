@@ -17,12 +17,13 @@ import { useActivityFeedStore } from '../../store/activityFeedStore';
 import { useThreatStore } from '../../store/threatStore';
 import { formatSafeDate } from '../../utils/date';
 import { ThreatLevelIndicator } from '../threat/ThreatLevelIndicator';
+import { AppTheme, isLightTheme } from '../../store/theme';
 
 interface NavbarProps {
   onToggleTheme: () => void;
   onLogout: () => void;
   lastUpdated: string | null;
-  theme: 'light' | 'dark';
+  theme: AppTheme;
 }
 
 const decodeEmail = (): string => {
@@ -276,7 +277,7 @@ export const Navbar = ({ onToggleTheme, onLogout, lastUpdated, theme }: NavbarPr
           </button>
 
           <button type="button" onClick={onToggleTheme} className="glass-btn h-10 w-10 justify-center p-0" aria-label="Toggle theme">
-            {theme === 'dark' ? <SunMedium size={16} /> : <MoonStar size={16} />}
+            {isLightTheme(theme) ? <MoonStar size={16} /> : <SunMedium size={16} />}
           </button>
 
           <div className="relative" ref={profileRef}>

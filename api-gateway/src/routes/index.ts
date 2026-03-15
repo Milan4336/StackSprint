@@ -21,6 +21,7 @@ import { EntityController } from '../controllers/EntityController';
 import { AutonomousAgentController } from '../controllers/AutonomousAgentController';
 import { AdminController } from '../controllers/AdminController';
 import { AlertController } from '../controllers/AlertController';
+import { CopilotController } from '../controllers/CopilotController';
 import { UserRepository } from '../repositories/UserRepository';
 import { FraudAIAgentService } from '../services/FraudAIAgentService';
 import { realtimeEventBus } from '../services/RealtimeEventBus';
@@ -51,6 +52,7 @@ import { AlertService } from '../services/AlertService';
 import { OtpRepository } from '../repositories/OtpRepository';
 import { asyncHandler } from '../utils/asyncHandler';
 import { authMiddleware, roleMiddleware } from '../middleware/auth';
+import { authRateLimiter, copilotRateLimiter, loginRateLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import {
   createCaseSchema,
@@ -140,6 +142,7 @@ const searchController = new SearchController(searchService);
 const userRepository = new UserRepository();
 const authService = new AuthService(userRepository, auditService, otpRepository);
 const authController = new AuthController(authService, deviceIntelligenceService);
+const copilotController = new CopilotController();
 
 const entityController = new EntityController(
   transactionRepository,
@@ -178,10 +181,16 @@ router.get('/api/v1/graph', authMiddleware, asyncHandler(graphController.getNetw
 router.get('/api/v1/graph/analytics', authMiddleware, asyncHandler(graphController.getAnalytics));
 
 router.post('/api/v1/auth/register', validate(registerSchema), asyncHandler(authController.register));
-router.post('/api/v1/auth/login', validate(loginSchema), asyncHandler(authController.login));
-router.post('/api/v1/auth/request-otp', asyncHandler(authController.requestOtp));
-router.post('/api/v1/auth/verify-otp', asyncHandler(authController.verifyOtp));
+router.post('/api/v1/auth/login', loginRateLimiter, validate(loginSchema), asyncHandler(authController.login));
+router.post('/api/v1/auth/request-otp', authRateLimiter, asyncHandler(authController.requestOtp));
+router.post('/api/v1/auth/verify-otp', authRateLimiter, asyncHandler(authController.verifyOtp));
+router.post('/api/v1/auth/mfa/setup', authMiddleware, authRateLimiter, asyncHandler(authController.setupMfa));
+router.post('/api/v1/auth/mfa/enable', authMiddleware, authRateLimiter, asyncHandler(authController.enableMfa));
+router.post('/api/v1/auth/mfa/verify', authMiddleware, authRateLimiter, asyncHandler(authController.verifyMfa));
+router.get('/api/v1/auth/mfa/status', authMiddleware, asyncHandler(authController.mfaStatus));
+router.post('/api/v1/auth/mfa/status', authMiddleware, asyncHandler(authController.mfaStatus));
 router.get('/api/v1/auth/me', authMiddleware, asyncHandler(authController.me));
+router.post('/api/v1/auth/me', authMiddleware, asyncHandler(authController.me));
 
 router.post(
   '/api/v1/transactions',
@@ -233,6 +242,8 @@ router.get('/api/v1/timeline/:id', authMiddleware, asyncHandler(entityController
 
 router.get('/api/v1/agent/status', authMiddleware, asyncHandler(agentController.getStatus));
 router.post('/api/v1/agent/toggle', authMiddleware, roleMiddleware(['admin']), asyncHandler(agentController.toggle));
+
+router.post('/api/v1/copilot/chat', authMiddleware, copilotRateLimiter, asyncHandler(copilotController.chat));
 
 router.post('/api/v1/admin/unfreeze-user', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeUser));
 router.post('/api/v1/admin/unfreeze-device', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeDevice));

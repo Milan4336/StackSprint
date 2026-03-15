@@ -19,7 +19,12 @@ import {
   AlertRecord,
   CaseStatus,
   CasePriority,
-  EnrichedGraphNode
+  EnrichedGraphNode,
+  CopilotChatResponse,
+  LoginResponse,
+  MfaSetupResponse,
+  MfaStatusResponse,
+  MfaVerifyResponse
 } from '../types';
 import { useAuthStore } from '../store/auth';
 import { generateDeviceFingerprint } from '../utils/deviceFingerprint';
@@ -69,9 +74,39 @@ export const monitoringApi = {
     status: string;
     riskScore: number;
     lastLogin?: string;
+    mfaEnabled?: boolean;
+    mfaVerifiedAt?: string | null;
   }> {
     const fp = await generateDeviceFingerprint();
     const { data } = await apiClient.post('/auth/me', { deviceFingerprint: fp });
+    return data;
+  },
+  async login(payload: { email: string; password: string; deviceFingerprint?: unknown }): Promise<LoginResponse> {
+    const { data } = await apiClient.post<LoginResponse>('/auth/login', payload);
+    return data;
+  },
+  async getMfaStatus(): Promise<MfaStatusResponse> {
+    const { data } = await apiClient.get<MfaStatusResponse>('/auth/mfa/status');
+    return data;
+  },
+  async setupMfa(): Promise<MfaSetupResponse> {
+    const { data } = await apiClient.post<MfaSetupResponse>('/auth/mfa/setup');
+    return data;
+  },
+  async enableMfa(code: string): Promise<MfaVerifyResponse> {
+    const { data } = await apiClient.post<MfaVerifyResponse>('/auth/mfa/enable', { code });
+    return data;
+  },
+  async verifyMfa(code: string, reason?: string): Promise<MfaVerifyResponse> {
+    const { data } = await apiClient.post<MfaVerifyResponse>('/auth/mfa/verify', { code, reason });
+    return data;
+  },
+  async verifyMfaWithChallenge(code: string, mfaToken: string): Promise<MfaVerifyResponse> {
+    const { data } = await apiClient.post<MfaVerifyResponse>(
+      '/auth/mfa/verify',
+      { code, reason: 'LOGIN_CHALLENGE' },
+      { headers: { Authorization: `Bearer ${mfaToken}` } }
+    );
     return data;
   },
   async getEntity(id: string): Promise<any> {
@@ -337,5 +372,25 @@ export const monitoringApi = {
   async acknowledgeAlert(alertId: string): Promise<AlertRecord> {
     const { data } = await apiClient.patch<AlertRecord>(`/alerts/${alertId}/acknowledge`);
     return data;
+  },
+  async copilotChat(message: string): Promise<CopilotChatResponse> {
+    const { data } = await apiClient.post<CopilotChatResponse | { response: string }>('/copilot/chat', { message });
+
+    if (typeof (data as CopilotChatResponse).response === 'string') {
+      const typed = data as Partial<CopilotChatResponse>;
+      return {
+        response: typed.response ?? '',
+        sources: Array.isArray(typed.sources) ? typed.sources : [],
+        suggestions: Array.isArray(typed.suggestions) ? typed.suggestions : [],
+        mode: typed.mode
+      };
+    }
+
+    return {
+      response: 'Copilot returned an unexpected payload.',
+      sources: [],
+      suggestions: [],
+      mode: 'fallback'
+    };
   }
 };

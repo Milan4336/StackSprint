@@ -17,10 +17,10 @@ import { AdminControlPanel } from '../components/dashboard/AdminControlPanel';
 import { DeviceIntelligencePanel } from '../components/dashboard/DeviceIntelligencePanel';
 
 const threatLevelColor = (index: number) => {
-    if (index >= 86) return { text: 'text-red-400', label: 'Critical', bar: 'from-red-600 to-red-400' };
-    if (index >= 66) return { text: 'text-orange-400', label: 'High', bar: 'from-orange-600 to-orange-400' };
-    if (index >= 41) return { text: 'text-amber-400', label: 'Elevated', bar: 'from-amber-500 to-yellow-400' };
-    return { text: 'text-emerald-400', label: 'Normal', bar: 'from-emerald-600 to-emerald-400' };
+    if (index >= 86) return { text: 'var(--status-danger)', label: 'Critical', bar: 'linear-gradient(90deg, color-mix(in srgb, var(--status-danger) 85%, black 15%), color-mix(in srgb, var(--status-danger) 70%, white 30%))' };
+    if (index >= 66) return { text: 'var(--status-warning)', label: 'High', bar: 'linear-gradient(90deg, color-mix(in srgb, var(--status-warning) 80%, black 20%), color-mix(in srgb, var(--status-warning) 75%, white 25%))' };
+    if (index >= 41) return { text: 'var(--accent-strong)', label: 'Elevated', bar: 'linear-gradient(90deg, var(--accent), var(--accent-strong))' };
+    return { text: 'var(--status-success)', label: 'Normal', bar: 'linear-gradient(90deg, color-mix(in srgb, var(--status-success) 80%, black 20%), color-mix(in srgb, var(--status-success) 75%, white 25%))' };
 };
 
 export const Overview = () => {
@@ -88,8 +88,9 @@ export const Overview = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black uppercase tracking-tighter text-white italic">
-                        Mission <span className="text-blue-500">Control</span>
+                    <span className="page-kicker">Command Layer</span>
+                    <h1 className="theme-page-title italic">
+                        Mission <span style={{ color: 'var(--accent)' }}>Control</span>
                     </h1>
                     <div className="flex gap-4 mt-1">
                         <HUDDataReadout label="System Mode" value="Active Intelligence" />
@@ -97,7 +98,13 @@ export const Overview = () => {
                         <HUDDataReadout label="Telemetry" value="Real-time / Socket-Bound" />
                     </div>
                 </div>
-                <div className="flex items-center gap-3 bg-blue-500/5 px-6 py-3 rounded-xl border border-blue-500/20 glass-panel">
+                <div
+                    className="glass-panel flex items-center gap-3 rounded-xl border px-6 py-3"
+                    style={{
+                        background: 'color-mix(in srgb, var(--accent) 10%, var(--surface-1) 90%)',
+                        borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)'
+                    }}
+                >
                     <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
                         <div className="relative flex h-3 w-3">
                             {connected ? (
@@ -105,18 +112,19 @@ export const Overview = () => {
                                     <motion.span
                                         animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
                                         transition={{ duration: 2, repeat: Infinity }}
-                                        className="absolute inline-flex h-full w-full rounded-full bg-emerald-400"
+                                        className="absolute inline-flex h-full w-full rounded-full"
+                                        style={{ background: 'var(--status-success)' }}
                                     />
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                                    <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: 'var(--status-success)', boxShadow: '0 0 10px color-mix(in srgb, var(--status-success) 80%, transparent)' }} />
                                 </>
                             ) : (
                                 <>
-                                    <span className="animate-pulse absolute inline-flex h-full w-full rounded-full opacity-40 bg-red-500" />
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                                    <span className="animate-pulse absolute inline-flex h-full w-full rounded-full opacity-40" style={{ background: 'var(--status-danger)' }} />
+                                    <span className="relative inline-flex rounded-full h-3 w-3" style={{ background: 'var(--status-danger)', boxShadow: '0 0 10px color-mix(in srgb, var(--status-danger) 80%, transparent)' }} />
                                 </>
                             )}
                         </div>
-                        <span className={connected ? 'text-emerald-400' : 'text-red-500'}>
+                        <span style={{ color: connected ? 'var(--status-success)' : 'var(--status-danger)' }}>
                             {connected ? 'Neural Link Established' : 'Attempting Engine Handshake...'}
                         </span>
                     </div>
@@ -128,15 +136,15 @@ export const Overview = () => {
                 {/* KPI 1: Transaction Volume */}
                 <HUDPanel title="Total Transactions">
                     <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                        <Activity size={100} className="text-blue-500" />
+                        <Activity size={100} style={{ color: 'var(--accent)' }} />
                     </div>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-end gap-3">
-                            <span className="text-6xl font-black text-white italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                            <span className="theme-strong-text text-6xl font-black italic tracking-tighter tabular-nums" style={{ textShadow: '0 0 15px color-mix(in srgb, var(--accent) 50%, transparent)' }}>
                                 {txCount.toLocaleString()}
                             </span>
                             <div className="mb-2">
-                                <span className="hud-readout border-l border-blue-500/30 pl-2">TX / SESSION</span>
+                                <span className="hud-readout border-l pl-2" style={{ borderColor: 'color-mix(in srgb, var(--accent) 35%, transparent)' }}>TX / SESSION</span>
                             </div>
                         </div>
                         <div className="flex gap-4 mt-4 border-t border-white/5 pt-4">
@@ -150,21 +158,22 @@ export const Overview = () => {
                 {/* KPI 2: Threat Matrix */}
                 <HUDPanel title="Neural Threat Matrix">
                     <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                        <Zap size={100} className="text-red-500" />
+                        <Zap size={100} style={{ color: 'var(--status-danger)' }} />
                     </div>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-end gap-3">
-                            <span className={`text-6xl font-black italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] ${tl.text}`}>
+                            <span className="text-6xl font-black italic tracking-tighter tabular-nums" style={{ color: tl.text, textShadow: '0 0 15px color-mix(in srgb, var(--status-danger) 45%, transparent)' }}>
                                 {threatIndex.toFixed(0)}
                             </span>
                             <div className="mb-2">
-                                <span className={`hud-readout border-l pl-2 ${tl.text} opacity-100`}>{tl.label}</span>
+                                <span className="hud-readout border-l pl-2 opacity-100" style={{ color: tl.text, borderColor: 'color-mix(in srgb, var(--status-danger) 35%, transparent)' }}>{tl.label}</span>
                             </div>
                         </div>
 
-                        <div className="w-full bg-white/5 h-1.5 rounded-sm mt-4 overflow-hidden relative border border-white/5">
+                        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-sm border relative" style={{ background: 'color-mix(in srgb, var(--surface-3) 75%, transparent)', borderColor: 'var(--surface-border)' }}>
                             <motion.div
-                                className={`h-full bg-gradient-to-r ${tl.bar} shadow-[0_0_10px_rgba(239,68,68,0.5)]`}
+                                className="h-full"
+                                style={{ background: tl.bar, boxShadow: '0 0 10px color-mix(in srgb, var(--status-danger) 45%, transparent)' }}
                                 animate={{ width: `${threatIndex}%` }}
                                 transition={{ type: 'spring', stiffness: 50, damping: 15 }}
                             />
@@ -181,15 +190,21 @@ export const Overview = () => {
                 {/* KPI 3: Fraud Intelligence */}
                 <HUDPanel title="Actionable Intelligence">
                     <div className="absolute top-0 right-0 p-4 opacity-[0.05]">
-                        <ShieldAlert size={100} className="text-amber-500" />
+                        <ShieldAlert size={100} style={{ color: 'var(--status-warning)' }} />
                     </div>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-end gap-3">
-                            <span className={`text-6xl font-black italic tracking-tighter tabular-nums drop-shadow-[0_0_15px_rgba(245,158,11,0.5)] ${fraudCount > 0 ? 'text-amber-400' : 'text-white'}`}>
+                            <span
+                                className="text-6xl font-black italic tracking-tighter tabular-nums"
+                                style={{
+                                    color: fraudCount > 0 ? 'var(--status-warning)' : 'var(--app-text-strong)',
+                                    textShadow: '0 0 15px color-mix(in srgb, var(--status-warning) 45%, transparent)'
+                                }}
+                            >
                                 {fraudCount}
                             </span>
                             <div className="mb-2">
-                                <span className="hud-readout border-l border-amber-500/30 pl-2">DETECTED EVENTS</span>
+                                <span className="hud-readout border-l pl-2" style={{ borderColor: 'color-mix(in srgb, var(--status-warning) 35%, transparent)' }}>DETECTED EVENTS</span>
                             </div>
                         </div>
 

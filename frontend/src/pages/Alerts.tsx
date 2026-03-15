@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { monitoringApi } from '../api/client';
 import { AlertRecord } from '../types';
 import { AlertCard } from '../components/alerts/AlertCard';
-import { Bell, ShieldAlert, Filter, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Bell, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Alerts = () => {
@@ -51,78 +51,82 @@ export const Alerts = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black uppercase tracking-widest text-slate-100 flex items-center gap-3">
-            Alert Center
+      <div className="panel">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <span className="page-kicker">Threat Operations</span>
+            <h1 className="theme-page-title flex items-center gap-3">
+              Alert Center
+              {' '}
             {criticalCount > 0 && (
-              <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-black rounded-lg animate-pulse">
+              <span
+                className="rounded-lg px-2 py-0.5 text-xs font-black uppercase tracking-wide animate-pulse"
+                style={{ background: 'color-mix(in srgb, var(--status-danger) 85%, black 15%)', color: '#fff5f5' }}
+              >
                 {criticalCount} Critical
               </span>
             )}
-          </h1>
-          <p className="text-sm font-bold text-slate-400 mt-1">Real-time fraud alert orchestration and threat acknowledgement</p>
-        </div>
+            </h1>
+            <p className="theme-page-subtitle">Real-time fraud alert orchestration and threat acknowledgement.</p>
+          </div>
 
-        <div className="flex items-center gap-2 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
-          {(['ALL', 'OPEN', 'CRITICAL'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filter === f
-                  ? 'bg-indigo-600 text-white shadow-lg'
-                  : 'text-slate-500 hover:text-slate-300'
-                }`}
-            >
-              {f}
-            </button>
-          ))}
+          <div className="theme-segmented-control">
+            {(['ALL', 'OPEN', 'CRITICAL'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`theme-segmented-button ${filter === f ? 'theme-segmented-button-active' : ''}`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Stats Sidebar */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50">
+          <div className="theme-stat-card theme-stat-card-success">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <CheckCircle2 className="text-emerald-400" size={20} />
+              <div className="rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--status-success) 14%, transparent)' }}>
+                <CheckCircle2 size={20} style={{ color: 'var(--status-success)' }} />
               </div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Resolution Rate</h3>
+              <h3 className="theme-stat-label">Resolution Rate</h3>
             </div>
-            <div className="text-3xl font-black text-white">
+            <div className="theme-stat-value">
               {alerts.length > 0
                 ? Math.round((alerts.filter(a => a.status === 'ACKNOWLEDGED').length / alerts.length) * 100)
                 : 0}%
             </div>
-            <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase">of last 50 threats cleared</p>
+            <p className="mt-2 text-[10px] font-bold uppercase tracking-wide theme-muted-text">of last 50 threats cleared</p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-red-500/20 bg-slate-900/50">
+          <div className="theme-stat-card theme-stat-card-danger">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <ShieldAlert className="text-red-400" size={20} />
+              <div className="rounded-lg p-2" style={{ background: 'color-mix(in srgb, var(--status-danger) 14%, transparent)' }}>
+                <ShieldAlert size={20} style={{ color: 'var(--status-danger)' }} />
               </div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">High Risk Pool</h3>
+              <h3 className="theme-stat-label">High Risk Pool</h3>
             </div>
-            <div className="text-3xl font-black text-white">
+            <div className="theme-stat-value">
               {alerts.filter(a => a.fraudScore > 0.85).length}
             </div>
-            <p className="text-[10px] font-bold text-slate-500 mt-2 uppercase">Pending investigation</p>
+            <p className="mt-2 text-[10px] font-bold uppercase tracking-wide theme-muted-text">Pending investigation</p>
           </div>
         </div>
 
         {/* Alerts Stream */}
         <div className="lg:col-span-3 space-y-4">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-64 border border-dashed border-slate-800 rounded-2xl">
-              <RefreshCw className="text-slate-700 animate-spin mb-4" size={32} />
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Syncing with threat engine...</span>
+            <div className="theme-empty-state h-64">
+              <RefreshCw className="mb-4 animate-spin" size={32} style={{ color: 'var(--accent)' }} />
+              <span className="text-xs font-bold uppercase tracking-widest">Syncing with threat engine...</span>
             </div>
           ) : filteredAlerts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 border border-dashed border-slate-800 rounded-2xl">
-              <Bell className="text-slate-800 mb-4" size={48} />
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest text-center">
+            <div className="theme-empty-state h-64">
+              <Bell className="mb-4" size={48} style={{ color: 'var(--app-text-muted)' }} />
+              <span className="theme-muted-text text-center text-xs font-bold uppercase tracking-widest">
                 All clear. No {filter.toLowerCase()} alerts active.
               </span>
             </div>

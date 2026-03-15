@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useIntelligenceSlice } from '../../store/slices/intelligenceSlice';
 import { format } from 'date-fns';
 
 interface DataPoint {
@@ -10,6 +9,17 @@ interface DataPoint {
 
 export const ModelConfidenceChart = ({ initialData }: { initialData: DataPoint[] }) => {
     const [data, setData] = useState<DataPoint[]>(initialData);
+    const gradientId = useId().replace(/:/g, '');
+    const readVar = (name: string, fallback: string): string => {
+        if (typeof window === 'undefined') return fallback;
+        const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return value || fallback;
+    };
+    const accent = readVar('--accent', '#6366f1');
+    const muted = readVar('--app-text-muted', '#475569');
+    const strong = readVar('--app-text-strong', '#f8fafc');
+    const surface = readVar('--surface-3', '#0f172a');
+    const border = readVar('--surface-border', '#334155');
 
     useEffect(() => {
         const handleNewData = (payload: any) => {
@@ -47,7 +57,7 @@ export const ModelConfidenceChart = ({ initialData }: { initialData: DataPoint[]
         return () => window.removeEventListener('intelligence:confidence', handler);
     }, []);
 
-    if (data.length === 0) return <div className="text-xs text-slate-500">Loading...</div>;
+    if (data.length === 0) return <div className="theme-muted-text text-xs">Loading...</div>;
 
     const currentConfidence = data[data.length - 1].value;
 
@@ -56,32 +66,38 @@ export const ModelConfidenceChart = ({ initialData }: { initialData: DataPoint[]
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                     <defs>
-                        <linearGradient id="colorConf" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={accent} stopOpacity={0.4} />
+                            <stop offset="95%" stopColor={accent} stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <XAxis
                         dataKey="time"
                         tickFormatter={(t) => format(new Date(t), 'HH:mm')}
-                        stroke="#475569"
+                        stroke={muted}
                         fontSize={10}
                         tickMargin={8}
                         minTickGap={20}
                     />
                     <YAxis domain={['auto', 'auto']} hide />
                     <Tooltip
-                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid #334155', borderRadius: '8px' }}
+                        contentStyle={{
+                            backgroundColor: `color-mix(in srgb, ${surface} 88%, black 12%)`,
+                            border: `1px solid ${border}`,
+                            borderRadius: '8px'
+                        }}
+                        itemStyle={{ color: strong }}
+                        labelStyle={{ color: muted }}
                         labelFormatter={(t) => format(new Date(t), 'HH:mm:ss')}
-                        cursor={{ stroke: '#6366f1', strokeWidth: 1 }}
+                        cursor={{ stroke: accent, strokeWidth: 1 }}
                     />
                     <Area
                         type="monotone"
                         dataKey="value"
-                        stroke="#6366f1"
+                        stroke={accent}
                         strokeWidth={2}
                         fillOpacity={1}
-                        fill="url(#colorConf)"
+                        fill={`url(#${gradientId})`}
                         isAnimationActive={false}
                     />
                 </AreaChart>
