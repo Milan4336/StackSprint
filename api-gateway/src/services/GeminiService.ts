@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 import { secretProvider } from '../config/secrets';
@@ -24,8 +24,14 @@ export class GeminiService {
             }
 
             this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-            this.embeddingModel = this.genAI.getGenerativeModel({ model: 'text-embedding-004' });
+            const safetySettings = [
+                { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+                { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            ];
+            this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash', safetySettings });
+            this.embeddingModel = this.genAI.getGenerativeModel({ model: 'text-embedding-004', safetySettings });
         })();
 
         await this.initializing;
