@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { scamAdvisorService } from '../services/ScamAdvisorService';
 import { logger } from '../config/logger';
 
 export class ScamAdvisorController {
-    public analyze = async (req: Request, res: Response) => {
+    public analyze = async (req: Request, res: Response, _next: NextFunction) => {
         try {
             const { content, type } = req.body;
             if (!content) {

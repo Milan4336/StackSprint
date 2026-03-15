@@ -251,8 +251,8 @@ router.get('/api/v1/timeline/:id', authMiddleware, asyncHandler(entityController
 router.get('/api/v1/agent/status', authMiddleware, asyncHandler(agentController.getStatus));
 router.post('/api/v1/agent/toggle', authMiddleware, roleMiddleware(['admin']), asyncHandler(agentController.toggle));
 
-router.post('/api/v1/copilot/chat', authMiddleware, copilotRateLimiter, asyncHandler(async (req, res) => { await copilotController.chat(req, res); }));
-router.post('/api/v1/scam-advisor/analyze', authMiddleware, asyncHandler(async (req, res) => { await scamAdvisorController.analyze(req, res); }));
+router.post('/api/v1/copilot/chat', authMiddleware, copilotRateLimiter, asyncHandler(async (req, res, next) => { await copilotController.chat(req, res, next); }));
+router.post('/api/v1/scam-advisor/analyze', authMiddleware, asyncHandler(async (req, res, next) => { await scamAdvisorController.analyze(req, res, next); }));
 
 router.post('/api/v1/admin/unfreeze-user', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeUser));
 router.post('/api/v1/admin/unfreeze-device', authMiddleware, roleMiddleware(['admin']), asyncHandler(adminController.unfreezeDevice));
@@ -278,5 +278,5 @@ router.patch(
   asyncHandler(settingsController.update)
 );
 
-router.get('/api/v1/forensics/replay/:sessionId', authMiddleware, asyncHandler(async (req, res) => { await forensicsController.getSessionReplay(req, res); }));
-router.get('/api/v1/forensics/sessions', authMiddleware, asyncHandler(async (req, res) => { await forensicsController.listSessions(req, res); }));
+router.get('/api/v1/forensics/replay/:sessionId', authMiddleware, asyncHandler(async (req, res, next) => { await forensicsController.getSessionReplay(req, res, next); }));
+router.get('/api/v1/forensics/sessions', authMiddleware, asyncHandler(async (req, res, next) => { await forensicsController.listSessions(req, res, next); }));

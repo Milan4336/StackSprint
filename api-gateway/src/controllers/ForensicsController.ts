@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { SessionReplayModel } from '../models/SessionReplay';
 import { logger } from '../config/logger';
 
@@ -6,7 +6,7 @@ export class ForensicsController {
     /**
      * Get session replay data for a specific user or session
      */
-    async getSessionReplay(req: Request, res: Response) {
+    async getSessionReplay(req: Request, res: Response, _next: NextFunction) {
         try {
             const sessionId = req.params.sessionId as string;
             const replay = await SessionReplayModel.findOne({ sessionId });
@@ -26,7 +26,7 @@ export class ForensicsController {
     /**
      * List recent forensic sessions
      */
-    async listSessions(req: Request, res: Response) {
+    async listSessions(req: Request, res: Response, _next: NextFunction) {
         try {
             const sessions = await SessionReplayModel.find().select('sessionId userId createdAt duration').sort({ createdAt: -1 }).limit(20);
             return res.json(sessions);

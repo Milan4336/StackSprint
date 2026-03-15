@@ -70,12 +70,17 @@ const createService = (fixture: ScoreFixture) => {
     updateGraphAndGetAnomaly: vi.fn().mockResolvedValue(fixture.graphScore)
   };
 
+  const muleDetectionService = {
+    detectMulePatterns: vi.fn().mockResolvedValue({ score: 0, reasons: [] })
+  };
+
   return new FraudScoringServiceClass(
     ruleEngineService as any,
     mlServiceClient as any,
     settingsService as any,
     userBehaviorService as any,
-    fraudGraphService as any
+    fraudGraphService as any,
+    muleDetectionService as any
   );
 };
 
